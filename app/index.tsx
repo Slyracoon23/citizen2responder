@@ -1,9 +1,16 @@
+import { useRouter } from 'expo-router';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
+  const router = useRouter();
+
+  const handleStartNewReport = () => {
+    router.push('/questionnaire');
+  };
+
   return (
     <ThemedView style={styles.container}>
       {/* Header Section */}
@@ -17,7 +24,7 @@ export default function HomeScreen() {
         {/* Button Container */}
         <View style={styles.buttonContainer}>
           {/* Start New Report Button */}
-          <TouchableOpacity style={[styles.button, styles.primaryButton]}>
+          <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={handleStartNewReport}>
             <ThemedText style={[styles.buttonText, styles.primaryButtonText]}>
               START NEW REPORT
             </ThemedText>
