@@ -1,5 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -10,7 +12,7 @@ type QuestionnaireStep = 'describe' | 'photo' | 'followup' | 'report';
 interface FollowUpQuestion {
   id: string;
   question: string;
-  subQuestions?: string[];
+  subQuestions?: string[];r
 }
 
 export default function QuestionnaireScreen() {
@@ -21,6 +23,8 @@ export default function QuestionnaireScreen() {
   const [capturedMedia, setCapturedMedia] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, boolean>>({});
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
   const suggestions = ['Accident', 'Fall', 'Fire', 'Medical', 'Violence', 'Other'];
 
@@ -124,6 +128,61 @@ export default function QuestionnaireScreen() {
     return true;
   };
 
+  const requestMicrophonePermission = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Microphone permission is required for voice recording.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleStartRecording = async () => {
+    try {
+      const hasPermission = await requestMicrophonePermission();
+      if (!hasPermission) return;
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+      Alert.alert('Error', 'Failed to start recording');
+    }
+  };
+
+  const handleStopRecording = async () => {
+    try {
+      if (!recording) return;
+
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+      
+      const uri = recording.getURI();
+      setRecording(null);
+      
+      // For now, we'll add placeholder text to indicate recording was captured
+      // In a real implementation, you would send this to a speech-to-text service
+      const recordingText = `[Voice recording captured - ${new Date().toLocaleTimeString()}]`;
+      setDescription(prev => prev + (prev ? ' ' : '') + recordingText);
+      
+      Alert.alert('Recording Complete', 'Voice recording has been captured. In a full implementation, this would be converted to text.');
+    } catch (err) {
+      console.error('Failed to stop recording', err);
+      Alert.alert('Error', 'Failed to stop recording');
+    }
+  };
+
   const handleTakePhoto = async () => {
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) return;
@@ -166,15 +225,65 @@ export default function QuestionnaireScreen() {
       <View style={styles.content}>
         <ThemedText style={styles.title}>Describe what happened</ThemedText>
         
-        <TextInput
-          style={styles.textInput}
-          placeholder="Briefly describe the incident..."
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
+        <View style={styles.inputContainer}>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Briefly describe the incident..."
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            
+            {/* Input Action Icons - positioned inside the input */}
+            <View style={styles.inputActionIcons}>
+              <TouchableOpacity
+                style={styles.inputIconButton}
+                onPress={isRecording ? handleStopRecording : handleStartRecording}
+              >
+                <MaterialIcons 
+                  name={isRecording ? "stop" : "mic"} 
+                  size={24} 
+                  color={isRecording ? "#FF4444" : "#666"} 
+                />
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.inputIconButton}
+                onPress={handleTakePhoto}
+              >
+                <MaterialIcons 
+                  name="camera-alt" 
+                  size={24} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Recording Indicator */}
+        {isRecording && (
+          <View style={styles.recordingIndicator}>
+            <View style={styles.recordingDot} />
+            <ThemedText style={styles.recordingText}>Recording...</ThemedText>
+          </View>
+        )}
+
+        {/* Photo Preview */}
+        {capturedMedia && (
+          <View style={styles.photoPreview}>
+            <Image source={{ uri: capturedMedia }} style={styles.previewThumbnail} />
+            <TouchableOpacity 
+              style={styles.removePhotoButton}
+              onPress={() => setCapturedMedia(null)}
+            >
+              <ThemedText style={styles.removePhotoText}>✕</ThemedText>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.suggestionsContainer}>
           <ThemedText style={styles.suggestionsTitle}>Suggestions</ThemedText>
@@ -457,10 +566,77 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     borderRadius: 12,
     padding: 16,
+    paddingRight: 60,
     fontSize: 16,
     backgroundColor: '#F8F8F8',
     minHeight: 120,
+  },
+  inputContainer: {
     marginBottom: 40,
+  },
+  inputWrapper: {
+    position: 'relative',
+  },
+  inputActionIcons: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  inputIconButton: {
+    padding: 8,
+    borderRadius: 20,
+  },
+  recordingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    padding: 12,
+    backgroundColor: '#FFE8E8',
+    borderRadius: 8,
+  },
+  recordingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#FF4444',
+    marginRight: 8,
+  },
+  recordingText: {
+    fontSize: 16,
+    color: '#D93636',
+    fontWeight: '600',
+  },
+  photoPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  previewThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 16,
+  },
+  removePhotoButton: {
+    padding: 8,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removePhotoText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: 'bold',
   },
   suggestionsContainer: {
     marginBottom: 60,
