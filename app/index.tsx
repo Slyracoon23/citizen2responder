@@ -48,9 +48,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#4A7CB8', // Blue background color
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingTop: Platform.OS === 'ios' ? 80 : 30,
     paddingHorizontal: 20,
-    paddingBottom: 60,
+    paddingBottom: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
