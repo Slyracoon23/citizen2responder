@@ -247,24 +247,21 @@ export default function QuestionnaireScreen() {
         </View>
 
         {/* Content */}
-        <View style={styles.followUpContent}>
-          {/* Question Section */}
-          <View style={styles.questionSection}>
-            <ThemedText style={styles.followUpTitle}>
-              {currentQuestion.question}
-            </ThemedText>
+        <View style={styles.content}>
+          <ThemedText style={styles.title}>
+            {currentQuestion.question}
+          </ThemedText>
 
-            {/* Sub-questions if they exist */}
-            {currentQuestion.subQuestions && (
-              <View style={styles.subQuestionsContainer}>
-                {currentQuestion.subQuestions.map((subQuestion, index) => (
-                  <ThemedText key={index} style={styles.subQuestion}>
-                    {subQuestion}
-                  </ThemedText>
-                ))}
-              </View>
-            )}
-          </View>
+          {/* Sub-questions if they exist */}
+          {currentQuestion.subQuestions && (
+            <View style={styles.subQuestionsContainer}>
+              {currentQuestion.subQuestions.map((subQuestion, index) => (
+                <ThemedText key={index} style={styles.subQuestion}>
+                  {subQuestion}
+                </ThemedText>
+              ))}
+            </View>
+          )}
 
           {/* Yes/No Buttons */}
           <View style={styles.answerButtonsContainer}>
@@ -459,78 +456,51 @@ const styles = StyleSheet.create({
     height: 50,
   },
   // Follow-up Questions Styles
-  followUpContent: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 40,
-    justifyContent: 'space-between',
-  },
-  questionSection: {
-    paddingHorizontal: 8,
-    flex: 1,
-  },
-  followUpTitle: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 42,
-  },
   subQuestionsContainer: {
-    alignItems: 'center',
-    marginTop: 16,
+    marginBottom: 60,
   },
   subQuestion: {
-    fontSize: 22,
+    fontSize: 18,
     color: '#666',
-    marginBottom: 8,
-    lineHeight: 26,
-    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 24,
   },
   answerButtonsContainer: {
-    paddingHorizontal: 12,
+    flex: 1,
+    justifyContent: 'center',
     gap: 20,
-    marginBottom: 20,
+    marginBottom: 60,
   },
   answerButton: {
-    borderRadius: 16,
-    paddingVertical: 20,
+    borderRadius: 12,
+    paddingVertical: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 70,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    minHeight: 80,
   },
   yesButton: {
     backgroundColor: '#4A7CB8',
   },
   noButton: {
-    backgroundColor: '#E8E8E8',
+    backgroundColor: '#E0E0E0',
   },
   yesButtonText: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   noButtonText: {
     color: '#666',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   progressContainer: {
     alignItems: 'center',
-    paddingBottom: 40,
+    marginBottom: 40,
   },
   progressText: {
     fontSize: 18,
-    color: '#999',
+    color: '#666',
     fontWeight: '600',
   },
   nextButton: {
