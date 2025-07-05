@@ -12,7 +12,7 @@ type QuestionnaireStep = 'describe' | 'photo' | 'followup' | 'report';
 interface FollowUpQuestion {
   id: string;
   question: string;
-  subQuestions?: string[];r
+  subQuestions?: string[];
 }
 
 export default function QuestionnaireScreen() {
