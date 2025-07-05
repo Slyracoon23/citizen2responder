@@ -33,10 +33,12 @@ export default function QuestionnaireScreen() {
     {
       id: 'breathing',
       question: 'Are they breathing normally?',
+      subQuestions: ['Is their breathing noisy or shallow?', 'Are they gasping for air?']
     },
     {
       id: 'bleeding',
       question: 'Is there severe bleeding?',
+      subQuestions: ['Is blood spurting from the wound?', 'Is a large pool of blood visible?']
     }
   ];
 
@@ -51,7 +53,11 @@ export default function QuestionnaireScreen() {
     } else if (currentStep === 'photo') {
       setCurrentStep('describe');
     } else if (currentStep === 'followup') {
-      setCurrentStep('photo');
+      if (currentQuestionIndex > 0) {
+        setCurrentQuestionIndex(currentQuestionIndex - 1);
+      } else {
+        setCurrentStep('photo');
+      }
     } else if (currentStep === 'report') {
       setCurrentStep('followup');
     }
@@ -275,7 +281,7 @@ export default function QuestionnaireScreen() {
 
         {/* Content */}
         <View style={styles.content}>
-          <ThemedText style={styles.title}>
+          <ThemedText style={styles.followUpTitle}>
             {currentQuestion.question}
           </ThemedText>
 
@@ -283,7 +289,7 @@ export default function QuestionnaireScreen() {
           {currentQuestion.subQuestions && (
             <View style={styles.subQuestionsContainer}>
               {currentQuestion.subQuestions.map((subQuestion, index) => (
-                <ThemedText key={index} style={styles.subQuestion}>
+                <ThemedText key={index} style={styles.followUpSubQuestion}>
                   {subQuestion}
                 </ThemedText>
               ))}
@@ -439,11 +445,12 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 30,
-    lineHeight: 36,
+    lineHeight: 38,
+    textAlign: 'center',
   },
   textInput: {
     borderWidth: 1,
@@ -565,24 +572,40 @@ const styles = StyleSheet.create({
     height: 50,
   },
   // Follow-up Questions Styles
+  followUpTitle: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 50,
+    lineHeight: 48,
+    textAlign: 'center',
+  },
   subQuestionsContainer: {
-    marginBottom: 60,
+    marginBottom: 100,
   },
   subQuestion: {
     fontSize: 18,
     color: '#666',
     marginBottom: 12,
     lineHeight: 24,
+    textAlign: 'center',
+  },
+  followUpSubQuestion: {
+    fontSize: 22,
+    color: '#666',
+    marginBottom: 12,
+    lineHeight: 32,
+    textAlign: 'center',
   },
   answerButtonsContainer: {
     flex: 1,
     justifyContent: 'center',
-    gap: 20,
+    gap: 28,
     marginBottom: 60,
   },
   answerButton: {
     borderRadius: 12,
-    paddingVertical: 24,
+    paddingVertical: 28,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 80,
