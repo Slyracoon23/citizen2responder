@@ -1,75 +1,142 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { SafeAreaView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <ThemedView style={styles.container}>
+      {/* Header Section */}
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <ThemedText style={styles.headerTitle}>Citizen2Responder</ThemedText>
+          <ThemedText style={styles.languageText}>English</ThemedText>
+        </View>
+      </SafeAreaView>
+
+      {/* Main Content */}
+      <View style={styles.content}>
+        {/* Start New Report Button */}
+        <TouchableOpacity style={styles.primaryButton}>
+          <ThemedText style={styles.primaryButtonText}>
+            START{'\n'}NEW REPORT s
+          </ThemedText>
+        </TouchableOpacity>
+
+        {/* View Saved Reports Button */}
+        <TouchableOpacity style={styles.secondaryButton}>
+          <ThemedText style={styles.secondaryButtonText}>
+            VIEW SAVED REPORTS
+          </ThemedText>
+        </TouchableOpacity>
+
+        {/* Emergency Call Button */}
+        <TouchableOpacity style={styles.emergencyButton}>
+          <ThemedText style={styles.emergencyButtonText}>
+            EMERGENCY CALL
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#4A7CB8', // Blue background color
+  },
+  safeArea: {
+    backgroundColor: '#4A7CB8',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+    flex: 1,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  languageText: {
+    fontSize: 16,
+    color: 'white',
+    fontWeight: '500',
+  },
+  content: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
+    justifyContent: 'space-between',
+  },
+  primaryButton: {
+    backgroundColor: '#4A7CB8',
+    borderRadius: 25,
+    paddingVertical: 30,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  primaryButtonText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    lineHeight: 30,
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderColor: '#4A7CB8',
+    borderWidth: 3,
+    borderRadius: 25,
+    paddingVertical: 20,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  secondaryButtonText: {
+    color: '#4A7CB8',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  emergencyButton: {
+    backgroundColor: '#E53E3E',
+    borderRadius: 25,
+    paddingVertical: 25,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  emergencyButtonText: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
