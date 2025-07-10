@@ -21,6 +21,9 @@ export default function VideoCallScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(true);
+  const [isCameraOn, setIsCameraOn] = useState(true);
+  const [isLocationOn, setIsLocationOn] = useState(false);
+  const [isVoiceOn, setIsVoiceOn] = useState(false);
   const insets = useSafeAreaInsets();
 
   const handleEndCall = () => {
@@ -36,7 +39,19 @@ export default function VideoCallScreen() {
   };
 
   const handleCamera = () => {
-    // Toggle camera or take photo
+    setIsCameraOn(!isCameraOn);
+  };
+
+  const handleLocation = () => {
+    setIsLocationOn(!isLocationOn);
+  };
+
+  const handleVoice = () => {
+    setIsVoiceOn(!isVoiceOn);
+    // If turning on, could start recording
+    if (!isVoiceOn) {
+      // Start voice recording functionality here
+    }
   };
 
   const handleGallery = async () => {
@@ -81,20 +96,39 @@ export default function VideoCallScreen() {
 
       {/* Video Feed Area with Top Gap */}
       <View style={styles.videoContainer}>
-        <CameraView 
-          ref={cameraRef}
-          style={styles.camera}
-          facing="back"
-        >
-          {/* Chat Message Overlay */}
-          <View style={styles.chatOverlay}>
-            <View style={styles.chatBubble}>
-              <Text style={styles.chatText}>
-                Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
-              </Text>
+        {isCameraOn ? (
+          <CameraView 
+            ref={cameraRef}
+            style={styles.camera}
+            facing="back"
+          >
+            {/* Chat Message Overlay */}
+            <View style={styles.chatOverlay}>
+              <View style={styles.chatBubble}>
+                <Text style={styles.chatText}>
+                  Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
+                </Text>
+              </View>
+            </View>
+          </CameraView>
+        ) : (
+          <View style={styles.camera}>
+            {/* Camera Off Overlay */}
+            <View style={styles.cameraOffOverlay}>
+              <MaterialIcons name="videocam-off" size={48} color="white" />
+              <Text style={styles.cameraOffText}>Camera is off</Text>
+            </View>
+            
+            {/* Chat Message Overlay */}
+            <View style={styles.chatOverlay}>
+              <View style={styles.chatBubble}>
+                <Text style={styles.chatText}>
+                  Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
+                </Text>
+              </View>
             </View>
           </View>
-        </CameraView>
+        )}
       </View>
 
       {/* Control Buttons */}
@@ -103,38 +137,61 @@ export default function VideoCallScreen() {
           style={styles.controlButton}
           onPress={handleCamera}
         >
-          <View style={styles.buttonBackground}>
-            <MaterialIcons name="videocam" size={24} color="#000" />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.controlButton}
-          onPress={handleGallery}
-        >
-          <View style={styles.buttonBackground}>
-            <MaterialIcons name="photo-library" size={24} color="#000" />
-          </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.controlButton}
-          onPress={handlePause}
-        >
-          <View style={styles.buttonBackground}>
+          <View style={[
+            styles.buttonBackground,
+            !isCameraOn && styles.buttonBackgroundOff
+          ]}>
             <MaterialIcons 
-              name={isPaused ? "play-arrow" : "pause"} 
+              name={isCameraOn ? "videocam" : "videocam-off"} 
               size={24} 
-              color="#000" 
+              color={isCameraOn ? "#000" : "white"} 
             />
           </View>
+          <Text style={styles.buttonLabel}>Video</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={styles.endCallButton}
+          style={styles.controlButton}
+          onPress={handleLocation}
+        >
+          <View style={[
+            styles.buttonBackground,
+            !isLocationOn && styles.buttonBackgroundOff
+          ]}>
+            <MaterialIcons 
+              name={isLocationOn ? "location-on" : "location-off"} 
+              size={24} 
+              color={isLocationOn ? "#000" : "white"} 
+            />
+          </View>
+          <Text style={styles.buttonLabel}>Location</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.controlButton}
+          onPress={handleVoice}
+        >
+          <View style={[
+            styles.buttonBackground,
+            !isVoiceOn && styles.buttonBackgroundOff
+          ]}>
+            <MaterialIcons 
+              name={isVoiceOn ? "mic" : "mic-off"} 
+              size={24} 
+              color={isVoiceOn ? "#000" : "white"} 
+            />
+          </View>
+          <Text style={styles.buttonLabel}>Voice</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.controlButton}
           onPress={handleEndCall}
         >
-          <MaterialIcons name="close" size={24} color="white" />
+          <View style={styles.endCallButton}>
+            <MaterialIcons name="close" size={24} color="white" />
+          </View>
+          <Text style={styles.buttonLabel}>End</Text>
         </TouchableOpacity>
       </View>
 
@@ -203,6 +260,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  cameraOffOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(128, 128, 128, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  cameraOffText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+    marginTop: 12,
+  },
   chatOverlay: {
     position: 'absolute',
     top: 40,
@@ -235,6 +309,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  buttonLabel: {
+    color: 'white',
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: '500',
+  },
   buttonBackground: {
     width: 50,
     height: 50,
@@ -250,6 +330,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  buttonBackgroundOff: {
+    backgroundColor: '#FF3B30',
   },
   endCallButton: {
     width: 50,
