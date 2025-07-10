@@ -108,7 +108,11 @@ export default function VideoCallScreen() {
       
       {/* Top Header Area with Gap */}
       <View style={[styles.headerArea, { paddingTop: insets.top }]}>
-        {/* Live Indicator */}
+        {/* Left Side Controls (empty for now, but available for future use) */}
+        <View style={styles.leftControls}>
+        </View>
+
+        {/* Live Indicator - Centered */}
         <View style={styles.liveIndicator}>
           <View style={styles.liveContainer}>
             <View style={styles.liveDot} />
@@ -348,9 +352,11 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     zIndex: 10,
   },
+  leftControls: {
+    width: 98, // Same width as rightControls (44px per button + 10px margin + 44px = 98px)
+  },
   liveIndicator: {
     alignItems: 'center',
-    flex: 1,
   },
   liveContainer: {
     flexDirection: 'row',
@@ -375,6 +381,7 @@ const styles = StyleSheet.create({
   rightControls: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: 98, // Fixed width to match leftControls
   },
   headerToggle: {
     width: 44,
