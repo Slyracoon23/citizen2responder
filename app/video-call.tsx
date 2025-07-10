@@ -2,8 +2,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Dimensions,
   StatusBar,
   StyleSheet,
@@ -24,7 +25,20 @@ export default function VideoCallScreen() {
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isLocationOn, setIsLocationOn] = useState(false);
   const [isVoiceOn, setIsVoiceOn] = useState(false);
+  // Add question popover state with animation
+  const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
+  const slideAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
   const insets = useSafeAreaInsets();
+
+  // Animation effect for sliding question popover
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: isQuestionToggleOn ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isQuestionToggleOn, slideAnim]);
 
   const handleEndCall = () => {
     router.back();
@@ -67,6 +81,27 @@ export default function VideoCallScreen() {
     setIsTranscriptionEnabled(!isTranscriptionEnabled);
   };
 
+  const handleQuestionToggle = () => {
+    setIsQuestionToggleOn(!isQuestionToggleOn);
+  };
+
+  const handleQuestionResponse = (response: 'yes' | 'no' | 'dont-know') => {
+    console.log('Question response:', response);
+    // Handle the response - could send to API, store in state, etc.
+    setIsQuestionToggleOn(false);
+    
+    // Optional: Show next question after a delay
+    // setTimeout(() => {
+    //   setCurrentQuestion("Is the person conscious?");
+    //   setShowQuestionPopover(true);
+    // }, 2000);
+  };
+
+  const showNewQuestion = (question: string) => {
+    setCurrentQuestion(question);
+    setIsQuestionToggleOn(true);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -81,17 +116,32 @@ export default function VideoCallScreen() {
           </View>
         </View>
 
-        {/* Transcription Toggle */}
-        <TouchableOpacity 
-          style={styles.transcriptionToggle}
-          onPress={handleToggleTranscription}
-        >
-          <MaterialIcons 
-            name={isTranscriptionEnabled ? "closed-caption" : "closed-caption-disabled"} 
-            size={24} 
-            color="white" 
-          />
-        </TouchableOpacity>
+        {/* Right Side Controls */}
+        <View style={styles.rightControls}>
+          {/* Question Toggle */}
+          <TouchableOpacity 
+            style={[styles.headerToggle, isQuestionToggleOn && styles.headerToggleActive]}
+            onPress={handleQuestionToggle}
+          >
+            <MaterialIcons 
+              name="quiz" 
+              size={24} 
+              color={isQuestionToggleOn ? "#FF3B30" : "white"} 
+            />
+          </TouchableOpacity>
+
+          {/* Transcription Toggle */}
+          <TouchableOpacity 
+            style={styles.headerToggle}
+            onPress={handleToggleTranscription}
+          >
+            <MaterialIcons 
+              name={isTranscriptionEnabled ? "closed-caption" : "closed-caption-disabled"} 
+              size={24} 
+              color="white" 
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Video Feed Area with Top Gap */}
@@ -110,6 +160,45 @@ export default function VideoCallScreen() {
                 </Text>
               </View>
             </View>
+
+            {/* Question Popover */}
+            {isQuestionToggleOn && (
+              <Animated.View style={[
+                styles.questionOverlay, 
+                { 
+                  transform: [{ 
+                    translateY: slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [200, 0], // slide from 200px below to normal position
+                    }) 
+                  }] 
+                }
+              ]}>
+                <View style={styles.questionPopover}>
+                  <Text style={styles.questionText}>{currentQuestion}</Text>
+                  <View style={styles.responseButtons}>
+                    <TouchableOpacity 
+                      style={styles.responseButton}
+                      onPress={() => handleQuestionResponse('yes')}
+                    >
+                      <Text style={styles.responseButtonText}>Yes</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.responseButton}
+                      onPress={() => handleQuestionResponse('no')}
+                    >
+                      <Text style={styles.responseButtonText}>No</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.responseButton}
+                      onPress={() => handleQuestionResponse('dont-know')}
+                    >
+                      <Text style={styles.responseButtonText}>Can&apos;t Tell</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Animated.View>
+            )}
           </CameraView>
         ) : (
           <View style={styles.camera}>
@@ -127,6 +216,45 @@ export default function VideoCallScreen() {
                 </Text>
               </View>
             </View>
+
+            {/* Question Popover (also show when camera is off) */}
+            {isQuestionToggleOn && (
+              <Animated.View style={[
+                styles.questionOverlay, 
+                { 
+                  transform: [{ 
+                    translateY: slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [200, 0], // slide from 200px below to normal position
+                    }) 
+                  }] 
+                }
+              ]}>
+                <View style={styles.questionPopover}>
+                  <Text style={styles.questionText}>{currentQuestion}</Text>
+                  <View style={styles.responseButtons}>
+                    <TouchableOpacity 
+                      style={styles.responseButton}
+                      onPress={() => handleQuestionResponse('yes')}
+                    >
+                      <Text style={styles.responseButtonText}>Yes</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.responseButton}
+                      onPress={() => handleQuestionResponse('no')}
+                    >
+                      <Text style={styles.responseButtonText}>No</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.responseButton}
+                      onPress={() => handleQuestionResponse('dont-know')}
+                    >
+                      <Text style={styles.responseButtonText}>Can&apos;t Tell</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Animated.View>
+            )}
           </View>
         )}
       </View>
@@ -240,13 +368,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  transcriptionToggle: {
+  rightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerToggle: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 10,
+  },
+  headerToggleActive: {
+    backgroundColor: 'rgba(255, 59, 48, 0.2)',
   },
   videoContainer: {
     flex: 1,
@@ -296,6 +432,53 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     lineHeight: 22,
+  },
+  questionOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.0)',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    zIndex: 10,
+  },
+  questionPopover: {
+    backgroundColor: '#1C1C1E',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  questionText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  responseButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  responseButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  responseButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
   controlsContainer: {
     flexDirection: 'row',
