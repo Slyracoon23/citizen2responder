@@ -1,4 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 import { Camera, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -29,6 +30,7 @@ export default function VideoCallScreen() {
   const [isVoiceOn, setIsVoiceOn] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
+  const [hasAudioPermission, setHasAudioPermission] = useState<boolean | null>(null);
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
@@ -37,6 +39,7 @@ export default function VideoCallScreen() {
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
   const slideAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
   const rotateAnim = useRef(new Animated.Value(0)).current; // Animation for loading spinner
+  const micPulseAnim = useRef(new Animated.Value(1)).current; // Animation for microphone pulse
   const insets = useSafeAreaInsets();
 
   // Request camera permissions on mount
@@ -52,6 +55,14 @@ export default function VideoCallScreen() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       setHasLocationPermission(status === 'granted');
+    })();
+  }, []);
+
+  // Request audio permissions on mount
+  useEffect(() => {
+    (async () => {
+      const { status } = await Audio.requestPermissionsAsync();
+      setHasAudioPermission(status === 'granted');
     })();
   }, []);
 
@@ -80,6 +91,8 @@ export default function VideoCallScreen() {
       rotateAnim.setValue(0);
     }
   }, [isLocationLoading, rotateAnim]);
+
+
 
   const handleEndCall = () => {
     router.back();
@@ -212,11 +225,88 @@ export default function VideoCallScreen() {
     }
   };
 
-  const handleVoice = () => {
-    setIsVoiceOn(!isVoiceOn);
-    // If turning on, could start recording
+  const handleVoice = async () => {
     if (!isVoiceOn) {
-      // Start voice recording functionality here
+      // Turning voice ON - check permissions first
+      if (hasAudioPermission === false) {
+        Alert.alert(
+          'Microphone Permission Required',
+          'Please enable microphone access in your device settings to use voice features.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Settings', 
+              onPress: async () => {
+                const { status } = await Audio.requestPermissionsAsync();
+                setHasAudioPermission(status === 'granted');
+                if (status === 'granted') {
+                  await enableVoice();
+                }
+              }
+            }
+          ]
+        );
+        return;
+      }
+      
+      if (hasAudioPermission === null) {
+        // Request permission if not determined yet
+        const { status } = await Audio.requestPermissionsAsync();
+        setHasAudioPermission(status === 'granted');
+        if (status === 'granted') {
+          await enableVoice();
+        }
+        return;
+      }
+
+      // Permission already granted, enable voice
+      if (hasAudioPermission === true) {
+        await enableVoice();
+      }
+    } else {
+      // Turning voice OFF
+      await disableVoice();
+    }
+  };
+
+  const enableVoice = async () => {
+    try {
+      // Configure audio mode for live microphone use
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: true,
+      });
+      
+      setIsVoiceOn(true);
+      console.log('Voice enabled - microphone is now active');
+    } catch (error) {
+      console.error('Failed to enable voice:', error);
+      Alert.alert(
+        'Voice Error',
+        'Unable to enable microphone. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const disableVoice = async () => {
+    try {
+      // Reset audio mode to default
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: false,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: false,
+      });
+      
+      setIsVoiceOn(false);
+      console.log('Voice disabled - microphone is now inactive');
+    } catch (error) {
+      console.error('Failed to disable voice:', error);
     }
   };
 
@@ -382,6 +472,26 @@ export default function VideoCallScreen() {
               </View>
             )}
 
+            {/* Voice Status Indicator - Below location */}
+            {/* {isVoiceOn && (
+              <View style={styles.voiceOverlay}>
+                <View style={styles.voiceIndicator}>
+                  <Animated.View style={{
+                    transform: [{
+                      scale: micPulseAnim,
+                    }],
+                  }}>
+                    <MaterialIcons 
+                      name="mic" 
+                      size={16} 
+                      color="#FF3B30" 
+                    />
+                  </Animated.View>
+                  <Text style={styles.voiceText}>Microphone Active</Text>
+                </View>
+              </View>
+            )} */}
+
             {/* Chat Message Overlay */}
             {isTranscriptionEnabled && (
               <View style={styles.chatOverlay}>
@@ -481,6 +591,26 @@ export default function VideoCallScreen() {
                 </View>
               </View>
             )}
+
+            {/* Voice Status Indicator - Below location */}
+            {/* {isVoiceOn && (
+              <View style={styles.voiceOverlay}>
+                <View style={styles.voiceIndicator}>
+                  <Animated.View style={{
+                    transform: [{
+                      scale: micPulseAnim,
+                    }],
+                  }}>
+                    <MaterialIcons 
+                      name="mic" 
+                      size={16} 
+                      color="#FF3B30" 
+                    />
+                  </Animated.View>
+                  <Text style={styles.voiceText}>Microphone Active</Text>
+                </View>
+              </View>
+            )} */}
 
             {/* Chat Message Overlay */}
             {isTranscriptionEnabled && (
@@ -598,11 +728,17 @@ export default function VideoCallScreen() {
             styles.buttonBackground,
             !isVoiceOn && styles.buttonBackgroundOff
           ]}>
-            <MaterialIcons 
-              name={isVoiceOn ? "mic" : "mic-off"} 
-              size={24} 
-              color={isVoiceOn ? "#000" : "white"} 
-            />
+            <Animated.View style={{
+              transform: [{
+                scale: micPulseAnim,
+              }],
+            }}>
+              <MaterialIcons 
+                name={isVoiceOn ? "mic" : "mic-off"} 
+                size={24} 
+                color={isVoiceOn ? "#000" : "white"} 
+              />
+            </Animated.View>
           </View>
           <Text style={styles.buttonLabel}>Voice</Text>
         </TouchableOpacity>
@@ -935,6 +1071,29 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   locationText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  voiceOverlay: {
+    position: 'absolute',
+    top: 50, // Position below location indicator
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    padding: 10,
+    alignItems: 'center',
+  },
+  voiceIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.9)',
+    borderRadius: 15,
+    padding: 8,
+    alignSelf: 'center',
+  },
+  voiceText: {
     color: 'white',
     fontSize: 12,
     fontWeight: '500',
