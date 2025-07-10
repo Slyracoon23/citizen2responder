@@ -177,20 +177,22 @@ export default function VideoCallScreen() {
                 <View style={styles.questionPopover}>
                   <Text style={styles.questionText}>{currentQuestion}</Text>
                   <View style={styles.responseButtons}>
+                    <View style={styles.topButtonRow}>
+                      <TouchableOpacity 
+                        style={styles.responseButton}
+                        onPress={() => handleQuestionResponse('no')}
+                      >
+                        <Text style={styles.responseButtonText}>No</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.yesButton}
+                        onPress={() => handleQuestionResponse('yes')}
+                      >
+                        <Text style={styles.responseButtonText}>Yes</Text>
+                      </TouchableOpacity>
+                    </View>
                     <TouchableOpacity 
-                      style={styles.responseButton}
-                      onPress={() => handleQuestionResponse('yes')}
-                    >
-                      <Text style={styles.responseButtonText}>Yes</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.responseButton}
-                      onPress={() => handleQuestionResponse('no')}
-                    >
-                      <Text style={styles.responseButtonText}>No</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.responseButton}
+                      style={styles.cantTellButton}
                       onPress={() => handleQuestionResponse('dont-know')}
                     >
                       <Text style={styles.responseButtonText}>Can&apos;t Tell</Text>
@@ -233,20 +235,22 @@ export default function VideoCallScreen() {
                 <View style={styles.questionPopover}>
                   <Text style={styles.questionText}>{currentQuestion}</Text>
                   <View style={styles.responseButtons}>
+                    <View style={styles.topButtonRow}>
+                      <TouchableOpacity 
+                        style={styles.responseButton}
+                        onPress={() => handleQuestionResponse('no')}
+                      >
+                        <Text style={styles.responseButtonText}>No</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.yesButton}
+                        onPress={() => handleQuestionResponse('yes')}
+                      >
+                        <Text style={styles.responseButtonText}>Yes</Text>
+                      </TouchableOpacity>
+                    </View>
                     <TouchableOpacity 
-                      style={styles.responseButton}
-                      onPress={() => handleQuestionResponse('yes')}
-                    >
-                      <Text style={styles.responseButtonText}>Yes</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.responseButton}
-                      onPress={() => handleQuestionResponse('no')}
-                    >
-                      <Text style={styles.responseButtonText}>No</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.responseButton}
+                      style={styles.cantTellButton}
                       onPress={() => handleQuestionResponse('dont-know')}
                     >
                       <Text style={styles.responseButtonText}>Can&apos;t Tell</Text>
@@ -463,16 +467,39 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   responseButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: 'column',
+    alignItems: 'center',
     width: '100%',
+    gap: 12,
+  },
+  topButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    gap: 15,
   },
   responseButton: {
     backgroundColor: '#FF3B30',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
-    minWidth: 100,
+    flex: 1,
+    alignItems: 'center',
+  },
+  yesButton: {
+    backgroundColor: '#34C759',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    flex: 1,
+    alignItems: 'center',
+  },
+  cantTellButton: {
+    backgroundColor: '#6C6C70',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    width: '100%',
     alignItems: 'center',
   },
   responseButtonText: {
