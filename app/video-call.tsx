@@ -1,9 +1,10 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { CameraView } from 'expo-camera';
+import { Camera, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   StatusBar,
@@ -25,11 +26,21 @@ export default function VideoCallScreen() {
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isLocationOn, setIsLocationOn] = useState(false);
   const [isVoiceOn, setIsVoiceOn] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [cameraReady, setCameraReady] = useState(false);
   // Add question popover state with animation
   const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
   const slideAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
   const insets = useSafeAreaInsets();
+
+  // Request camera permissions on mount
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === 'granted');
+    })();
+  }, []);
 
   // Animation effect for sliding question popover
   useEffect(() => {
@@ -52,7 +63,38 @@ export default function VideoCallScreen() {
     setIsPaused(!isPaused);
   };
 
-  const handleCamera = () => {
+  const handleCamera = async () => {
+    if (!isCameraOn && hasPermission === false) {
+      Alert.alert(
+        'Camera Permission Required',
+        'Please enable camera access in your device settings to use this feature.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Settings', 
+            onPress: async () => {
+              const { status } = await Camera.requestCameraPermissionsAsync();
+              setHasPermission(status === 'granted');
+              if (status === 'granted') {
+                setIsCameraOn(true);
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
+    
+    if (!isCameraOn && hasPermission === null) {
+      // Request permission if not determined yet
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === 'granted');
+      if (status === 'granted') {
+        setIsCameraOn(true);
+      }
+      return;
+    }
+
     setIsCameraOn(!isCameraOn);
   };
 
@@ -102,6 +144,41 @@ export default function VideoCallScreen() {
     setIsQuestionToggleOn(true);
   };
 
+  const handleCameraReady = () => {
+    setCameraReady(true);
+  };
+
+  // Handle permission denied case
+  if (hasPermission === false) {
+    return (
+      <View style={[styles.container, styles.permissionContainer]}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <View style={styles.permissionContent}>
+          <MaterialIcons name="videocam-off" size={64} color="white" />
+          <Text style={styles.permissionTitle}>Camera Access Required</Text>
+          <Text style={styles.permissionText}>
+            Please enable camera access to use video calling features.
+          </Text>
+          <TouchableOpacity 
+            style={styles.permissionButton}
+            onPress={async () => {
+              const { status } = await Camera.requestCameraPermissionsAsync();
+              setHasPermission(status === 'granted');
+            }}
+          >
+            <Text style={styles.permissionButtonText}>Enable Camera</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={handleEndCall}
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -150,11 +227,12 @@ export default function VideoCallScreen() {
 
       {/* Video Feed Area with Top Gap */}
       <View style={styles.videoContainer}>
-        {isCameraOn ? (
+        {isCameraOn && hasPermission ? (
           <CameraView 
             ref={cameraRef}
             style={styles.camera}
             facing="back"
+            onCameraReady={handleCameraReady}
           >
             {/* Chat Message Overlay */}
             <View style={styles.chatOverlay}>
@@ -211,7 +289,9 @@ export default function VideoCallScreen() {
             {/* Camera Off Overlay */}
             <View style={styles.cameraOffOverlay}>
               <MaterialIcons name="videocam-off" size={48} color="white" />
-              <Text style={styles.cameraOffText}>Camera is off</Text>
+              <Text style={styles.cameraOffText}>
+                {hasPermission === null ? 'Checking camera permissions...' : 'Camera is off'}
+              </Text>
             </View>
             
             {/* Chat Message Overlay */}
@@ -343,6 +423,55 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  permissionContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  permissionContent: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  permissionTitle: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+  },
+  permissionText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 30,
+  },
+  permissionButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    width: '100%',
+    alignItems: 'center',
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  backButton: {
+    marginTop: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: '#6C6C70',
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
   },
   headerArea: {
     flexDirection: 'row',
