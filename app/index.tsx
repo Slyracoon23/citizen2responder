@@ -11,6 +11,10 @@ export default function HomeScreen() {
     router.push('/questionnaire');
   };
 
+  const handleVideoCall = () => {
+    router.push('/video-call' as any);
+  };
+
   return (
     <ThemedView style={styles.container}>
       {/* Header Section */}
@@ -34,6 +38,13 @@ export default function HomeScreen() {
           <TouchableOpacity style={[styles.button, styles.secondaryButton]}>
             <ThemedText style={[styles.buttonText, styles.secondaryButtonText]}>
               VIEW SAVED REPORTS
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Video Call Button */}
+          <TouchableOpacity style={[styles.button, styles.videoCallButton]} onPress={handleVideoCall}>
+            <ThemedText style={[styles.buttonText, styles.videoCallButtonText]}>
+              📹 START VIDEO CALL
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -129,6 +140,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#D93636',
   },
   emergencyButtonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  videoCallButton: {
+    backgroundColor: '#34C759',
+  },
+  videoCallButtonText: {
     color: 'white',
     fontSize: 18,
   },
