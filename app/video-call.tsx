@@ -1,14 +1,12 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { Camera, CameraView } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
-  Dimensions,
   StatusBar,
   StyleSheet,
   Text,
@@ -17,56 +15,303 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width, height } = Dimensions.get('window');
+// --- Custom Hook for Permissions ---
+function usePermission(requestAsync: () => Promise<{ status: string }>) {
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  useEffect(() => {
+    (async () => {
+      const { status } = await requestAsync();
+      setHasPermission(status === 'granted');
+    })();
+  }, [requestAsync]);
+  const requestPermission = useCallback(async () => {
+    const { status } = await requestAsync();
+    setHasPermission(status === 'granted');
+    return status === 'granted';
+  }, [requestAsync]);
+  return [hasPermission, requestPermission] as const;
+}
+
+// --- Overlay Components ---
+type LocationOverlayProps = {
+  isLocationOn: boolean;
+  isLocationLoading: boolean;
+  currentLocation: Location.LocationObject | null;
+  rotateAnim: Animated.Value;
+};
+const LocationOverlay = ({ isLocationOn, isLocationLoading, currentLocation, rotateAnim }: LocationOverlayProps) => (
+  isLocationOn ? (
+    <View style={styles.locationOverlay}>
+      <View style={styles.locationIndicator}>
+        {isLocationLoading ? (
+          <Animated.View style={{
+            transform: [{
+              rotate: rotateAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0deg', '360deg'],
+              }),
+            }],
+          }}>
+            <MaterialIcons name="hourglass-empty" size={16} color="#FF9F0A" />
+          </Animated.View>
+        ) : (
+          <MaterialIcons name="location-on" size={16} color="#34C759" />
+        )}
+        <Text style={styles.locationText}>
+          {isLocationLoading
+            ? "Getting location..."
+            : currentLocation
+              ? `Location: ${currentLocation.coords.latitude.toFixed(4)}, ${currentLocation.coords.longitude.toFixed(4)}`
+              : "Location enabled"
+          }
+        </Text>
+      </View>
+    </View>
+  ) : null
+);
+
+type ChatOverlayProps = { isTranscriptionEnabled: boolean };
+const ChatOverlay = ({ isTranscriptionEnabled }: ChatOverlayProps) => (
+  isTranscriptionEnabled ? (
+    <View style={styles.chatOverlay}>
+      <View style={styles.chatBubble}>
+        <Text style={styles.chatText}>
+          Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
+        </Text>
+      </View>
+    </View>
+  ) : null
+);
+
+type QuestionPopoverProps = {
+  isQuestionToggleOn: boolean;
+  slideAnim: Animated.Value;
+  currentQuestion: string;
+  handleQuestionResponse: (response: 'yes' | 'no' | 'dont-know') => void;
+};
+const QuestionPopover = ({ isQuestionToggleOn, slideAnim, currentQuestion, handleQuestionResponse }: QuestionPopoverProps) => (
+  isQuestionToggleOn ? (
+    <Animated.View style={[
+      styles.questionOverlay,
+      {
+        transform: [{
+          translateY: slideAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [200, 0],
+          })
+        }]
+      }
+    ]}>
+      <View style={styles.questionPopover}>
+        <Text style={styles.questionText}>{currentQuestion}</Text>
+        <View style={styles.responseButtons}>
+          <View style={styles.topButtonRow}>
+            <TouchableOpacity
+              style={styles.responseButton}
+              onPress={() => handleQuestionResponse('no')}
+            >
+              <Text style={styles.responseButtonText}>No</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.yesButton}
+              onPress={() => handleQuestionResponse('yes')}
+            >
+              <Text style={styles.responseButtonText}>Yes</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.cantTellButton}
+            onPress={() => handleQuestionResponse('dont-know')}
+          >
+            <Text style={styles.responseButtonText}>Can&apos;t Tell</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Animated.View>
+  ) : null
+);
+
+// --- Combined Overlays Component ---
+type AllOverlaysProps = {
+  isLocationOn: boolean;
+  isLocationLoading: boolean;
+  currentLocation: Location.LocationObject | null;
+  rotateAnim: Animated.Value;
+  isTranscriptionEnabled: boolean;
+  isQuestionToggleOn: boolean;
+  slideAnim: Animated.Value;
+  currentQuestion: string;
+  handleQuestionResponse: (response: 'yes' | 'no' | 'dont-know') => void;
+};
+const AllOverlays = (props: AllOverlaysProps) => (
+  <>
+    <LocationOverlay 
+      isLocationOn={props.isLocationOn} 
+      isLocationLoading={props.isLocationLoading} 
+      currentLocation={props.currentLocation} 
+      rotateAnim={props.rotateAnim} 
+    />
+    <ChatOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
+    <QuestionPopover 
+      isQuestionToggleOn={props.isQuestionToggleOn} 
+      slideAnim={props.slideAnim} 
+      currentQuestion={props.currentQuestion} 
+      handleQuestionResponse={props.handleQuestionResponse} 
+    />
+  </>
+);
+
+// --- Toggle Button Component ---
+type ToggleButtonProps = {
+  isOn: boolean;
+  onPress: () => void;
+  iconOn: keyof typeof MaterialIcons.glyphMap;
+  iconOff: keyof typeof MaterialIcons.glyphMap;
+  label: string;
+  isLoading?: boolean;
+  rotateAnim?: Animated.Value;
+  pulseAnim?: Animated.Value;
+  isEndButton?: boolean;
+};
+const ToggleButton = ({ 
+  isOn, 
+  onPress, 
+  iconOn, 
+  iconOff, 
+  label, 
+  isLoading, 
+  rotateAnim, 
+  pulseAnim,
+  isEndButton 
+}: ToggleButtonProps) => (
+  <TouchableOpacity style={styles.controlButton} onPress={onPress}>
+    <View style={[
+      isEndButton ? styles.endCallButton : styles.buttonBackground,
+      !isOn && !isEndButton && styles.buttonBackgroundOff
+    ]}>
+      {isLoading && rotateAnim ? (
+        <Animated.View style={{
+          transform: [{
+            rotate: rotateAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0deg', '360deg'],
+            }),
+          }],
+        }}>
+          <MaterialIcons 
+            name="hourglass-empty" 
+            size={24} 
+            color={isOn && !isEndButton ? "#000" : "white"} 
+          />
+        </Animated.View>
+      ) : pulseAnim ? (
+        <Animated.View style={{
+          transform: [{ scale: pulseAnim }],
+        }}>
+          <MaterialIcons 
+            name={isOn ? iconOn : iconOff} 
+            size={24} 
+            color={isOn && !isEndButton ? "#000" : "white"} 
+          />
+        </Animated.View>
+      ) : (
+        <MaterialIcons 
+          name={isOn ? iconOn : iconOff} 
+          size={24} 
+          color={isOn && !isEndButton ? "#000" : "white"} 
+        />
+      )}
+    </View>
+    <Text style={styles.buttonLabel}>{label}</Text>
+  </TouchableOpacity>
+);
+
+type ToggleFeatureOptions = {
+  isOn: boolean;
+  setIsOn: (on: boolean) => void;
+  hasPermission: boolean | null;
+  requestPermission: () => Promise<boolean>;
+  onEnable?: () => Promise<void>;
+  onDisable?: () => Promise<void>;
+  alertTitle: string;
+  alertMessage: string;
+};
+
+async function handleToggleFeature({
+  isOn,
+  setIsOn,
+  hasPermission,
+  requestPermission,
+  onEnable,
+  onDisable,
+  alertTitle,
+  alertMessage,
+}: ToggleFeatureOptions) {
+  if (!isOn) {
+    if (hasPermission === false) {
+      Alert.alert(
+        alertTitle,
+        alertMessage,
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => setIsOn(false) },
+          {
+            text: 'Settings',
+            onPress: async () => {
+              const granted = await requestPermission();
+              if (granted) {
+                if (onEnable) await onEnable();
+                setIsOn(true);
+              } else {
+                setIsOn(false);
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+    if (hasPermission === null) {
+      const granted = await requestPermission();
+      if (granted) {
+        if (onEnable) await onEnable();
+        setIsOn(true);
+      } else {
+        setIsOn(false);
+      }
+      return;
+    }
+    if (hasPermission === true) {
+      if (onEnable) await onEnable();
+      setIsOn(true);
+    }
+  } else {
+    if (onDisable) await onDisable();
+    setIsOn(false);
+  }
+}
 
 export default function VideoCallScreen() {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isLocationOn, setIsLocationOn] = useState(false);
   const [isVoiceOn, setIsVoiceOn] = useState(false);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
-  const [hasAudioPermission, setHasAudioPermission] = useState<boolean | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
-  const [isLocationLoading, setIsLocationLoading] = useState(false);
-  const [cameraReady, setCameraReady] = useState(false);
-  // Add question popover state with animation
+  const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(true);
   const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
-  const slideAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
-  const rotateAnim = useRef(new Animated.Value(0)).current; // Animation for loading spinner
-  const micPulseAnim = useRef(new Animated.Value(1)).current; // Animation for microphone pulse
+  const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
+  
+  const [hasPermission, requestCameraPermission] = usePermission(Camera.requestCameraPermissionsAsync);
+  const [hasLocationPermission, requestLocationPermission] = usePermission(Location.requestForegroundPermissionsAsync);
+  const [hasAudioPermission, requestAudioPermission] = usePermission(Audio.requestPermissionsAsync);
+  
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const micPulseAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
 
-  // Request camera permissions on mount
-  useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
-
-  // Request location permissions on mount
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setHasLocationPermission(status === 'granted');
-    })();
-  }, []);
-
-  // Request audio permissions on mount
-  useEffect(() => {
-    (async () => {
-      const { status } = await Audio.requestPermissionsAsync();
-      setHasAudioPermission(status === 'granted');
-    })();
-  }, []);
-
-  // Animation effect for sliding question popover
+  // Animation effects
   useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: isQuestionToggleOn ? 1 : 0,
@@ -75,7 +320,6 @@ export default function VideoCallScreen() {
     }).start();
   }, [isQuestionToggleOn, slideAnim]);
 
-  // Animation effect for location loading spinner
   useEffect(() => {
     if (isLocationLoading) {
       const rotateAnimation = Animated.loop(
@@ -92,111 +336,38 @@ export default function VideoCallScreen() {
     }
   }, [isLocationLoading, rotateAnim]);
 
-
-
   const handleEndCall = () => {
     router.back();
   };
 
-  const handleToggleRecording = () => {
-    setIsRecording(!isRecording);
-  };
-
-  const handlePause = () => {
-    setIsPaused(!isPaused);
-  };
-
   const handleCamera = async () => {
-    if (!isCameraOn && hasPermission === false) {
-      Alert.alert(
-        'Camera Permission Required',
-        'Please enable camera access in your device settings to use this feature.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Settings', 
-            onPress: async () => {
-              const { status } = await Camera.requestCameraPermissionsAsync();
-              setHasPermission(status === 'granted');
-              if (status === 'granted') {
-                setIsCameraOn(true);
-              }
-            }
-          }
-        ]
-      );
-      return;
-    }
-    
-    if (!isCameraOn && hasPermission === null) {
-      // Request permission if not determined yet
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-      if (status === 'granted') {
-        setIsCameraOn(true);
-      }
-      return;
-    }
-
-    setIsCameraOn(!isCameraOn);
+    await handleToggleFeature({
+      isOn: isCameraOn,
+      setIsOn: setIsCameraOn,
+      hasPermission: hasPermission,
+      requestPermission: requestCameraPermission,
+      alertTitle: 'Camera Permission Required',
+      alertMessage: 'Please enable camera access in your device settings to use this feature.',
+    });
   };
 
   const handleLocation = async () => {
-    if (!isLocationOn) {
-      // Turning location ON - provide immediate feedback
-      setIsLocationOn(true);
-      setIsLocationLoading(true);
-      
-      if (hasLocationPermission === false) {
-        Alert.alert(
-          'Location Permission Required',
-          'Please enable location access in your device settings to use this feature.',
-          [
-            { text: 'Cancel', style: 'cancel', onPress: () => {
-              setIsLocationOn(false);
-              setIsLocationLoading(false);
-            }},
-            { 
-              text: 'Settings', 
-              onPress: async () => {
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                setHasLocationPermission(status === 'granted');
-                if (status === 'granted') {
-                  await getCurrentLocation();
-                } else {
-                  setIsLocationOn(false);
-                  setIsLocationLoading(false);
-                }
-              }
-            }
-          ]
-        );
-        return;
-      }
-      
-      if (hasLocationPermission === null) {
-        // Request permission if not determined yet
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        setHasLocationPermission(status === 'granted');
-        if (status === 'granted') {
-          await getCurrentLocation();
-        } else {
-          setIsLocationOn(false);
-          setIsLocationLoading(false);
-        }
-        return;
-      }
-
-      // Permission already granted, get location
-      if (hasLocationPermission === true) {
+    await handleToggleFeature({
+      isOn: isLocationOn,
+      setIsOn: setIsLocationOn,
+      hasPermission: hasLocationPermission,
+      requestPermission: requestLocationPermission,
+      onEnable: async () => {
+        setIsLocationLoading(true);
         await getCurrentLocation();
-      }
-    } else {
-      // Turning location OFF
-      setIsLocationOn(false);
-      setIsLocationLoading(false);
-      setCurrentLocation(null);
-    }
+      },
+      onDisable: async () => {
+        setIsLocationLoading(false);
+        setCurrentLocation(null);
+      },
+      alertTitle: 'Location Permission Required',
+      alertMessage: 'Please enable location access in your device settings to use this feature.',
+    });
   };
 
   const getCurrentLocation = async () => {
@@ -218,104 +389,52 @@ export default function VideoCallScreen() {
       Alert.alert(
         'Location Error',
         'Unable to get your current location. Please try again.',
-        [{ text: 'OK', onPress: () => {
-          setIsLocationOn(false);
-        }}]
+        [{ text: 'OK', onPress: () => setIsLocationOn(false) }]
       );
     }
   };
 
   const handleVoice = async () => {
-    if (!isVoiceOn) {
-      // Turning voice ON - check permissions first
-      if (hasAudioPermission === false) {
-        Alert.alert(
-          'Microphone Permission Required',
-          'Please enable microphone access in your device settings to use voice features.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Settings', 
-              onPress: async () => {
-                const { status } = await Audio.requestPermissionsAsync();
-                setHasAudioPermission(status === 'granted');
-                if (status === 'granted') {
-                  await enableVoice();
-                }
-              }
-            }
-          ]
-        );
-        return;
-      }
-      
-      if (hasAudioPermission === null) {
-        // Request permission if not determined yet
-        const { status } = await Audio.requestPermissionsAsync();
-        setHasAudioPermission(status === 'granted');
-        if (status === 'granted') {
-          await enableVoice();
+    await handleToggleFeature({
+      isOn: isVoiceOn,
+      setIsOn: setIsVoiceOn,
+      hasPermission: hasAudioPermission,
+      requestPermission: requestAudioPermission,
+      onEnable: async () => {
+        try {
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            playsInSilentModeIOS: true,
+            shouldDuckAndroid: true,
+            playThroughEarpieceAndroid: false,
+            staysActiveInBackground: true,
+          });
+          console.log('Voice enabled - microphone is now active');
+        } catch (error) {
+          console.error('Failed to enable voice:', error);
+          Alert.alert(
+            'Voice Error',
+            'Unable to enable microphone. Please try again.',
+            [{ text: 'OK' }]
+          );
         }
-        return;
-      }
-
-      // Permission already granted, enable voice
-      if (hasAudioPermission === true) {
-        await enableVoice();
-      }
-    } else {
-      // Turning voice OFF
-      await disableVoice();
-    }
-  };
-
-  const enableVoice = async () => {
-    try {
-      // Configure audio mode for live microphone use
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-        staysActiveInBackground: true,
-      });
-      
-      setIsVoiceOn(true);
-      console.log('Voice enabled - microphone is now active');
-    } catch (error) {
-      console.error('Failed to enable voice:', error);
-      Alert.alert(
-        'Voice Error',
-        'Unable to enable microphone. Please try again.',
-        [{ text: 'OK' }]
-      );
-    }
-  };
-
-  const disableVoice = async () => {
-    try {
-      // Reset audio mode to default
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: false,
-        shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: false,
-        staysActiveInBackground: false,
-      });
-      
-      setIsVoiceOn(false);
-      console.log('Voice disabled - microphone is now inactive');
-    } catch (error) {
-      console.error('Failed to disable voice:', error);
-    }
-  };
-
-  const handleGallery = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
+      },
+      onDisable: async () => {
+        try {
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: false,
+            playsInSilentModeIOS: false,
+            shouldDuckAndroid: false,
+            playThroughEarpieceAndroid: false,
+            staysActiveInBackground: false,
+          });
+          console.log('Voice disabled - microphone is now inactive');
+        } catch (error) {
+          console.error('Failed to disable voice:', error);
+        }
+      },
+      alertTitle: 'Microphone Permission Required',
+      alertMessage: 'Please enable microphone access in your device settings to use voice features.',
     });
   };
 
@@ -329,23 +448,7 @@ export default function VideoCallScreen() {
 
   const handleQuestionResponse = (response: 'yes' | 'no' | 'dont-know') => {
     console.log('Question response:', response);
-    // Handle the response - could send to API, store in state, etc.
     setIsQuestionToggleOn(false);
-    
-    // Optional: Show next question after a delay
-    // setTimeout(() => {
-    //   setCurrentQuestion("Is the person conscious?");
-    //   setShowQuestionPopover(true);
-    // }, 2000);
-  };
-
-  const showNewQuestion = (question: string) => {
-    setCurrentQuestion(question);
-    setIsQuestionToggleOn(true);
-  };
-
-  const handleCameraReady = () => {
-    setCameraReady(true);
   };
 
   // Handle permission denied case
@@ -361,10 +464,7 @@ export default function VideoCallScreen() {
           </Text>
           <TouchableOpacity 
             style={styles.permissionButton}
-            onPress={async () => {
-              const { status } = await Camera.requestCameraPermissionsAsync();
-              setHasPermission(status === 'granted');
-            }}
+            onPress={requestCameraPermission}
           >
             <Text style={styles.permissionButtonText}>Enable Camera</Text>
           </TouchableOpacity>
@@ -383,23 +483,16 @@ export default function VideoCallScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
-      {/* Top Header Area with Gap */}
+      {/* Header */}
       <View style={[styles.headerArea, { paddingTop: insets.top }]}>
-        {/* Left Side Controls (empty for now, but available for future use) */}
-        <View style={styles.leftControls}>
-        </View>
-
-        {/* Live Indicator - Centered */}
+        <View style={styles.leftControls} />
         <View style={styles.liveIndicator}>
           <View style={styles.liveContainer}>
             <View style={styles.liveDot} />
             <Text style={styles.liveText}>Live</Text>
           </View>
         </View>
-
-        {/* Right Side Controls */}
         <View style={styles.rightControls}>
-          {/* Question Toggle */}
           <TouchableOpacity 
             style={[styles.headerToggle, isQuestionToggleOn && styles.headerToggleActive]}
             onPress={handleQuestionToggle}
@@ -410,8 +503,6 @@ export default function VideoCallScreen() {
               color={isQuestionToggleOn ? "#FF3B30" : "white"} 
             />
           </TouchableOpacity>
-
-          {/* Transcription Toggle */}
           <TouchableOpacity 
             style={styles.headerToggle}
             onPress={handleToggleTranscription}
@@ -425,333 +516,73 @@ export default function VideoCallScreen() {
         </View>
       </View>
 
-      {/* Video Feed Area with Top Gap */}
+      {/* Video Feed */}
       <View style={styles.videoContainer}>
         {isCameraOn && hasPermission ? (
           <CameraView 
             ref={cameraRef}
             style={styles.camera}
             facing="back"
-            onCameraReady={handleCameraReady}
-          >
-            {/* Location Status Indicator - Close to top */}
-            {isLocationOn && (
-              <View style={styles.locationOverlay}>
-                <View style={styles.locationIndicator}>
-                  {isLocationLoading ? (
-                    <Animated.View style={{
-                      transform: [{
-                        rotate: rotateAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: ['0deg', '360deg'],
-                        }),
-                      }],
-                    }}>
-                      <MaterialIcons 
-                        name="hourglass-empty" 
-                        size={16} 
-                        color="#FF9F0A" 
-                      />
-                    </Animated.View>
-                  ) : (
-                    <MaterialIcons 
-                      name="location-on" 
-                      size={16} 
-                      color="#34C759" 
-                    />
-                  )}
-                  <Text style={styles.locationText}>
-                    {isLocationLoading 
-                      ? "Getting location..." 
-                      : currentLocation 
-                        ? `Location: ${currentLocation.coords.latitude.toFixed(4)}, ${currentLocation.coords.longitude.toFixed(4)}`
-                        : "Location enabled"
-                    }
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Voice Status Indicator - Below location */}
-            {/* {isVoiceOn && (
-              <View style={styles.voiceOverlay}>
-                <View style={styles.voiceIndicator}>
-                  <Animated.View style={{
-                    transform: [{
-                      scale: micPulseAnim,
-                    }],
-                  }}>
-                    <MaterialIcons 
-                      name="mic" 
-                      size={16} 
-                      color="#FF3B30" 
-                    />
-                  </Animated.View>
-                  <Text style={styles.voiceText}>Microphone Active</Text>
-                </View>
-              </View>
-            )} */}
-
-            {/* Chat Message Overlay */}
-            {isTranscriptionEnabled && (
-              <View style={styles.chatOverlay}>
-                <View style={styles.chatBubble}>
-                  <Text style={styles.chatText}>
-                    Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Question Popover */}
-            {isQuestionToggleOn && (
-              <Animated.View style={[
-                styles.questionOverlay, 
-                { 
-                  transform: [{ 
-                    translateY: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [200, 0], // slide from 200px below to normal position
-                    }) 
-                  }] 
-                }
-              ]}>
-                <View style={styles.questionPopover}>
-                  <Text style={styles.questionText}>{currentQuestion}</Text>
-                  <View style={styles.responseButtons}>
-                    <View style={styles.topButtonRow}>
-                      <TouchableOpacity 
-                        style={styles.responseButton}
-                        onPress={() => handleQuestionResponse('no')}
-                      >
-                        <Text style={styles.responseButtonText}>No</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={styles.yesButton}
-                        onPress={() => handleQuestionResponse('yes')}
-                      >
-                        <Text style={styles.responseButtonText}>Yes</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity 
-                      style={styles.cantTellButton}
-                      onPress={() => handleQuestionResponse('dont-know')}
-                    >
-                      <Text style={styles.responseButtonText}>Can&apos;t Tell</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Animated.View>
-            )}
-          </CameraView>
+          />
         ) : (
           <View style={styles.camera}>
-            {/* Camera Off Overlay */}
             <View style={styles.cameraOffOverlay}>
               <MaterialIcons name="videocam-off" size={48} color="white" />
               <Text style={styles.cameraOffText}>
                 {hasPermission === null ? 'Checking camera permissions...' : 'Camera is off'}
               </Text>
             </View>
-            
-            {/* Location Status Indicator - Close to top */}
-            {isLocationOn && (
-              <View style={styles.locationOverlay}>
-                <View style={styles.locationIndicator}>
-                  {isLocationLoading ? (
-                    <Animated.View style={{
-                      transform: [{
-                        rotate: rotateAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: ['0deg', '360deg'],
-                        }),
-                      }],
-                    }}>
-                      <MaterialIcons 
-                        name="hourglass-empty" 
-                        size={16} 
-                        color="#FF9F0A" 
-                      />
-                    </Animated.View>
-                  ) : (
-                    <MaterialIcons 
-                      name="location-on" 
-                      size={16} 
-                      color="#34C759" 
-                    />
-                  )}
-                  <Text style={styles.locationText}>
-                    {isLocationLoading 
-                      ? "Getting location..." 
-                      : currentLocation 
-                        ? `Location: ${currentLocation.coords.latitude.toFixed(4)}, ${currentLocation.coords.longitude.toFixed(4)}`
-                        : "Location enabled"
-                    }
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Voice Status Indicator - Below location */}
-            {/* {isVoiceOn && (
-              <View style={styles.voiceOverlay}>
-                <View style={styles.voiceIndicator}>
-                  <Animated.View style={{
-                    transform: [{
-                      scale: micPulseAnim,
-                    }],
-                  }}>
-                    <MaterialIcons 
-                      name="mic" 
-                      size={16} 
-                      color="#FF3B30" 
-                    />
-                  </Animated.View>
-                  <Text style={styles.voiceText}>Microphone Active</Text>
-                </View>
-              </View>
-            )} */}
-
-            {/* Chat Message Overlay */}
-            {isTranscriptionEnabled && (
-              <View style={styles.chatOverlay}>
-                <View style={styles.chatBubble}>
-                  <Text style={styles.chatText}>
-                    Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Question Popover (also show when camera is off) */}
-            {isQuestionToggleOn && (
-              <Animated.View style={[
-                styles.questionOverlay, 
-                { 
-                  transform: [{ 
-                    translateY: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [200, 0], // slide from 200px below to normal position
-                    }) 
-                  }] 
-                }
-              ]}>
-                <View style={styles.questionPopover}>
-                  <Text style={styles.questionText}>{currentQuestion}</Text>
-                  <View style={styles.responseButtons}>
-                    <View style={styles.topButtonRow}>
-                      <TouchableOpacity 
-                        style={styles.responseButton}
-                        onPress={() => handleQuestionResponse('no')}
-                      >
-                        <Text style={styles.responseButtonText}>No</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={styles.yesButton}
-                        onPress={() => handleQuestionResponse('yes')}
-                      >
-                        <Text style={styles.responseButtonText}>Yes</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity 
-                      style={styles.cantTellButton}
-                      onPress={() => handleQuestionResponse('dont-know')}
-                    >
-                      <Text style={styles.responseButtonText}>Can&apos;t Tell</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Animated.View>
-            )}
           </View>
         )}
+        
+        {/* All Overlays */}
+        <AllOverlays 
+          isLocationOn={isLocationOn}
+          isLocationLoading={isLocationLoading}
+          currentLocation={currentLocation}
+          rotateAnim={rotateAnim}
+          isTranscriptionEnabled={isTranscriptionEnabled}
+          isQuestionToggleOn={isQuestionToggleOn}
+          slideAnim={slideAnim}
+          currentQuestion={currentQuestion}
+          handleQuestionResponse={handleQuestionResponse}
+        />
       </View>
 
       {/* Control Buttons */}
       <View style={[styles.controlsContainer, { paddingBottom: insets.bottom + 20 }]}>
-        <TouchableOpacity 
-          style={styles.controlButton}
+        <ToggleButton
+          isOn={isCameraOn}
           onPress={handleCamera}
-        >
-          <View style={[
-            styles.buttonBackground,
-            !isCameraOn && styles.buttonBackgroundOff
-          ]}>
-            <MaterialIcons 
-              name={isCameraOn ? "videocam" : "videocam-off"} 
-              size={24} 
-              color={isCameraOn ? "#000" : "white"} 
-            />
-          </View>
-          <Text style={styles.buttonLabel}>Video</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.controlButton}
+          iconOn="videocam"
+          iconOff="videocam-off"
+          label="Video"
+        />
+        <ToggleButton
+          isOn={isLocationOn}
           onPress={handleLocation}
-        >
-          <View style={[
-            styles.buttonBackground,
-            !isLocationOn && styles.buttonBackgroundOff
-          ]}>
-            {isLocationLoading ? (
-              <Animated.View style={{
-                transform: [{
-                  rotate: rotateAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0deg', '360deg'],
-                  }),
-                }],
-              }}>
-                <MaterialIcons 
-                  name="hourglass-empty" 
-                  size={24} 
-                  color={isLocationOn ? "#000" : "white"} 
-                />
-              </Animated.View>
-            ) : (
-              <MaterialIcons 
-                name={isLocationOn ? "location-on" : "location-off"} 
-                size={24} 
-                color={isLocationOn ? "#000" : "white"} 
-              />
-            )}
-          </View>
-          <Text style={styles.buttonLabel}>Location</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.controlButton}
+          iconOn="location-on"
+          iconOff="location-off"
+          label="Location"
+          isLoading={isLocationLoading}
+          rotateAnim={rotateAnim}
+        />
+        <ToggleButton
+          isOn={isVoiceOn}
           onPress={handleVoice}
-        >
-          <View style={[
-            styles.buttonBackground,
-            !isVoiceOn && styles.buttonBackgroundOff
-          ]}>
-            <Animated.View style={{
-              transform: [{
-                scale: micPulseAnim,
-              }],
-            }}>
-              <MaterialIcons 
-                name={isVoiceOn ? "mic" : "mic-off"} 
-                size={24} 
-                color={isVoiceOn ? "#000" : "white"} 
-              />
-            </Animated.View>
-          </View>
-          <Text style={styles.buttonLabel}>Voice</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.controlButton}
+          iconOn="mic"
+          iconOff="mic-off"
+          label="Voice"
+          pulseAnim={micPulseAnim}
+        />
+        <ToggleButton
+          isOn={false}
           onPress={handleEndCall}
-        >
-          <View style={styles.endCallButton}>
-            <MaterialIcons name="close" size={24} color="white" />
-          </View>
-          <Text style={styles.buttonLabel}>End</Text>
-        </TouchableOpacity>
+          iconOn="close"
+          iconOff="close"
+          label="End"
+          isEndButton
+        />
       </View>
 
       {/* Progress Bar */}
