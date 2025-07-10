@@ -383,13 +383,15 @@ export default function VideoCallScreen() {
             )}
 
             {/* Chat Message Overlay */}
-            <View style={styles.chatOverlay}>
-              <View style={styles.chatBubble}>
-                <Text style={styles.chatText}>
-                  Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
-                </Text>
+            {isTranscriptionEnabled && (
+              <View style={styles.chatOverlay}>
+                <View style={styles.chatBubble}>
+                  <Text style={styles.chatText}>
+                    Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
+                  </Text>
+                </View>
               </View>
-            </View>
+            )}
 
             {/* Question Popover */}
             {isQuestionToggleOn && (
@@ -481,13 +483,15 @@ export default function VideoCallScreen() {
             )}
 
             {/* Chat Message Overlay */}
-            <View style={styles.chatOverlay}>
-              <View style={styles.chatBubble}>
-                <Text style={styles.chatText}>
-                  Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
-                </Text>
+            {isTranscriptionEnabled && (
+              <View style={styles.chatOverlay}>
+                <View style={styles.chatBubble}>
+                  <Text style={styles.chatText}>
+                    Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
+                  </Text>
+                </View>
               </View>
-            </View>
+            )}
 
             {/* Question Popover (also show when camera is off) */}
             {isQuestionToggleOn && (
