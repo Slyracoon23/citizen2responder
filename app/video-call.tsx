@@ -1,6 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Camera, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -27,11 +28,15 @@ export default function VideoCallScreen() {
   const [isLocationOn, setIsLocationOn] = useState(false);
   const [isVoiceOn, setIsVoiceOn] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   // Add question popover state with animation
   const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
   const slideAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
+  const rotateAnim = useRef(new Animated.Value(0)).current; // Animation for loading spinner
   const insets = useSafeAreaInsets();
 
   // Request camera permissions on mount
@@ -39,6 +44,14 @@ export default function VideoCallScreen() {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
+    })();
+  }, []);
+
+  // Request location permissions on mount
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      setHasLocationPermission(status === 'granted');
     })();
   }, []);
 
@@ -50,6 +63,23 @@ export default function VideoCallScreen() {
       useNativeDriver: true,
     }).start();
   }, [isQuestionToggleOn, slideAnim]);
+
+  // Animation effect for location loading spinner
+  useEffect(() => {
+    if (isLocationLoading) {
+      const rotateAnimation = Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      );
+      rotateAnimation.start();
+      return () => rotateAnimation.stop();
+    } else {
+      rotateAnim.setValue(0);
+    }
+  }, [isLocationLoading, rotateAnim]);
 
   const handleEndCall = () => {
     router.back();
@@ -98,8 +128,88 @@ export default function VideoCallScreen() {
     setIsCameraOn(!isCameraOn);
   };
 
-  const handleLocation = () => {
-    setIsLocationOn(!isLocationOn);
+  const handleLocation = async () => {
+    if (!isLocationOn) {
+      // Turning location ON - provide immediate feedback
+      setIsLocationOn(true);
+      setIsLocationLoading(true);
+      
+      if (hasLocationPermission === false) {
+        Alert.alert(
+          'Location Permission Required',
+          'Please enable location access in your device settings to use this feature.',
+          [
+            { text: 'Cancel', style: 'cancel', onPress: () => {
+              setIsLocationOn(false);
+              setIsLocationLoading(false);
+            }},
+            { 
+              text: 'Settings', 
+              onPress: async () => {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                setHasLocationPermission(status === 'granted');
+                if (status === 'granted') {
+                  await getCurrentLocation();
+                } else {
+                  setIsLocationOn(false);
+                  setIsLocationLoading(false);
+                }
+              }
+            }
+          ]
+        );
+        return;
+      }
+      
+      if (hasLocationPermission === null) {
+        // Request permission if not determined yet
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        setHasLocationPermission(status === 'granted');
+        if (status === 'granted') {
+          await getCurrentLocation();
+        } else {
+          setIsLocationOn(false);
+          setIsLocationLoading(false);
+        }
+        return;
+      }
+
+      // Permission already granted, get location
+      if (hasLocationPermission === true) {
+        await getCurrentLocation();
+      }
+    } else {
+      // Turning location OFF
+      setIsLocationOn(false);
+      setIsLocationLoading(false);
+      setCurrentLocation(null);
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    try {
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      setCurrentLocation(location);
+      setIsLocationLoading(false);
+      console.log('Current location:', {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        accuracy: location.coords.accuracy,
+        timestamp: new Date(location.timestamp).toISOString(),
+      });
+    } catch (error) {
+      console.error('Error getting location:', error);
+      setIsLocationLoading(false);
+      Alert.alert(
+        'Location Error',
+        'Unable to get your current location. Please try again.',
+        [{ text: 'OK', onPress: () => {
+          setIsLocationOn(false);
+        }}]
+      );
+    }
   };
 
   const handleVoice = () => {
@@ -234,6 +344,44 @@ export default function VideoCallScreen() {
             facing="back"
             onCameraReady={handleCameraReady}
           >
+            {/* Location Status Indicator - Close to top */}
+            {isLocationOn && (
+              <View style={styles.locationOverlay}>
+                <View style={styles.locationIndicator}>
+                  {isLocationLoading ? (
+                    <Animated.View style={{
+                      transform: [{
+                        rotate: rotateAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0deg', '360deg'],
+                        }),
+                      }],
+                    }}>
+                      <MaterialIcons 
+                        name="hourglass-empty" 
+                        size={16} 
+                        color="#FF9F0A" 
+                      />
+                    </Animated.View>
+                  ) : (
+                    <MaterialIcons 
+                      name="location-on" 
+                      size={16} 
+                      color="#34C759" 
+                    />
+                  )}
+                  <Text style={styles.locationText}>
+                    {isLocationLoading 
+                      ? "Getting location..." 
+                      : currentLocation 
+                        ? `Location: ${currentLocation.coords.latitude.toFixed(4)}, ${currentLocation.coords.longitude.toFixed(4)}`
+                        : "Location enabled"
+                    }
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Chat Message Overlay */}
             <View style={styles.chatOverlay}>
               <View style={styles.chatBubble}>
@@ -294,6 +442,44 @@ export default function VideoCallScreen() {
               </Text>
             </View>
             
+            {/* Location Status Indicator - Close to top */}
+            {isLocationOn && (
+              <View style={styles.locationOverlay}>
+                <View style={styles.locationIndicator}>
+                  {isLocationLoading ? (
+                    <Animated.View style={{
+                      transform: [{
+                        rotate: rotateAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0deg', '360deg'],
+                        }),
+                      }],
+                    }}>
+                      <MaterialIcons 
+                        name="hourglass-empty" 
+                        size={16} 
+                        color="#FF9F0A" 
+                      />
+                    </Animated.View>
+                  ) : (
+                    <MaterialIcons 
+                      name="location-on" 
+                      size={16} 
+                      color="#34C759" 
+                    />
+                  )}
+                  <Text style={styles.locationText}>
+                    {isLocationLoading 
+                      ? "Getting location..." 
+                      : currentLocation 
+                        ? `Location: ${currentLocation.coords.latitude.toFixed(4)}, ${currentLocation.coords.longitude.toFixed(4)}`
+                        : "Location enabled"
+                    }
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Chat Message Overlay */}
             <View style={styles.chatOverlay}>
               <View style={styles.chatBubble}>
@@ -374,11 +560,28 @@ export default function VideoCallScreen() {
             styles.buttonBackground,
             !isLocationOn && styles.buttonBackgroundOff
           ]}>
-            <MaterialIcons 
-              name={isLocationOn ? "location-on" : "location-off"} 
-              size={24} 
-              color={isLocationOn ? "#000" : "white"} 
-            />
+            {isLocationLoading ? (
+              <Animated.View style={{
+                transform: [{
+                  rotate: rotateAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '360deg'],
+                  }),
+                }],
+              }}>
+                <MaterialIcons 
+                  name="hourglass-empty" 
+                  size={24} 
+                  color={isLocationOn ? "#000" : "white"} 
+                />
+              </Animated.View>
+            ) : (
+              <MaterialIcons 
+                name={isLocationOn ? "location-on" : "location-off"} 
+                size={24} 
+                color={isLocationOn ? "#000" : "white"} 
+              />
+            )}
           </View>
           <Text style={styles.buttonLabel}>Location</Text>
         </TouchableOpacity>
@@ -555,7 +758,7 @@ const styles = StyleSheet.create({
   },
   chatOverlay: {
     position: 'absolute',
-    top: 40,
+    top: 50,
     left: 20,
     right: 20,
     zIndex: 5,
@@ -709,5 +912,28 @@ const styles = StyleSheet.create({
     width: '60%',
     backgroundColor: 'white',
     borderRadius: 2,
+  },
+  locationOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    padding: 10,
+    alignItems: 'center',
+  },
+  locationIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 15,
+    padding: 8,
+    alignSelf: 'center',
+  },
+  locationText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
   },
 }); 
