@@ -15,6 +15,10 @@ export default function HomeScreen() {
     router.push('/video-call' as any);
   };
 
+  const handleLlamaTest = () => {
+    router.push('/llama-test' as any);
+  };
+
   return (
     <ThemedView style={styles.container}>
       {/* Header Section */}
@@ -45,6 +49,13 @@ export default function HomeScreen() {
           <TouchableOpacity style={[styles.button, styles.videoCallButton]} onPress={handleVideoCall}>
             <ThemedText style={[styles.buttonText, styles.videoCallButtonText]}>
               📹 START VIDEO CALL
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Llama Test Button */}
+          <TouchableOpacity style={[styles.button, styles.llamaTestButton]} onPress={handleLlamaTest}>
+            <ThemedText style={[styles.buttonText, styles.llamaTestButtonText]}>
+              🤖 LLAMA TEST
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -147,6 +158,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#34C759',
   },
   videoCallButtonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  llamaTestButton: {
+    backgroundColor: '#FF9500',
+  },
+  llamaTestButtonText: {
     color: 'white',
     fontSize: 18,
   },
