@@ -27,6 +27,10 @@ interface Message {
 interface ModelInfo {
   'general.name'?: string;
   'general.architecture'?: string;
+  'gemma3n.context_length'?: string;
+  'gemma3n.embedding_length'?: string;
+  'gemma3n.block_count'?: string;
+  'gemma3n.attention.head_count'?: string;
   'llama.context_length'?: string;
   'llama.embedding_length'?: string;
   'llama.block_count'?: string;
@@ -43,15 +47,19 @@ interface LlamaContext {
 }
 
 const STOP_WORDS = [
-  '</s>', '<|end|>', '<|eot_id|>', '<|end_of_text|>', 
+  '<end_of_turn>', '</s>', '<|end|>', '<|eot_id|>', '<|end_of_text|>', 
   '<|im_end|>', '<|EOT|>', '<|END_OF_TURN_TOKEN|>', 
   '<|end_of_turn|>', '<|endoftext|>'
 ];
 
 const MODEL_CONFIG = {
   use_mlock: true,
-  n_ctx: 2048,
+  n_ctx: 32768, // Gemma 3n supports 32K context
   n_gpu_layers: 99,
+  temperature: 1.0,
+  top_k: 64,
+  top_p: 0.95,
+  min_p: 0.0,
 };
 
 export default function LlamaTestScreen() {
@@ -59,7 +67,7 @@ export default function LlamaTestScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   
   // States
-  const [modelPath, setModelPath] = useState('/Users/earlpotters/Documents/ai-projects/relay-responder-app/models/TinyLlama-1.1B-Chat-v1.0-Q4_K_M.gguf');
+  const [modelPath, setModelPath] = useState('/Users/earlpotters/Documents/ai-projects/relay-responder-app/models/gemma-3n-E2B-it-Q4_K_M.gguf');
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
   const [context, setContext] = useState<LlamaContext | null>(null);
   const [isLoadingModel, setIsLoadingModel] = useState(false);
@@ -77,7 +85,10 @@ export default function LlamaTestScreen() {
     if (!value) return fallback;
     
     // Only parse numeric fields, leave string fields as-is
-    const numericFields = ['llama.context_length', 'llama.embedding_length', 'llama.block_count', 'llama.attention.head_count'];
+    const numericFields = [
+      'llama.context_length', 'llama.embedding_length', 'llama.block_count', 'llama.attention.head_count',
+      'gemma3n.context_length', 'gemma3n.embedding_length', 'gemma3n.block_count', 'gemma3n.attention.head_count'
+    ];
     
     if (typeof value === 'string' && numericFields.includes(key)) {
       const parsed = parseInt(value);
@@ -92,6 +103,17 @@ export default function LlamaTestScreen() {
     if (info.size) return (info.size / 1024 / 1024).toFixed(1) + ' MB';
     if (info.data_offset) return (info.data_offset / 1024 / 1024).toFixed(1) + ' MB (est.)';
     return 'Unknown';
+  };
+
+  // Helper function to get model info with fallback to both Gemma 3n and LLaMA properties
+  const getModelInfoWithFallback = (info: ModelInfo | null, gemma3nKey: keyof ModelInfo, llamaKey: keyof ModelInfo): string => {
+    if (!info) return 'Unknown';
+    
+    // Try Gemma 3n property first, then LLaMA property
+    const gemma3nValue = getModelInfoValue(info, gemma3nKey);
+    if (gemma3nValue !== 'Unknown') return gemma3nValue;
+    
+    return getModelInfoValue(info, llamaKey);
   };
 
   const handleModelAction = async (action: 'info' | 'load' | 'release') => {
@@ -174,18 +196,31 @@ export default function LlamaTestScreen() {
     setCurrentResponse('');
 
     try {
-      const conversationHistory = [
-        { role: 'system', content: 'You are a helpful AI assistant. Respond in a clear and concise manner.' },
-        ...messages.map(msg => ({ role: msg.role, content: msg.content })),
-        { role: 'user', content: inputMessage.trim() },
-      ];
+      // Format conversation using Gemma 3n chat template
+      let conversationText = '<bos>';
+      
+      // Add system message
+      conversationText += '<start_of_turn>system\nYou are a helpful AI assistant. Respond clearly and concisely.<end_of_turn>\n';
+      
+      // Add conversation history
+      messages.forEach(msg => {
+        const role = msg.role === 'assistant' ? 'model' : 'user';
+        conversationText += `<start_of_turn>${role}\n${msg.content}<end_of_turn>\n`;
+      });
+      
+      // Add current user message
+      conversationText += `<start_of_turn>user\n${inputMessage.trim()}<end_of_turn>\n`;
+      
+      // Start model response
+      conversationText += '<start_of_turn>model\n';
 
       await context.completion(
         {
-          messages: conversationHistory,
+          prompt: conversationText,
           n_predict: 200,
           stop: STOP_WORDS,
           stream: true,
+          ...MODEL_CONFIG,
         },
         (data) => {
           if (data.token) {
@@ -232,10 +267,10 @@ export default function LlamaTestScreen() {
   const modelInfoItems = [
     { label: 'Model', value: getModelInfoValue(modelInfo, 'general.name') },
     { label: 'Architecture', value: getModelInfoValue(modelInfo, 'general.architecture') },
-    { label: 'Context Length', value: getModelInfoValue(modelInfo, 'llama.context_length') },
-    { label: 'Embedding Size', value: getModelInfoValue(modelInfo, 'llama.embedding_length') },
-    { label: 'Layers', value: getModelInfoValue(modelInfo, 'llama.block_count') },
-    { label: 'Attention Heads', value: getModelInfoValue(modelInfo, 'llama.attention.head_count') },
+    { label: 'Context Length', value: getModelInfoWithFallback(modelInfo, 'gemma3n.context_length' as keyof ModelInfo, 'llama.context_length') },
+    { label: 'Embedding Size', value: getModelInfoWithFallback(modelInfo, 'gemma3n.embedding_length' as keyof ModelInfo, 'llama.embedding_length') },
+    { label: 'Layers', value: getModelInfoWithFallback(modelInfo, 'gemma3n.block_count' as keyof ModelInfo, 'llama.block_count') },
+    { label: 'Attention Heads', value: getModelInfoWithFallback(modelInfo, 'gemma3n.attention.head_count' as keyof ModelInfo, 'llama.attention.head_count') },
     { label: 'File Size', value: getModelSize(modelInfo) },
   ];
 
@@ -250,7 +285,7 @@ export default function LlamaTestScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <MaterialIcons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Llama.rn Test</Text>
+          <Text style={styles.headerTitle}>Gemma 3n Test</Text>
           <TouchableOpacity onPress={clearChat}>
             <MaterialIcons name="clear" size={24} color="#fff" />
           </TouchableOpacity>
