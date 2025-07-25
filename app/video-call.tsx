@@ -14,6 +14,8 @@ import {
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSpeechToText } from '../hooks/useSpeechToText';
+import { useVoiceActivityDetection } from '../hooks/useVoiceActivityDetection';
 
 // --- Custom Hook for Permissions ---
 function usePermission(requestAsync: () => Promise<{ status: string }>) {
@@ -70,19 +72,6 @@ const LocationOverlay = ({ isLocationOn, isLocationLoading, currentLocation, rot
   ) : null
 );
 
-type ChatOverlayProps = { isTranscriptionEnabled: boolean };
-const ChatOverlay = ({ isTranscriptionEnabled }: ChatOverlayProps) => (
-  isTranscriptionEnabled ? (
-    <View style={styles.chatOverlay}>
-      <View style={styles.chatBubble}>
-        <Text style={styles.chatText}>
-          Okay, I see the white cord now. Is there anything specific you&apos;d like to ask about it?
-        </Text>
-      </View>
-    </View>
-  ) : null
-);
-
 type QuestionPopoverProps = {
   isQuestionToggleOn: boolean;
   slideAnim: Animated.Value;
@@ -132,17 +121,8 @@ const QuestionPopover = ({ isQuestionToggleOn, slideAnim, currentQuestion, handl
 );
 
 // --- Combined Overlays Component ---
-type AllOverlaysProps = {
-  isLocationOn: boolean;
-  isLocationLoading: boolean;
-  currentLocation: Location.LocationObject | null;
-  rotateAnim: Animated.Value;
-  isTranscriptionEnabled: boolean;
-  isQuestionToggleOn: boolean;
-  slideAnim: Animated.Value;
-  currentQuestion: string;
-  handleQuestionResponse: (response: 'yes' | 'no' | 'dont-know') => void;
-};
+// Remove any AllOverlays or AllOverlaysProps definitions outside the VideoCallScreen function
+// Only define and use them inside VideoCallScreen, after ChatOverlay is defined
 const AllOverlays = (props: AllOverlaysProps) => (
   <>
     <LocationOverlay 
@@ -151,7 +131,8 @@ const AllOverlays = (props: AllOverlaysProps) => (
       currentLocation={props.currentLocation} 
       rotateAnim={props.rotateAnim} 
     />
-    <ChatOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
+    {/* Use the ChatOverlay defined inside VideoCallScreen */}
+    {typeof ChatOverlay === 'function' && <ChatOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />}
     <QuestionPopover 
       isQuestionToggleOn={props.isQuestionToggleOn} 
       slideAnim={props.slideAnim} 
@@ -309,6 +290,161 @@ export default function VideoCallScreen() {
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const micPulseAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
+
+  const {
+    transcript,
+    interimTranscript,
+    errorMessage: sttError,
+    recognizing,
+    recognitionState,
+    start: startSpeech,
+    stop: stopSpeech,
+    clear: clearSpeech,
+    permissionStatus: sttPermissionStatus,
+    checkPermissions: checkSttPermissions,
+    checkAndRequestPermissions: checkAndRequestSttPermissions,
+  } = useSpeechToText();
+
+  // VAD integration
+  const {
+    isVoiceActive,
+    isListening,
+    isStarting,
+    startVAD,
+    stopVAD,
+    permissionStatus: vadPermissionStatus,
+    error: vadError,
+    clearError: clearVadError,
+  } = useVoiceActivityDetection({ silenceTimeout: 1200, debug: false });
+
+  // AI response state
+  const [aiResponse, setAiResponse] = useState('');
+  const [isGemmaLoading, setIsGemmaLoading] = useState(false);
+  const prevVoiceActive = useRef(false);
+  const prevTranscript = useRef('');
+
+  // Simulate local Gemma inference
+  async function runGemmaLocally(text: string): Promise<string> {
+    // TODO: Replace with actual local inference logic
+    await new Promise(res => setTimeout(res, 1000));
+    return `Gemma (local): ${text.toUpperCase()}`;
+  }
+
+  // Effect: When user stops talking, send transcript to Gemma
+  useEffect(() => {
+    if (prevVoiceActive.current && !isVoiceActive) {
+      // Only trigger if transcript changed and is not empty
+      if (transcript && transcript !== prevTranscript.current) {
+        setIsGemmaLoading(true);
+        runGemmaLocally(transcript.trim())
+          .then(res => setAiResponse(res))
+          .catch(() => setAiResponse('Error running Gemma locally.'))
+          .finally(() => setIsGemmaLoading(false));
+        prevTranscript.current = transcript;
+      }
+    }
+    prevVoiceActive.current = isVoiceActive;
+  }, [isVoiceActive, transcript]);
+
+  // Move ChatOverlay definition here so it has access to the above variables
+  const ChatOverlay = ({ isTranscriptionEnabled }: { isTranscriptionEnabled: boolean }) => (
+    isTranscriptionEnabled ? (
+      <View style={styles.chatOverlay}>
+        <View style={styles.chatBubble}>
+          <Text style={styles.chatText}>
+            {recognizing || interimTranscript
+              ? `${transcript}${interimTranscript}`
+              : transcript
+                ? transcript
+                : 'Tap the mic to start speaking to the AI.'}
+          </Text>
+        </View>
+        {isGemmaLoading ? (
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ color: '#34C759' }}>Gemma is thinking...</Text>
+          </View>
+        ) : aiResponse ? (
+          <View style={[styles.chatBubble, { backgroundColor: '#222', marginTop: 10 }]}> 
+            <Text style={[styles.chatText, { color: '#FFD600' }]}>{aiResponse}</Text>
+          </View>
+        ) : null}
+        {/* Clear button */}
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#6C6C70',
+            borderRadius: 20,
+            paddingVertical: 8,
+            paddingHorizontal: 20,
+            marginTop: 12,
+            alignSelf: 'center',
+          }}
+          onPress={() => {
+            clearSpeech();
+            setAiResponse('');
+          }}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>Clear</Text>
+        </TouchableOpacity>
+        {/* VAD status and controls */}
+        <View style={{ flexDirection: 'row', marginTop: 10, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: isVoiceActive ? '#34C759' : '#8E8E93', marginRight: 10 }}>
+            {isStarting ? 'Starting...' : isListening ? (isVoiceActive ? 'Voice Detected' : 'Listening...') : 'Not Listening'}
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: isListening ? '#FF3B30' : '#34C759',
+              borderRadius: 20,
+              paddingVertical: 8,
+              paddingHorizontal: 20,
+              marginHorizontal: 5,
+            }}
+            onPress={isListening ? stopVAD : startVAD}
+          >
+            <Text style={{ color: 'white', fontWeight: 'bold' }}>
+              {isListening ? 'Stop VAD' : 'Start VAD'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {vadError ? (
+          <Text style={{ color: '#FF3B30', marginTop: 8 }}>{vadError}</Text>
+        ) : null}
+        {sttError ? (
+          <Text style={{ color: '#FF3B30', marginTop: 8 }}>{sttError}</Text>
+        ) : null}
+      </View>
+    ) : null
+  );
+
+  // AllOverlaysProps type and AllOverlays component definition here
+  type AllOverlaysProps = {
+    isLocationOn: boolean;
+    isLocationLoading: boolean;
+    currentLocation: Location.LocationObject | null;
+    rotateAnim: Animated.Value;
+    isTranscriptionEnabled: boolean;
+    isQuestionToggleOn: boolean;
+    slideAnim: Animated.Value;
+    currentQuestion: string;
+    handleQuestionResponse: (response: 'yes' | 'no' | 'dont-know') => void;
+  };
+
+  const AllOverlays = (props: AllOverlaysProps) => (
+    <>
+      <LocationOverlay 
+        isLocationOn={props.isLocationOn} 
+        isLocationLoading={props.isLocationLoading} 
+        currentLocation={props.currentLocation} 
+        rotateAnim={props.rotateAnim} 
+      />
+      <ChatOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
+      <QuestionPopover 
+        isQuestionToggleOn={props.isQuestionToggleOn} 
+        slideAnim={props.slideAnim} 
+        currentQuestion={props.currentQuestion} 
+        handleQuestionResponse={props.handleQuestionResponse} 
+      />
+    </>
+  );
 
   // Animation effects
   useEffect(() => {
