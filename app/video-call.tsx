@@ -294,16 +294,15 @@ export default function VideoCallScreen() {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
   const [isCameraOn, setIsCameraOn] = useState(true);
-  const [isLocationOn, setIsLocationOn] = useState(false);
+  const [isLocationOn, setIsLocationOn] = useState(true);
   const [isVoiceOn, setIsVoiceOn] = useState(false);
   const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(true);
   const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
-  const [isLocationLoading, setIsLocationLoading] = useState(false);
+  const [isLocationLoading, setIsLocationLoading] = useState(true);
   
   const [hasPermission, requestCameraPermission] = usePermission(Camera.requestCameraPermissionsAsync);
-  const [hasLocationPermission, requestLocationPermission] = usePermission(Location.requestForegroundPermissionsAsync);
   const [hasAudioPermission, requestAudioPermission] = usePermission(Audio.requestPermissionsAsync);
   
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -336,6 +335,25 @@ export default function VideoCallScreen() {
     }
   }, [isLocationLoading, rotateAnim]);
 
+  useEffect(() => {
+    const requestAndFetchLocation = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Location Permission Required',
+          'This feature requires location access. Please enable it in your device settings.',
+          [{ text: 'OK', onPress: () => setIsLocationOn(false) }]
+        );
+        setIsLocationOn(false);
+        setIsLocationLoading(false);
+        return;
+      }
+      await getCurrentLocation();
+    };
+
+    requestAndFetchLocation();
+  }, []);
+
   const handleEndCall = () => {
     router.back();
   };
@@ -348,25 +366,6 @@ export default function VideoCallScreen() {
       requestPermission: requestCameraPermission,
       alertTitle: 'Camera Permission Required',
       alertMessage: 'Please enable camera access in your device settings to use this feature.',
-    });
-  };
-
-  const handleLocation = async () => {
-    await handleToggleFeature({
-      isOn: isLocationOn,
-      setIsOn: setIsLocationOn,
-      hasPermission: hasLocationPermission,
-      requestPermission: requestLocationPermission,
-      onEnable: async () => {
-        setIsLocationLoading(true);
-        await getCurrentLocation();
-      },
-      onDisable: async () => {
-        setIsLocationLoading(false);
-        setCurrentLocation(null);
-      },
-      alertTitle: 'Location Permission Required',
-      alertMessage: 'Please enable location access in your device settings to use this feature.',
     });
   };
 
@@ -557,15 +556,6 @@ export default function VideoCallScreen() {
           iconOn="videocam"
           iconOff="videocam-off"
           label="Video"
-        />
-        <ToggleButton
-          isOn={isLocationOn}
-          onPress={handleLocation}
-          iconOn="location-on"
-          iconOff="location-off"
-          label="Location"
-          isLoading={isLocationLoading}
-          rotateAnim={rotateAnim}
         />
         <ToggleButton
           isOn={isVoiceOn}
