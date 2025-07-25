@@ -3,6 +3,7 @@ import { Audio } from 'expo-av';
 import { Camera, CameraView } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
+import { initLlama, loadLlamaModelInfo } from 'llama.rn';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -16,6 +17,48 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { useVoiceActivityDetection } from '../hooks/useVoiceActivityDetection';
+
+// --- Types ---
+interface ModelInfo {
+  'general.name'?: string;
+  'general.architecture'?: string;
+  'gemma3n.context_length'?: string;
+  'gemma3n.embedding_length'?: string;
+  'gemma3n.block_count'?: string;
+  'gemma3n.attention.head_count'?: string;
+  'llama.context_length'?: string;
+  'llama.embedding_length'?: string;
+  'llama.block_count'?: string;
+  'llama.attention.head_count'?: string;
+  data_offset?: number;
+  size?: number;
+}
+
+interface LlamaContext {
+  completion: (params: any, callback?: (data: any) => void) => Promise<any>;
+  tokenize: (content: string) => Promise<any>;
+  detokenize: (tokens: number[]) => Promise<string>;
+  release: () => Promise<void>;
+}
+
+// --- Constants ---
+const STOP_WORDS = [
+  '<end_of_turn>', '</s>', '<|end|>', '<|eot_id|>', '<|end_of_text|>', 
+  '<|im_end|>', '<|EOT|>', '<|END_OF_TURN_TOKEN|>', 
+  '<|end_of_turn|>', '<|endoftext|>'
+];
+
+const MODEL_CONFIG = {
+  use_mlock: true,
+  n_ctx: 32768,
+  n_gpu_layers: 99,
+  temperature: 1.0,
+  top_k: 64,
+  top_p: 0.95,
+  min_p: 0.0,
+};
+
+const MODEL_PATH = '/Users/earlpotters/Documents/ai-projects/relay-responder-app/models/gemma-3n-E2B-it-Q4_K_M.gguf';
 
 // --- Custom Hook for Permissions ---
 function usePermission(requestAsync: () => Promise<{ status: string }>) {
@@ -323,11 +366,95 @@ export default function VideoCallScreen() {
   const prevVoiceActive = useRef(false);
   const prevTranscript = useRef('');
 
-  // Simulate local Gemma inference
+  // Gemma model state
+  const [gemmaContext, setGemmaContext] = useState<LlamaContext | null>(null);
+  const [isGemmaModelLoaded, setIsGemmaModelLoaded] = useState(false);
+  const [isInitializingGemma, setIsInitializingGemma] = useState(false);
+
+  // Initialize Gemma model
+  const initializeGemmaModel = async () => {
+    if (isInitializingGemma || isGemmaModelLoaded) return;
+    
+    try {
+      setIsInitializingGemma(true);
+      console.log('Initializing Gemma model...');
+      
+      // Release existing context if any
+      if (gemmaContext) {
+        await gemmaContext.release();
+        setGemmaContext(null);
+        setIsGemmaModelLoaded(false);
+      }
+      
+      const newContext = await initLlama({ model: MODEL_PATH, ...MODEL_CONFIG });
+      setGemmaContext(newContext);
+      setIsGemmaModelLoaded(true);
+      
+      console.log('Gemma model initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Gemma model:', error);
+      setGemmaContext(null);
+      setIsGemmaModelLoaded(false);
+    } finally {
+      setIsInitializingGemma(false);
+    }
+  };
+
+  // Run actual Gemma inference
   async function runGemmaLocally(text: string): Promise<string> {
-    // TODO: Replace with actual local inference logic
-    await new Promise(res => setTimeout(res, 1000));
-    return `Gemma (local): ${text.toUpperCase()}`;
+    // Fallback to mock response if model not loaded
+    if (!gemmaContext || !isGemmaModelLoaded) {
+      console.log('Gemma model not loaded, attempting to initialize...');
+      await initializeGemmaModel();
+      
+      // If still not loaded after initialization attempt, return fallback
+      if (!gemmaContext || !isGemmaModelLoaded) {
+        console.log('Gemma model initialization failed, using fallback response');
+        await new Promise(res => setTimeout(res, 500));
+        return `AI Assistant: I'm having trouble accessing the local model. You said: "${text}"`;
+      }
+    }
+
+    try {
+      // Format conversation using Gemma 3n chat template
+      let conversationText = '<bos>';
+      
+      // Add system message
+      conversationText += '<start_of_turn>system\nYou are a helpful AI assistant for emergency medical situations. Provide clear, concise, and supportive responses. Keep responses brief and to the point.<end_of_turn>\n';
+      
+      // Add current user message
+      conversationText += `<start_of_turn>user\n${text.trim()}<end_of_turn>\n`;
+      
+      // Start model response
+      conversationText += '<start_of_turn>model\n';
+
+      let fullResponse = '';
+      
+      await gemmaContext.completion(
+        {
+          prompt: conversationText,
+          n_predict: 150,
+          stop: STOP_WORDS,
+          stream: true,
+          ...MODEL_CONFIG,
+        },
+        (data) => {
+          if (data.token) {
+            fullResponse += data.token;
+          }
+        }
+      );
+
+      // Clean up response by removing any stop words that might have leaked through
+      for (const stopWord of STOP_WORDS) {
+        fullResponse = fullResponse.replace(stopWord, '');
+      }
+
+      return fullResponse.trim() || 'I understand what you said, but I need a moment to process it properly.';
+    } catch (error) {
+      console.error('Gemma inference error:', error);
+      return `AI Assistant: I encountered an issue processing your message: "${text}". Please try again.`;
+    }
   }
 
   // Effect: When user stops talking, send transcript to Gemma
@@ -359,13 +486,21 @@ export default function VideoCallScreen() {
                 : 'Tap the mic to start speaking to the AI.'}
           </Text>
         </View>
-        {isGemmaLoading ? (
+        {isInitializingGemma ? (
           <View style={{ marginTop: 10 }}>
-            <Text style={{ color: '#34C759' }}>Gemma is thinking...</Text>
+            <Text style={{ color: '#FF9F0A' }}>Initializing AI model...</Text>
+          </View>
+        ) : isGemmaLoading ? (
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ color: '#34C759' }}>AI is thinking...</Text>
           </View>
         ) : aiResponse ? (
           <View style={[styles.chatBubble, { backgroundColor: '#222', marginTop: 10 }]}> 
             <Text style={[styles.chatText, { color: '#FFD600' }]}>{aiResponse}</Text>
+          </View>
+        ) : !isGemmaModelLoaded ? (
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ color: '#FF3B30', fontSize: 12 }}>AI model not ready</Text>
           </View>
         ) : null}
         {/* Clear button */}
@@ -490,7 +625,41 @@ export default function VideoCallScreen() {
     requestAndFetchLocation();
   }, []);
 
-  const handleEndCall = () => {
+  // Initialize Gemma model on component mount and cleanup on unmount
+  useEffect(() => {
+    // Initialize model when component mounts
+    initializeGemmaModel();
+
+    // Cleanup function to release context when component unmounts
+    return () => {
+      if (gemmaContext) {
+        console.log('Cleaning up Gemma context...');
+        gemmaContext.release().catch(console.error);
+      }
+    };
+  }, []);
+
+  // Additional cleanup effect to handle context changes
+  useEffect(() => {
+    return () => {
+      if (gemmaContext) {
+        gemmaContext.release().catch(console.error);
+      }
+    };
+  }, [gemmaContext]);
+
+  const handleEndCall = async () => {
+    // Cleanup Gemma context before ending call
+    if (gemmaContext) {
+      try {
+        console.log('Releasing Gemma context on call end...');
+        await gemmaContext.release();
+        setGemmaContext(null);
+        setIsGemmaModelLoaded(false);
+      } catch (error) {
+        console.error('Error releasing Gemma context:', error);
+      }
+    }
     router.back();
   };
 
