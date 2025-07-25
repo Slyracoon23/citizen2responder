@@ -27,6 +27,10 @@ export default function HomeScreen() {
     router.push('/text-to-speech-test' as any);
   };
 
+  const handleVADDemo = () => {
+    router.push('/vad-demo' as any);
+  };
+
   return (
     <ThemedView style={styles.container}>
       {/* Header Section */}
@@ -78,6 +82,13 @@ export default function HomeScreen() {
           <TouchableOpacity style={[styles.button, styles.ttsTestButton]} onPress={handleTextToSpeechTest}>
             <ThemedText style={[styles.buttonText, styles.ttsTestButtonText]}>
               🔊 TEXT-TO-SPEECH TEST
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* VAD Demo Button */}
+          <TouchableOpacity style={[styles.button, styles.vadDemoButton]} onPress={handleVADDemo}>
+            <ThemedText style={[styles.buttonText, styles.vadDemoButtonText]}>
+              🎯 VAD DEMO
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -201,6 +212,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#2196F3',
   },
   ttsTestButtonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  vadDemoButton: {
+    backgroundColor: '#00BCD4',
+  },
+  vadDemoButtonText: {
     color: 'white',
     fontSize: 18,
   },
