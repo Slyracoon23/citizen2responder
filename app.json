@@ -10,7 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.slyracoon23.relayresponderapp"
+      "bundleIdentifier": "com.slyracoon23.relayresponderapp",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app needs access to the microphone to convert your speech to text for creating reports and responding to emergencies.",
+        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your voice into text for creating incident reports and emergency communications."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -34,6 +38,14 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone for speech recognition.",
+          "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to use speech recognition.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
         }
       ]
     ],

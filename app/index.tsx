@@ -19,6 +19,10 @@ export default function HomeScreen() {
     router.push('/llama-test' as any);
   };
 
+  const handleSpeechToTextTest = () => {
+    router.push('/speech-to-text-test' as any);
+  };
+
   return (
     <ThemedView style={styles.container}>
       {/* Header Section */}
@@ -56,6 +60,13 @@ export default function HomeScreen() {
           <TouchableOpacity style={[styles.button, styles.llamaTestButton]} onPress={handleLlamaTest}>
             <ThemedText style={[styles.buttonText, styles.llamaTestButtonText]}>
               🤖 LLAMA TEST
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Speech-to-Text Test Button */}
+          <TouchableOpacity style={[styles.button, styles.speechTestButton]} onPress={handleSpeechToTextTest}>
+            <ThemedText style={[styles.buttonText, styles.speechTestButtonText]}>
+              🎤 SPEECH-TO-TEXT TEST
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -165,6 +176,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF9500',
   },
   llamaTestButtonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  speechTestButton: {
+    backgroundColor: '#9C27B0',
+  },
+  speechTestButtonText: {
     color: 'white',
     fontSize: 18,
   },
