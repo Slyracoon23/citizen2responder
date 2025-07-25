@@ -23,6 +23,10 @@ export default function HomeScreen() {
     router.push('/speech-to-text-test' as any);
   };
 
+  const handleTextToSpeechTest = () => {
+    router.push('/text-to-speech-test' as any);
+  };
+
   return (
     <ThemedView style={styles.container}>
       {/* Header Section */}
@@ -67,6 +71,13 @@ export default function HomeScreen() {
           <TouchableOpacity style={[styles.button, styles.speechTestButton]} onPress={handleSpeechToTextTest}>
             <ThemedText style={[styles.buttonText, styles.speechTestButtonText]}>
               🎤 SPEECH-TO-TEXT TEST
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Text-to-Speech Test Button */}
+          <TouchableOpacity style={[styles.button, styles.ttsTestButton]} onPress={handleTextToSpeechTest}>
+            <ThemedText style={[styles.buttonText, styles.ttsTestButtonText]}>
+              🔊 TEXT-TO-SPEECH TEST
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -183,6 +194,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#9C27B0',
   },
   speechTestButtonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  ttsTestButton: {
+    backgroundColor: '#2196F3',
+  },
+  ttsTestButtonText: {
     color: 'white',
     fontSize: 18,
   },
