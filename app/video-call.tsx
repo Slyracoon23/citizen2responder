@@ -698,6 +698,7 @@ export default function VideoCallScreen() {
                   { 
                     backgroundColor: message.type === 'user' ? '#007AFF' : '#222', 
                     marginTop: 5,
+                    marginBottom: 5,
                     alignSelf: message.type === 'user' ? 'flex-end' : 'flex-start',
                     maxWidth: '85%'
                   }
@@ -714,41 +715,37 @@ export default function VideoCallScreen() {
           </View>
         ) : (
           /* Welcome message when no conversation history */
-          <View style={styles.chatBubble}>
+          <View style={[styles.chatBubble, { alignSelf: 'center' }]}>
             <Text style={styles.chatText}>
               Start speaking - I'm listening!
             </Text>
           </View>
         )}
 
-        {/* Loading states */}
-        {isInitializingGemma ? (
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ color: '#FF9F0A' }}>Initializing AI model...</Text>
-          </View>
-        ) : isGemmaLoading ? (
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ color: '#34C759' }}>AI is thinking...</Text>
-          </View>
-        ) : !isGemmaModelLoaded ? (
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ color: '#FF3B30', fontSize: 12 }}>AI model not ready</Text>
-          </View>
-        ) : null}
+        {/* Loading states and speech recognition status - positioned below messages */}
+        <View style={{ marginTop: 10, alignItems: 'center' }}>
+          {/* Loading states */}
+          {isInitializingGemma ? (
+            <Text style={{ color: '#FF9F0A', marginBottom: 8 }}>Initializing AI model...</Text>
+          ) : isGemmaLoading ? (
+            <Text style={{ color: '#34C759', marginBottom: 8 }}>AI is thinking...</Text>
+          ) : !isGemmaModelLoaded ? (
+            <Text style={{ color: '#FF3B30', fontSize: 12, marginBottom: 8 }}>AI model not ready</Text>
+          ) : null}
 
-        {/* Speech recognition status - positioned below messages */}
-        <View style={{ marginTop: 15, alignItems: 'center' }}>
+          {/* Speech recognition status */}
           <Text style={{ color: interimTranscript ? '#FF9F0A' : (recognizing ? '#34C759' : '#8E8E93'), fontSize: 12, fontWeight: '500', backgroundColor: 'rgba(0, 0, 0, 0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
             {interimTranscript ? 'Voice Detected!' :
              recognitionState === 'starting' ? 'Starting...' : 
              recognitionState === 'recognizing' ? 'Listening...' : 
              recognitionState === 'stopping' ? 'Stopping...' : 'Initializing...'}
           </Text>
-        </View>
 
-        {sttError ? (
-          <Text style={{ color: '#FF3B30', marginTop: 8, textAlign: 'center' }}>{sttError}</Text>
-        ) : null}
+          {/* Error message */}
+          {sttError ? (
+            <Text style={{ color: '#FF3B30', marginTop: 8, textAlign: 'center' }}>{sttError}</Text>
+          ) : null}
+        </View>
       </View>
     ) : null
   );
@@ -1257,7 +1254,8 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     zIndex: 5,
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'stretch',
   },
   chatBubble: {
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
