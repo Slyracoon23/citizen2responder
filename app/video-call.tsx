@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSpeechToText } from '../hooks/useSpeechToText';
-import { useVoiceActivityDetection } from '../hooks/useVoiceActivityDetection';
+import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 
 // --- Types ---
 interface ModelInfo {
@@ -340,7 +340,6 @@ export default function VideoCallScreen() {
     errorMessage: sttError,
     recognizing,
     recognitionState,
-    start: startSpeech,
     stop: stopSpeech,
     clear: clearSpeech,
     permissionStatus: sttPermissionStatus,
@@ -348,23 +347,56 @@ export default function VideoCallScreen() {
     checkAndRequestPermissions: checkAndRequestSttPermissions,
   } = useSpeechToText();
 
-  // VAD integration
-  const {
-    isVoiceActive,
-    isListening,
-    isStarting,
-    startVAD,
-    stopVAD,
-    permissionStatus: vadPermissionStatus,
-    error: vadError,
-    clearError: clearVadError,
-  } = useVoiceActivityDetection({ silenceTimeout: 1200, debug: false });
+  // Custom start function with continuous recognition
+  const startContinuousSpeech = async () => {
+    try {
+      const isAvailable = ExpoSpeechRecognitionModule.isRecognitionAvailable();
+      if (!isAvailable) {
+        console.error('Speech recognition is not available on this device');
+        return false;
+      }
+      
+      const hasPermissions = await checkAndRequestSttPermissions();
+      if (!hasPermissions) {
+        console.error('Speech recognition permissions not granted');
+        return false;
+      }
 
-  // AI response state
-  const [aiResponse, setAiResponse] = useState('');
+      console.log('Starting continuous speech recognition...');
+      ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        interimResults: true,
+        continuous: true, // Enable continuous recognition
+        maxAlternatives: 1,
+        requiresOnDeviceRecognition: false,
+        addsPunctuation: true,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to start continuous speech recognition:', error);
+      return false;
+    }
+  };
+
+  // Removed VAD - using only speech-to-text for voice detection
+
+  // Conversation history state
+  interface ConversationMessage {
+    id: string;
+    type: 'user' | 'ai';
+    content: string;
+    timestamp: number;
+  }
+  
+  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [isGemmaLoading, setIsGemmaLoading] = useState(false);
-  const prevVoiceActive = useRef(false);
   const prevTranscript = useRef('');
+  
+  // Speech end detection
+  const speechEndTimer = useRef<NodeJS.Timeout | null>(null);
+  const lastInterimTime = useRef<number>(0);
+  const speechEndTimeout = 1500; // 1.5 seconds of silence before triggering AI
 
   // Gemma model state
   const [gemmaContext, setGemmaContext] = useState<LlamaContext | null>(null);
@@ -420,7 +452,7 @@ export default function VideoCallScreen() {
       let conversationText = '<bos>';
       
       // Add system message
-      conversationText += '<start_of_turn>system\nYou are a helpful AI assistant for emergency medical situations. Provide clear, concise, and supportive responses. Keep responses brief and to the point.<end_of_turn>\n';
+      conversationText += '<start_of_turn>system\nYou are a helpful AI assistant for emergency medical situations. Keep your responses very short - maximum 1-2 sentences. Be direct, clear, and concise. Do not provide long explanations.<end_of_turn>\n';
       
       // Add current user message
       conversationText += `<start_of_turn>user\n${text.trim()}<end_of_turn>\n`;
@@ -457,35 +489,224 @@ export default function VideoCallScreen() {
     }
   }
 
-  // Effect: When user stops talking, send transcript to Gemma
-  useEffect(() => {
-    if (prevVoiceActive.current && !isVoiceActive) {
-      // Only trigger if transcript changed and is not empty
-      if (transcript && transcript !== prevTranscript.current) {
-        setIsGemmaLoading(true);
-        runGemmaLocally(transcript.trim())
-          .then(res => setAiResponse(res))
-          .catch(() => setAiResponse('Error running Gemma locally.'))
-          .finally(() => setIsGemmaLoading(false));
-        prevTranscript.current = transcript;
+  // Helper function to clear speech end timer
+  const clearSpeechEndTimer = useCallback(() => {
+    if (speechEndTimer.current) {
+      clearTimeout(speechEndTimer.current);
+      speechEndTimer.current = null;
+    }
+  }, []);
+
+  // Conversation history management functions
+  const addUserMessage = useCallback((content: string) => {
+    const message: ConversationMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: content.trim(),
+      timestamp: Date.now()
+    };
+    setConversationHistory(prev => [...prev, message]);
+    console.log('🔍 CONV DEBUG: Added user message:', content);
+    return message.id;
+  }, []);
+
+  const addAiMessage = useCallback((content: string) => {
+    const message: ConversationMessage = {
+      id: Date.now().toString(),
+      type: 'ai', 
+      content: content.trim(),
+      timestamp: Date.now()
+    };
+    setConversationHistory(prev => [...prev, message]);
+    console.log('🔍 CONV DEBUG: Added AI message:', content);
+    return message.id;
+  }, []);
+
+  const clearConversationHistory = useCallback(() => {
+    setConversationHistory([]);
+    prevTranscript.current = '';
+    console.log('🔍 CONV DEBUG: Conversation history cleared');
+  }, []);
+
+  // Smart diffing to extract new speech content
+  const getNewSpeechContent = useCallback((fullTranscript: string) => {
+    console.log('🔍 DIFF DEBUG: fullTranscript:', fullTranscript);
+    
+    // Build processed text from all previous user messages
+    const allUserMessages = conversationHistory
+      .filter(msg => msg.type === 'user')
+      .map(msg => msg.content)
+      .join(' ');
+    
+    console.log('🔍 DIFF DEBUG: allUserMessages:', allUserMessages);
+    
+    // Extract only the new part
+    let newContent = '';
+    if (allUserMessages.length === 0) {
+      // First message
+      newContent = fullTranscript.trim();
+    } else {
+      // Remove processed content to get new speech
+      if (fullTranscript.startsWith(allUserMessages)) {
+        newContent = fullTranscript.slice(allUserMessages.length).trim();
+      } else {
+        // Fallback: if transcript doesn't start with processed content, take the whole thing
+        newContent = fullTranscript.trim();
       }
     }
-    prevVoiceActive.current = isVoiceActive;
-  }, [isVoiceActive, transcript]);
+    
+    console.log('🔍 DIFF DEBUG: extracted newContent:', newContent);
+    return newContent;
+  }, [conversationHistory]);
+
+  // Helper function to trigger AI response with smart diffing
+  const triggerAIResponse = useCallback((finalTranscript: string) => {
+    console.log('🔍 DEBUG: triggerAIResponse called with:', finalTranscript);
+    
+    // Use smart diffing to extract only new content
+    const newContent = getNewSpeechContent(finalTranscript);
+    
+    // Only proceed if we have meaningful new content
+    if (!newContent || newContent.length < 2) {
+      console.log('❌ DEBUG: No meaningful new content to process:', newContent);
+      return;
+    }
+    
+    // Check if this exact content was already processed
+    if (newContent === prevTranscript.current) {
+      console.log('❌ DEBUG: Content already processed:', newContent);
+      return;
+    }
+    
+    console.log('✅ Triggering AI response for NEW content:', newContent);
+    
+    // Clear speech end timer
+    clearSpeechEndTimer();
+    
+    // Add user message to conversation history
+    addUserMessage(newContent);
+    
+    setIsGemmaLoading(true);
+    runGemmaLocally(newContent)
+      .then(res => {
+        console.log('🔍 DEBUG: AI response received:', res);
+        
+        // Add AI response to conversation history
+        addAiMessage(res);
+        
+        // Clear transcript state (the history is preserved in conversationHistory)
+        clearSpeech();
+        prevTranscript.current = newContent;
+        
+        console.log('🔍 DEBUG: Response added to history, speech cleared');
+        
+        // Auto-clear after showing for 3 seconds (history remains)
+        setTimeout(() => {
+          console.log('🔍 DEBUG: Ready for next conversation input');
+          // Speech recognition continues automatically (continuous mode)
+        }, 3000);
+      })
+      .catch(() => {
+        console.log('🔍 DEBUG: AI error occurred');
+        addAiMessage('Error running Gemma locally.');
+        
+        // Clear transcript state even on error
+        clearSpeech();
+        prevTranscript.current = newContent;
+        
+        // Auto-clear error message
+        setTimeout(() => {
+          console.log('🔍 DEBUG: Ready for next input after error');
+        }, 3000);
+      })
+      .finally(() => setIsGemmaLoading(false));
+    
+  }, [getNewSpeechContent, clearSpeechEndTimer, addUserMessage, addAiMessage, runGemmaLocally, clearSpeech]);
+
+  // Effect: Monitor interim transcript changes to detect speech activity
+  useEffect(() => {
+    console.log('🔍 DEBUG: Speech monitoring effect triggered');
+    console.log('🔍 DEBUG: interimTranscript:', interimTranscript);
+    console.log('🔍 DEBUG: transcript:', transcript);
+    console.log('🔍 DEBUG: prevTranscript.current:', prevTranscript.current);
+    
+    const now = Date.now();
+    
+    if (interimTranscript && interimTranscript.trim()) {
+      // User is actively speaking - reset timer
+      console.log('🎤 Speech activity detected:', interimTranscript);
+      lastInterimTime.current = now;
+      clearSpeechEndTimer();
+      
+      // Start new timer for speech end detection
+      speechEndTimer.current = setTimeout(() => {
+        console.log('⏰ Speech ended, checking for final transcript');
+        const currentTranscript = transcript || interimTranscript;
+        console.log('🔍 DEBUG: currentTranscript for AI trigger:', currentTranscript);
+        if (currentTranscript && currentTranscript.trim()) {
+          triggerAIResponse(currentTranscript);
+        }
+      }, speechEndTimeout);
+    } else if (transcript && transcript.trim() && !interimTranscript) {
+      // We have final transcript but no interim (speech likely ended)
+      console.log('📝 Final transcript without interim, starting end timer');
+      console.log('🔍 DEBUG: Final transcript value:', transcript);
+      clearSpeechEndTimer();
+      
+      speechEndTimer.current = setTimeout(() => {
+        console.log('⏰ Speech end timeout reached');
+        console.log('🔍 DEBUG: About to trigger AI with transcript:', transcript);
+        triggerAIResponse(transcript);
+      }, speechEndTimeout);
+    }
+  }, [interimTranscript, transcript, triggerAIResponse, clearSpeechEndTimer]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      clearSpeechEndTimer();
+    };
+  }, [clearSpeechEndTimer]);
 
   // Move ChatOverlay definition here so it has access to the above variables
   const ChatOverlay = ({ isTranscriptionEnabled }: { isTranscriptionEnabled: boolean }) => (
     isTranscriptionEnabled ? (
       <View style={styles.chatOverlay}>
-        <View style={styles.chatBubble}>
-          <Text style={styles.chatText}>
-            {recognizing || interimTranscript
-              ? `${transcript}${interimTranscript}`
-              : transcript
-                ? transcript
-                : 'Tap the mic to start speaking to the AI.'}
-          </Text>
-        </View>
+        {/* Conversation History */}
+        {conversationHistory.length > 0 ? (
+          <View style={{ maxHeight: 300 }}>
+            {conversationHistory.slice(-4).map((message) => (
+              <View 
+                key={message.id} 
+                style={[
+                  styles.chatBubble, 
+                  { 
+                    backgroundColor: message.type === 'user' ? '#007AFF' : '#222', 
+                    marginTop: 5,
+                    alignSelf: message.type === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: '85%'
+                  }
+                ]}
+              >
+                <Text style={[
+                  styles.chatText, 
+                  { color: message.type === 'user' ? '#FFF' : '#FFD600', fontSize: 14 }
+                ]}>
+                  {message.content}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          /* Welcome message when no conversation history */
+          <View style={styles.chatBubble}>
+            <Text style={styles.chatText}>
+              Start speaking - I'm listening!
+            </Text>
+          </View>
+        )}
+
+        {/* Loading states */}
         {isInitializingGemma ? (
           <View style={{ marginTop: 10 }}>
             <Text style={{ color: '#FF9F0A' }}>Initializing AI model...</Text>
@@ -494,57 +715,41 @@ export default function VideoCallScreen() {
           <View style={{ marginTop: 10 }}>
             <Text style={{ color: '#34C759' }}>AI is thinking...</Text>
           </View>
-        ) : aiResponse ? (
-          <View style={[styles.chatBubble, { backgroundColor: '#222', marginTop: 10 }]}> 
-            <Text style={[styles.chatText, { color: '#FFD600' }]}>{aiResponse}</Text>
-          </View>
         ) : !isGemmaModelLoaded ? (
           <View style={{ marginTop: 10 }}>
             <Text style={{ color: '#FF3B30', fontSize: 12 }}>AI model not ready</Text>
           </View>
         ) : null}
-        {/* Clear button */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: '#6C6C70',
-            borderRadius: 20,
-            paddingVertical: 8,
-            paddingHorizontal: 20,
-            marginTop: 12,
-            alignSelf: 'center',
-          }}
-          onPress={() => {
-            clearSpeech();
-            setAiResponse('');
-          }}
-        >
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>Clear</Text>
-        </TouchableOpacity>
-        {/* VAD status and controls */}
-        <View style={{ flexDirection: 'row', marginTop: 10, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: isVoiceActive ? '#34C759' : '#8E8E93', marginRight: 10 }}>
-            {isStarting ? 'Starting...' : isListening ? (isVoiceActive ? 'Voice Detected' : 'Listening...') : 'Not Listening'}
+
+        {/* Speech recognition status (automatic operation) */}
+        <View style={{ marginTop: 10, alignItems: 'center' }}>
+          <Text style={{ color: interimTranscript ? '#FF9F0A' : (recognizing ? '#34C759' : '#8E8E93'), fontSize: 14, fontWeight: '500' }}>
+            {interimTranscript ? 'Voice Detected!' :
+             recognitionState === 'starting' ? 'Starting...' : 
+             recognitionState === 'recognizing' ? 'Listening...' : 
+             recognitionState === 'stopping' ? 'Stopping...' : 'Initializing...'}
           </Text>
+        </View>
+
+        {/* Clear conversation button */}
+        {conversationHistory.length > 0 && (
           <TouchableOpacity
             style={{
-              backgroundColor: isListening ? '#FF3B30' : '#34C759',
+              backgroundColor: '#6C6C70',
               borderRadius: 20,
-              paddingVertical: 8,
-              paddingHorizontal: 20,
-              marginHorizontal: 5,
+              paddingVertical: 6,
+              paddingHorizontal: 16,
+              marginTop: 8,
+              alignSelf: 'center',
             }}
-            onPress={isListening ? stopVAD : startVAD}
+            onPress={clearConversationHistory}
           >
-            <Text style={{ color: 'white', fontWeight: 'bold' }}>
-              {isListening ? 'Stop VAD' : 'Start VAD'}
-            </Text>
+            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>Clear History</Text>
           </TouchableOpacity>
-        </View>
-        {vadError ? (
-          <Text style={{ color: '#FF3B30', marginTop: 8 }}>{vadError}</Text>
-        ) : null}
+        )}
+
         {sttError ? (
-          <Text style={{ color: '#FF3B30', marginTop: 8 }}>{sttError}</Text>
+          <Text style={{ color: '#FF3B30', marginTop: 8, textAlign: 'center' }}>{sttError}</Text>
         ) : null}
       </View>
     ) : null
@@ -625,16 +830,42 @@ export default function VideoCallScreen() {
     requestAndFetchLocation();
   }, []);
 
-  // Initialize Gemma model on component mount and cleanup on unmount
+  // Initialize Gemma model and auto-start speech recognition on component mount
   useEffect(() => {
     // Initialize model when component mounts
     initializeGemmaModel();
+
+    // Auto-start speech recognition after a short delay
+    const autoStartSpeech = async () => {
+      try {
+        // Wait a bit for component to fully mount and permissions to be checked
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        console.log('Auto-starting continuous speech recognition...');
+        const success = await startContinuousSpeech();
+        if (success) {
+          console.log('Continuous speech recognition auto-started successfully');
+        } else {
+          console.log('Failed to auto-start continuous speech recognition');
+        }
+      } catch (error) {
+        console.error('Error auto-starting speech recognition:', error);
+      }
+    };
+
+    autoStartSpeech();
 
     // Cleanup function to release context when component unmounts
     return () => {
       if (gemmaContext) {
         console.log('Cleaning up Gemma context...');
         gemmaContext.release().catch(console.error);
+      }
+      // Stop speech recognition on cleanup
+      try {
+        stopSpeech();
+      } catch (error) {
+        console.error('Error stopping speech recognition on cleanup:', error);
       }
     };
   }, []);

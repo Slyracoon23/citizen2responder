@@ -34,12 +34,22 @@ export function useSpeechToText() {
   });
 
   useSpeechRecognitionEvent('result', (event) => {
+    console.log('🔍 SPEECH DEBUG: Result event received');
+    console.log('🔍 SPEECH DEBUG: event.results:', event.results);
+    console.log('🔍 SPEECH DEBUG: event.isFinal:', event.isFinal);
+    
     if (event.results && event.results.length > 0) {
       const result = event.results[0];
+      console.log('🔍 SPEECH DEBUG: result.transcript:', result.transcript);
+      
       if (event.isFinal) {
-        setTranscript(prev => prev + result.transcript + ' ');
+        console.log('🔍 SPEECH DEBUG: Setting FINAL transcript to:', result.transcript);
+        console.log('🔍 SPEECH DEBUG: Previous transcript was:', transcript);
+        // Replace transcript instead of concatenating to prevent accumulation
+        setTranscript(result.transcript);
         setInterimTranscript('');
       } else {
+        console.log('🔍 SPEECH DEBUG: Setting INTERIM transcript to:', result.transcript);
         setInterimTranscript(result.transcript);
       }
     }
@@ -125,9 +135,13 @@ export function useSpeechToText() {
   };
 
   const clear = () => {
+    console.log('🔍 SPEECH DEBUG: clear() called');
+    console.log('🔍 SPEECH DEBUG: Clearing transcript from:', transcript);
+    console.log('🔍 SPEECH DEBUG: Clearing interimTranscript from:', interimTranscript);
     setTranscript('');
     setInterimTranscript('');
     setErrorMessage('');
+    console.log('🔍 SPEECH DEBUG: Transcripts cleared');
   };
 
   return {
