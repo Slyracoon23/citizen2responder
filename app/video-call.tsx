@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
+import { GEMMA_SYSTEM_PROMPT, parseGemmaResponse } from './config/gemmaPrompts';
 
 // --- Types ---
 interface ModelInfo {
@@ -435,7 +436,7 @@ export default function VideoCallScreen() {
       let conversationText = '<bos>';
 
       // Add system message
-      conversationText += '<start_of_turn>system\nYou are a helpful AI assistant. Keep your responses very short - maximum 1-2 sentences. Be direct, clear, and concise. Do not provide long explanations.<end_of_turn>\n';
+      conversationText += `<start_of_turn>system\n${GEMMA_SYSTEM_PROMPT}<end_of_turn>\n`;
 
       // Add current user message
       conversationText += `<start_of_turn>user\n${text.trim()}<end_of_turn>\n`;
@@ -465,7 +466,17 @@ export default function VideoCallScreen() {
         fullResponse = fullResponse.replace(stopWord, '');
       }
 
-      return fullResponse.trim() || 'I understand what you said, but I need a moment to process it properly.';
+      const cleanedResponse = fullResponse.trim() || 'I understand what you said, but I need a moment to process it properly.';
+      
+      // Parse response to check for tool calls
+      const parsedResponse = parseGemmaResponse(cleanedResponse);
+      
+      // Return the response in a format that can be handled by the caller
+      if (parsedResponse.isToolCall) {
+        return JSON.stringify({ toolCall: parsedResponse.toolCall });
+      }
+      
+      return cleanedResponse;
     } catch (error) {
       console.error('Gemma inference error:', error);
       return `AI Assistant: I encountered an issue processing your message: "${text}". Please try again.`;
@@ -600,7 +611,29 @@ export default function VideoCallScreen() {
         .then(res => {
           console.log(`🔍 DEBUG [${timestamp}]: AI response received:`, res);
 
-          // Add AI response to conversation history
+          // Check if response is a tool call
+          try {
+            const parsedToolCall = JSON.parse(res);
+            if (parsedToolCall.toolCall && parsedToolCall.toolCall.name === 'ask_question') {
+              // Handle tool call - show question UI AND add to chat history
+              const question = parsedToolCall.toolCall.parameters.question;
+              console.log(`🔍 TOOL CALL DEBUG [${timestamp}]: AI asked question:`, question);
+              
+              // Add question to conversation history so it's visible in chat
+              addAiMessage(question);
+              
+              // Also trigger the question UI for user interaction
+              setCurrentQuestion(question);
+              setIsQuestionToggleOn(true);
+              
+              clearSpeech();
+              return;
+            }
+          } catch (error) {
+            // Not a tool call, handle as regular response
+          }
+
+          // Handle regular AI response
           addAiMessage(res);
 
           // Clear transcript state (the history is preserved in conversationHistory)
@@ -983,6 +1016,48 @@ export default function VideoCallScreen() {
   const handleQuestionResponse = (response: 'yes' | 'no' | 'dont-know') => {
     console.log('Question response:', response);
     setIsQuestionToggleOn(false);
+    
+    // Send the user's response back to the AI
+    const responseText = response === 'yes' ? 'Yes' : response === 'no' ? 'No' : "I can't tell";
+    
+    // Add user response to conversation history
+    addUserMessage(responseText);
+    
+    // Trigger AI response to continue the conversation
+    setIsGemmaLoading(true);
+    runGemmaLocally(responseText)
+      .then(res => {
+        console.log('🔍 QUESTION RESPONSE DEBUG: AI response to user answer:', res);
+        
+        // Check if response is another tool call
+        try {
+          const parsedToolCall = JSON.parse(res);
+          if (parsedToolCall.toolCall && parsedToolCall.toolCall.name === 'ask_question') {
+            const question = parsedToolCall.toolCall.parameters.question;
+            console.log('🔍 QUESTION RESPONSE DEBUG: AI asked follow-up question:', question);
+            
+            // Add follow-up question to conversation history
+            addAiMessage(question);
+            
+            // Also trigger the question UI for user interaction
+            setCurrentQuestion(question);
+            setIsQuestionToggleOn(true);
+            return;
+          }
+        } catch (error) {
+          // Not a tool call, handle as regular response
+        }
+        
+        // Handle regular AI response
+        addAiMessage(res);
+      })
+      .catch(error => {
+        console.error('Error processing question response:', error);
+        addAiMessage('Error processing your response.');
+      })
+      .finally(() => {
+        setIsGemmaLoading(false);
+      });
   };
 
   // Handle permission denied case
