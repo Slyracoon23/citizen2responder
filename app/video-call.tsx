@@ -435,7 +435,7 @@ export default function VideoCallScreen() {
       let conversationText = '<bos>';
 
       // Add system message
-      conversationText += '<start_of_turn>system\nYou are a helpful AI assistant for emergency medical situations. Keep your responses very short - maximum 1-2 sentences. Be direct, clear, and concise. Do not provide long explanations.<end_of_turn>\n';
+      conversationText += '<start_of_turn>system\nYou are a helpful AI assistant. Keep your responses very short - maximum 1-2 sentences. Be direct, clear, and concise. Do not provide long explanations.<end_of_turn>\n';
 
       // Add current user message
       conversationText += `<start_of_turn>user\n${text.trim()}<end_of_turn>\n`;
