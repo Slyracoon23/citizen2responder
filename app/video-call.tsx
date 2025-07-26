@@ -43,8 +43,8 @@ interface LlamaContext {
 
 // --- Constants ---
 const STOP_WORDS = [
-  '<end_of_turn>', '</s>', '<|end|>', '<|eot_id|>', '<|end_of_text|>', 
-  '<|im_end|>', '<|EOT|>', '<|END_OF_TURN_TOKEN|>', 
+  '<end_of_turn>', '</s>', '<|end|>', '<|eot_id|>', '<|end_of_text|>',
+  '<|im_end|>', '<|EOT|>', '<|END_OF_TURN_TOKEN|>',
   '<|end_of_turn|>', '<|endoftext|>'
 ];
 
@@ -178,16 +178,16 @@ type ToggleButtonProps = {
   pulseAnim?: Animated.Value;
   isEndButton?: boolean;
 };
-const ToggleButton = ({ 
-  isOn, 
-  onPress, 
-  iconOn, 
-  iconOff, 
-  label, 
-  isLoading, 
-  rotateAnim, 
+const ToggleButton = ({
+  isOn,
+  onPress,
+  iconOn,
+  iconOff,
+  label,
+  isLoading,
+  rotateAnim,
   pulseAnim,
-  isEndButton 
+  isEndButton
 }: ToggleButtonProps) => (
   <TouchableOpacity style={styles.controlButton} onPress={onPress}>
     <View style={[
@@ -203,27 +203,27 @@ const ToggleButton = ({
             }),
           }],
         }}>
-          <MaterialIcons 
-            name="hourglass-empty" 
-            size={24} 
-            color={isOn && !isEndButton ? "#000" : "white"} 
+          <MaterialIcons
+            name="hourglass-empty"
+            size={24}
+            color={isOn && !isEndButton ? "#000" : "white"}
           />
         </Animated.View>
       ) : pulseAnim ? (
         <Animated.View style={{
           transform: [{ scale: pulseAnim }],
         }}>
-          <MaterialIcons 
-            name={isOn ? iconOn : iconOff} 
-            size={24} 
-            color={isOn && !isEndButton ? "#000" : "white"} 
+          <MaterialIcons
+            name={isOn ? iconOn : iconOff}
+            size={24}
+            color={isOn && !isEndButton ? "#000" : "white"}
           />
         </Animated.View>
       ) : (
-        <MaterialIcons 
-          name={isOn ? iconOn : iconOff} 
-          size={24} 
-          color={isOn && !isEndButton ? "#000" : "white"} 
+        <MaterialIcons
+          name={isOn ? iconOn : iconOff}
+          size={24}
+          color={isOn && !isEndButton ? "#000" : "white"}
         />
       )}
     </View>
@@ -306,10 +306,10 @@ export default function VideoCallScreen() {
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [isLocationLoading, setIsLocationLoading] = useState(true);
-  
+
   const [hasPermission, requestCameraPermission] = usePermission(Camera.requestCameraPermissionsAsync);
   const [hasAudioPermission, requestAudioPermission] = usePermission(Audio.requestPermissionsAsync);
-  
+
   const slideAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const micPulseAnim = useRef(new Animated.Value(1)).current;
@@ -336,7 +336,7 @@ export default function VideoCallScreen() {
         console.error('Speech recognition is not available on this device');
         return false;
       }
-      
+
       const hasPermissions = await checkAndRequestSttPermissions();
       if (!hasPermissions) {
         console.error('Speech recognition permissions not granted');
@@ -352,7 +352,7 @@ export default function VideoCallScreen() {
         requiresOnDeviceRecognition: false,
         addsPunctuation: true,
       });
-      
+
       return true;
     } catch (error) {
       console.error('Failed to start continuous speech recognition:', error);
@@ -369,13 +369,13 @@ export default function VideoCallScreen() {
     content: string;
     timestamp: number;
   }
-  
+
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [isGemmaLoading, setIsGemmaLoading] = useState(false);
   const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
   const prevTranscript = useRef('');
   const lastProcessedLength = useRef(0);
-  
+
   // Speech end detection
   const speechEndTimer = useRef<NodeJS.Timeout | null>(null);
   const lastInterimTime = useRef<number>(0);
@@ -389,22 +389,22 @@ export default function VideoCallScreen() {
   // Initialize Gemma model
   const initializeGemmaModel = async () => {
     if (isInitializingGemma || isGemmaModelLoaded) return;
-    
+
     try {
       setIsInitializingGemma(true);
       console.log('Initializing Gemma model...');
-      
+
       // Release existing context if any
       if (gemmaContext) {
         await gemmaContext.release();
         setGemmaContext(null);
         setIsGemmaModelLoaded(false);
       }
-      
+
       const newContext = await initLlama({ model: MODEL_PATH, ...MODEL_CONFIG });
       setGemmaContext(newContext);
       setIsGemmaModelLoaded(true);
-      
+
       console.log('Gemma model initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Gemma model:', error);
@@ -421,7 +421,7 @@ export default function VideoCallScreen() {
     if (!gemmaContext || !isGemmaModelLoaded) {
       console.log('Gemma model not loaded, attempting to initialize...');
       await initializeGemmaModel();
-      
+
       // If still not loaded after initialization attempt, return fallback
       if (!gemmaContext || !isGemmaModelLoaded) {
         console.log('Gemma model initialization failed, using fallback response');
@@ -433,18 +433,18 @@ export default function VideoCallScreen() {
     try {
       // Format conversation using Gemma 3n chat template
       let conversationText = '<bos>';
-      
+
       // Add system message
       conversationText += '<start_of_turn>system\nYou are a helpful AI assistant for emergency medical situations. Keep your responses very short - maximum 1-2 sentences. Be direct, clear, and concise. Do not provide long explanations.<end_of_turn>\n';
-      
+
       // Add current user message
       conversationText += `<start_of_turn>user\n${text.trim()}<end_of_turn>\n`;
-      
+
       // Start model response
       conversationText += '<start_of_turn>model\n';
 
       let fullResponse = '';
-      
+
       await gemmaContext.completion(
         {
           prompt: conversationText,
@@ -496,7 +496,7 @@ export default function VideoCallScreen() {
   const addAiMessage = useCallback((content: string) => {
     const message: ConversationMessage = {
       id: Date.now().toString(),
-      type: 'ai', 
+      type: 'ai',
       content: content.trim(),
       timestamp: Date.now()
     };
@@ -512,13 +512,13 @@ export default function VideoCallScreen() {
     console.log(`🔍 DIFF DEBUG [${timestamp}]: fullTranscript:`, `"${fullTranscript}"`);
     console.log(`🔍 DIFF DEBUG [${timestamp}]: lastProcessedLength:`, lastProcessedLength.current);
     console.log(`🔍 DIFF DEBUG [${timestamp}]: prevTranscript:`, `"${prevTranscript.current}"`);
-    
+
     // Normalize the transcript
     const normalizedTranscript = fullTranscript.replace(/\s+/g, ' ').trim();
-    
+
     // Simple position-based approach
     let newContent = '';
-    
+
     if (lastProcessedLength.current === 0) {
       // First time processing any transcript
       newContent = normalizedTranscript;
@@ -538,7 +538,7 @@ export default function VideoCallScreen() {
       // Reset the position counter for new speech session
       lastProcessedLength.current = 0;
     }
-    
+
     console.log(`🔍 DIFF DEBUG [${timestamp}]: Final extracted newContent:`, `"${newContent}"`);
     return newContent;
   }, []);
@@ -547,67 +547,67 @@ export default function VideoCallScreen() {
   const triggerAIResponse = useCallback((finalTranscript: string) => {
     const timestamp = new Date().toISOString();
     console.log(`🔍 DEBUG [${timestamp}]: triggerAIResponse called with:`, finalTranscript);
-    
+
     // Prevent multiple simultaneous processing
     if (isProcessingTranscript) {
       console.log(`❌ DEBUG [${timestamp}]: Already processing transcript, skipping`);
       return;
     }
-    
+
     setIsProcessingTranscript(true);
-    
+
     try {
       // Use position-based diffing to extract only new content
       const newContent = getNewSpeechContent(finalTranscript);
-      
+
       // Only proceed if we have meaningful new content
       if (!newContent || newContent.length < 2) {
         console.log(`❌ DEBUG [${timestamp}]: No meaningful new content to process:`, newContent);
         return;
       }
-      
+
       // Check if this exact content was already processed
       if (newContent === prevTranscript.current) {
         console.log(`❌ DEBUG [${timestamp}]: Content already processed:`, newContent);
         return;
       }
-      
+
       // Additional safeguard: check if this content already exists in conversation history
       const existingUserMessage = conversationHistory
         .filter(msg => msg.type === 'user')
         .find(msg => msg.content.trim() === newContent.trim());
-      
+
       if (existingUserMessage) {
         console.log(`❌ DEBUG [${timestamp}]: Content already exists in conversation history:`, newContent);
         return;
       }
-      
+
       console.log(`✅ [${timestamp}] Triggering AI response for NEW content:`, newContent);
-      
+
       // Update tracking variables IMMEDIATELY to prevent race conditions
       const normalizedTranscript = finalTranscript.replace(/\s+/g, ' ').trim();
       lastProcessedLength.current = normalizedTranscript.length;
       prevTranscript.current = newContent;
-    
+
       // Clear speech end timer
       clearSpeechEndTimer();
-      
+
       // Add user message to conversation history
       addUserMessage(newContent);
-      
+
       setIsGemmaLoading(true);
       runGemmaLocally(newContent)
         .then(res => {
           console.log(`🔍 DEBUG [${timestamp}]: AI response received:`, res);
-          
+
           // Add AI response to conversation history
           addAiMessage(res);
-          
+
           // Clear transcript state (the history is preserved in conversationHistory)
           clearSpeech();
-          
+
           console.log(`🔍 DEBUG [${timestamp}]: Response added to history, speech cleared`);
-          
+
           // Auto-clear after showing for 3 seconds (history remains)
           setTimeout(() => {
             console.log(`🔍 DEBUG [${timestamp}]: Ready for next conversation input`);
@@ -617,10 +617,10 @@ export default function VideoCallScreen() {
         .catch(error => {
           console.log(`🔍 DEBUG [${timestamp}]: AI error occurred:`, error);
           addAiMessage('Error running Gemma locally.');
-          
+
           // Clear transcript state even on error
           clearSpeech();
-          
+
           // Auto-clear error message
           setTimeout(() => {
             console.log(`🔍 DEBUG [${timestamp}]: Ready for next input after error`);
@@ -630,12 +630,12 @@ export default function VideoCallScreen() {
           setIsGemmaLoading(false);
           setIsProcessingTranscript(false);
         });
-        
+
     } catch (error) {
       console.error(`🔍 ERROR [${timestamp}]: Exception in triggerAIResponse:`, error);
       setIsProcessingTranscript(false);
     }
-    
+
   }, [getNewSpeechContent, clearSpeechEndTimer, addUserMessage, addAiMessage, runGemmaLocally, clearSpeech]);
 
   // Effect: Monitor interim transcript changes to detect speech activity
@@ -644,15 +644,15 @@ export default function VideoCallScreen() {
     console.log('🔍 DEBUG: interimTranscript:', interimTranscript);
     console.log('🔍 DEBUG: transcript:', transcript);
     console.log('🔍 DEBUG: prevTranscript.current:', prevTranscript.current);
-    
+
     const now = Date.now();
-    
+
     if (interimTranscript && interimTranscript.trim()) {
       // User is actively speaking - reset timer
       console.log('🎤 Speech activity detected:', interimTranscript);
       lastInterimTime.current = now;
       clearSpeechEndTimer();
-      
+
       // Start new timer for speech end detection
       speechEndTimer.current = setTimeout(() => {
         console.log('⏰ Speech ended, checking for final transcript');
@@ -667,7 +667,7 @@ export default function VideoCallScreen() {
       console.log('📝 Final transcript without interim, starting end timer');
       console.log('🔍 DEBUG: Final transcript value:', transcript);
       clearSpeechEndTimer();
-      
+
       speechEndTimer.current = setTimeout(() => {
         console.log('⏰ Speech end timeout reached');
         console.log('🔍 DEBUG: About to trigger AI with transcript:', transcript);
@@ -691,12 +691,12 @@ export default function VideoCallScreen() {
         {conversationHistory.length > 0 ? (
           <View style={{ maxHeight: 300 }}>
             {conversationHistory.slice(-4).map((message) => (
-              <View 
-                key={message.id} 
+              <View
+                key={message.id}
                 style={[
-                  styles.chatBubble, 
-                  { 
-                    backgroundColor: message.type === 'user' ? '#007AFF' : '#222', 
+                  styles.chatBubble,
+                  {
+                    backgroundColor: message.type === 'user' ? '#007AFF' : '#222',
                     marginTop: 5,
                     marginBottom: 5,
                     alignSelf: message.type === 'user' ? 'flex-end' : 'flex-start',
@@ -705,7 +705,7 @@ export default function VideoCallScreen() {
                 ]}
               >
                 <Text style={[
-                  styles.chatText, 
+                  styles.chatText,
                   { color: message.type === 'user' ? '#FFF' : '#FFD600', fontSize: 14 }
                 ]}>
                   {message.content}
@@ -722,9 +722,8 @@ export default function VideoCallScreen() {
           </View>
         )}
 
-        {/* Loading states and speech recognition status - positioned below messages */}
+        {/* Loading states positioned below messages */}
         <View style={{ marginTop: 10, alignItems: 'center' }}>
-          {/* Loading states */}
           {isInitializingGemma ? (
             <Text style={{ color: '#FF9F0A', marginBottom: 8 }}>Initializing AI model...</Text>
           ) : isGemmaLoading ? (
@@ -732,20 +731,24 @@ export default function VideoCallScreen() {
           ) : !isGemmaModelLoaded ? (
             <Text style={{ color: '#FF3B30', fontSize: 12, marginBottom: 8 }}>AI model not ready</Text>
           ) : null}
-
-          {/* Speech recognition status */}
-          <Text style={{ color: interimTranscript ? '#FF9F0A' : (recognizing ? '#34C759' : '#8E8E93'), fontSize: 12, fontWeight: '500', backgroundColor: 'rgba(0, 0, 0, 0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
-            {interimTranscript ? 'Voice Detected!' :
-             recognitionState === 'starting' ? 'Starting...' : 
-             recognitionState === 'recognizing' ? 'Listening...' : 
-             recognitionState === 'stopping' ? 'Stopping...' : 'Initializing...'}
-          </Text>
-
-          {/* Error message */}
-          {sttError ? (
-            <Text style={{ color: '#FF3B30', marginTop: 8, textAlign: 'center' }}>{sttError}</Text>
-          ) : null}
         </View>
+      </View>
+    ) : null
+  );
+
+  // Simple speech status overlay - always center bottom of video
+  const SpeechStatusOverlay = ({ isTranscriptionEnabled }: { isTranscriptionEnabled: boolean }) => (
+    isTranscriptionEnabled ? (
+      <View style={styles.speechStatusOverlay}>
+        <Text style={{ color: interimTranscript ? '#FF9F0A' : (recognizing ? '#34C759' : '#8E8E93'), fontSize: 12, fontWeight: '500', backgroundColor: 'rgba(0, 0, 0, 0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
+          {interimTranscript ? 'Voice Detected!' :
+            recognitionState === 'starting' ? 'Starting...' :
+              recognitionState === 'recognizing' ? 'Listening...' :
+                recognitionState === 'stopping' ? 'Stopping...' : 'Initializing...'}
+        </Text>
+        {sttError ? (
+          <Text style={{ color: '#FF3B30', marginTop: 8, textAlign: 'center', fontSize: 11 }}>{sttError}</Text>
+        ) : null}
       </View>
     ) : null
   );
@@ -765,18 +768,19 @@ export default function VideoCallScreen() {
 
   const AllOverlays = (props: AllOverlaysProps) => (
     <>
-      <LocationOverlay 
-        isLocationOn={props.isLocationOn} 
-        isLocationLoading={props.isLocationLoading} 
-        currentLocation={props.currentLocation} 
-        rotateAnim={props.rotateAnim} 
+      <LocationOverlay
+        isLocationOn={props.isLocationOn}
+        isLocationLoading={props.isLocationLoading}
+        currentLocation={props.currentLocation}
+        rotateAnim={props.rotateAnim}
       />
       <ChatOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
-      <QuestionPopover 
-        isQuestionToggleOn={props.isQuestionToggleOn} 
-        slideAnim={props.slideAnim} 
-        currentQuestion={props.currentQuestion} 
-        handleQuestionResponse={props.handleQuestionResponse} 
+      <SpeechStatusOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
+      <QuestionPopover
+        isQuestionToggleOn={props.isQuestionToggleOn}
+        slideAnim={props.slideAnim}
+        currentQuestion={props.currentQuestion}
+        handleQuestionResponse={props.handleQuestionResponse}
       />
     </>
   );
@@ -835,7 +839,7 @@ export default function VideoCallScreen() {
       try {
         // Wait a bit for component to fully mount and permissions to be checked
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         console.log('Auto-starting continuous speech recognition...');
         const success = await startContinuousSpeech();
         if (success) {
@@ -992,13 +996,13 @@ export default function VideoCallScreen() {
           <Text style={styles.permissionText}>
             Please enable camera access to use video calling features.
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.permissionButton}
             onPress={requestCameraPermission}
           >
             <Text style={styles.permissionButtonText}>Enable Camera</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={handleEndCall}
           >
@@ -1012,7 +1016,7 @@ export default function VideoCallScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
+
       {/* Header */}
       <View style={[styles.headerArea, { paddingTop: insets.top }]}>
         <View style={styles.leftControls} />
@@ -1023,24 +1027,24 @@ export default function VideoCallScreen() {
           </View>
         </View>
         <View style={styles.rightControls}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.headerToggle, isQuestionToggleOn && styles.headerToggleActive]}
             onPress={handleQuestionToggle}
           >
-            <MaterialIcons 
-              name="quiz" 
-              size={24} 
-              color={isQuestionToggleOn ? "#FF3B30" : "white"} 
+            <MaterialIcons
+              name="quiz"
+              size={24}
+              color={isQuestionToggleOn ? "#FF3B30" : "white"}
             />
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.headerToggle}
             onPress={handleToggleTranscription}
           >
-            <MaterialIcons 
-              name={isTranscriptionEnabled ? "closed-caption" : "closed-caption-disabled"} 
-              size={24} 
-              color="white" 
+            <MaterialIcons
+              name={isTranscriptionEnabled ? "closed-caption" : "closed-caption-disabled"}
+              size={24}
+              color="white"
             />
           </TouchableOpacity>
         </View>
@@ -1049,7 +1053,7 @@ export default function VideoCallScreen() {
       {/* Video Feed */}
       <View style={styles.videoContainer}>
         {isCameraOn && hasPermission ? (
-          <CameraView 
+          <CameraView
             ref={cameraRef}
             style={styles.camera}
             facing="back"
@@ -1064,9 +1068,9 @@ export default function VideoCallScreen() {
             </View>
           </View>
         )}
-        
+
         {/* All Overlays */}
-        <AllOverlays 
+        <AllOverlays
           isLocationOn={isLocationOn}
           isLocationLoading={isLocationLoading}
           currentLocation={currentLocation}
@@ -1256,6 +1260,14 @@ const styles = StyleSheet.create({
     zIndex: 5,
     flexDirection: 'column',
     alignItems: 'stretch',
+  },
+  speechStatusOverlay: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
   },
   chatBubble: {
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
