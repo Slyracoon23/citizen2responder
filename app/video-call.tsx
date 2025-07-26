@@ -164,26 +164,7 @@ const QuestionPopover = ({ isQuestionToggleOn, slideAnim, currentQuestion, handl
 );
 
 // --- Combined Overlays Component ---
-// Remove any AllOverlays or AllOverlaysProps definitions outside the VideoCallScreen function
-// Only define and use them inside VideoCallScreen, after ChatOverlay is defined
-const AllOverlays = (props: AllOverlaysProps) => (
-  <>
-    <LocationOverlay 
-      isLocationOn={props.isLocationOn} 
-      isLocationLoading={props.isLocationLoading} 
-      currentLocation={props.currentLocation} 
-      rotateAnim={props.rotateAnim} 
-    />
-    {/* Use the ChatOverlay defined inside VideoCallScreen */}
-    {typeof ChatOverlay === 'function' && <ChatOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />}
-    <QuestionPopover 
-      isQuestionToggleOn={props.isQuestionToggleOn} 
-      slideAnim={props.slideAnim} 
-      currentQuestion={props.currentQuestion} 
-      handleQuestionResponse={props.handleQuestionResponse} 
-    />
-  </>
-);
+// This component will be defined inside VideoCallScreen function to have proper access to ChatOverlay
 
 // --- Toggle Button Component ---
 type ToggleButtonProps = {
@@ -391,7 +372,9 @@ export default function VideoCallScreen() {
   
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [isGemmaLoading, setIsGemmaLoading] = useState(false);
+  const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
   const prevTranscript = useRef('');
+  const lastProcessedLength = useRef(0);
   
   // Speech end detection
   const speechEndTimer = useRef<NodeJS.Timeout | null>(null);
@@ -522,104 +505,136 @@ export default function VideoCallScreen() {
     return message.id;
   }, []);
 
-  const clearConversationHistory = useCallback(() => {
-    setConversationHistory([]);
-    prevTranscript.current = '';
-    console.log('🔍 CONV DEBUG: Conversation history cleared');
-  }, []);
 
-  // Smart diffing to extract new speech content
+  // Position-based diffing to extract new speech content
   const getNewSpeechContent = useCallback((fullTranscript: string) => {
-    console.log('🔍 DIFF DEBUG: fullTranscript:', fullTranscript);
+    const timestamp = new Date().toISOString();
+    console.log(`🔍 DIFF DEBUG [${timestamp}]: fullTranscript:`, `"${fullTranscript}"`);
+    console.log(`🔍 DIFF DEBUG [${timestamp}]: lastProcessedLength:`, lastProcessedLength.current);
+    console.log(`🔍 DIFF DEBUG [${timestamp}]: prevTranscript:`, `"${prevTranscript.current}"`);
     
-    // Build processed text from all previous user messages
-    const allUserMessages = conversationHistory
-      .filter(msg => msg.type === 'user')
-      .map(msg => msg.content)
-      .join(' ');
+    // Normalize the transcript
+    const normalizedTranscript = fullTranscript.replace(/\s+/g, ' ').trim();
     
-    console.log('🔍 DIFF DEBUG: allUserMessages:', allUserMessages);
-    
-    // Extract only the new part
+    // Simple position-based approach
     let newContent = '';
-    if (allUserMessages.length === 0) {
-      // First message
-      newContent = fullTranscript.trim();
+    
+    if (lastProcessedLength.current === 0) {
+      // First time processing any transcript
+      newContent = normalizedTranscript;
+      console.log(`🔍 DIFF DEBUG [${timestamp}]: First transcript case`);
+    } else if (normalizedTranscript.length > lastProcessedLength.current) {
+      // Extract content after the last processed position
+      newContent = normalizedTranscript.slice(lastProcessedLength.current).trim();
+      console.log(`🔍 DIFF DEBUG [${timestamp}]: Position-based extraction from ${lastProcessedLength.current}`);
+    } else if (normalizedTranscript === prevTranscript.current) {
+      // Exact same as previous - no new content
+      newContent = '';
+      console.log(`🔍 DIFF DEBUG [${timestamp}]: Identical to previous transcript`);
     } else {
-      // Remove processed content to get new speech
-      if (fullTranscript.startsWith(allUserMessages)) {
-        newContent = fullTranscript.slice(allUserMessages.length).trim();
-      } else {
-        // Fallback: if transcript doesn't start with processed content, take the whole thing
-        newContent = fullTranscript.trim();
-      }
+      // Different transcript but not longer - treat as new (speech recognition restart)
+      newContent = normalizedTranscript;
+      console.log(`🔍 DIFF DEBUG [${timestamp}]: Different transcript - treating as new`);
+      // Reset the position counter for new speech session
+      lastProcessedLength.current = 0;
     }
     
-    console.log('🔍 DIFF DEBUG: extracted newContent:', newContent);
+    console.log(`🔍 DIFF DEBUG [${timestamp}]: Final extracted newContent:`, `"${newContent}"`);
     return newContent;
-  }, [conversationHistory]);
+  }, []);
 
   // Helper function to trigger AI response with smart diffing
   const triggerAIResponse = useCallback((finalTranscript: string) => {
-    console.log('🔍 DEBUG: triggerAIResponse called with:', finalTranscript);
+    const timestamp = new Date().toISOString();
+    console.log(`🔍 DEBUG [${timestamp}]: triggerAIResponse called with:`, finalTranscript);
     
-    // Use smart diffing to extract only new content
-    const newContent = getNewSpeechContent(finalTranscript);
-    
-    // Only proceed if we have meaningful new content
-    if (!newContent || newContent.length < 2) {
-      console.log('❌ DEBUG: No meaningful new content to process:', newContent);
+    // Prevent multiple simultaneous processing
+    if (isProcessingTranscript) {
+      console.log(`❌ DEBUG [${timestamp}]: Already processing transcript, skipping`);
       return;
     }
     
-    // Check if this exact content was already processed
-    if (newContent === prevTranscript.current) {
-      console.log('❌ DEBUG: Content already processed:', newContent);
-      return;
+    setIsProcessingTranscript(true);
+    
+    try {
+      // Use position-based diffing to extract only new content
+      const newContent = getNewSpeechContent(finalTranscript);
+      
+      // Only proceed if we have meaningful new content
+      if (!newContent || newContent.length < 2) {
+        console.log(`❌ DEBUG [${timestamp}]: No meaningful new content to process:`, newContent);
+        return;
+      }
+      
+      // Check if this exact content was already processed
+      if (newContent === prevTranscript.current) {
+        console.log(`❌ DEBUG [${timestamp}]: Content already processed:`, newContent);
+        return;
+      }
+      
+      // Additional safeguard: check if this content already exists in conversation history
+      const existingUserMessage = conversationHistory
+        .filter(msg => msg.type === 'user')
+        .find(msg => msg.content.trim() === newContent.trim());
+      
+      if (existingUserMessage) {
+        console.log(`❌ DEBUG [${timestamp}]: Content already exists in conversation history:`, newContent);
+        return;
+      }
+      
+      console.log(`✅ [${timestamp}] Triggering AI response for NEW content:`, newContent);
+      
+      // Update tracking variables IMMEDIATELY to prevent race conditions
+      const normalizedTranscript = finalTranscript.replace(/\s+/g, ' ').trim();
+      lastProcessedLength.current = normalizedTranscript.length;
+      prevTranscript.current = newContent;
+    
+      // Clear speech end timer
+      clearSpeechEndTimer();
+      
+      // Add user message to conversation history
+      addUserMessage(newContent);
+      
+      setIsGemmaLoading(true);
+      runGemmaLocally(newContent)
+        .then(res => {
+          console.log(`🔍 DEBUG [${timestamp}]: AI response received:`, res);
+          
+          // Add AI response to conversation history
+          addAiMessage(res);
+          
+          // Clear transcript state (the history is preserved in conversationHistory)
+          clearSpeech();
+          
+          console.log(`🔍 DEBUG [${timestamp}]: Response added to history, speech cleared`);
+          
+          // Auto-clear after showing for 3 seconds (history remains)
+          setTimeout(() => {
+            console.log(`🔍 DEBUG [${timestamp}]: Ready for next conversation input`);
+            // Speech recognition continues automatically (continuous mode)
+          }, 3000);
+        })
+        .catch(error => {
+          console.log(`🔍 DEBUG [${timestamp}]: AI error occurred:`, error);
+          addAiMessage('Error running Gemma locally.');
+          
+          // Clear transcript state even on error
+          clearSpeech();
+          
+          // Auto-clear error message
+          setTimeout(() => {
+            console.log(`🔍 DEBUG [${timestamp}]: Ready for next input after error`);
+          }, 3000);
+        })
+        .finally(() => {
+          setIsGemmaLoading(false);
+          setIsProcessingTranscript(false);
+        });
+        
+    } catch (error) {
+      console.error(`🔍 ERROR [${timestamp}]: Exception in triggerAIResponse:`, error);
+      setIsProcessingTranscript(false);
     }
-    
-    console.log('✅ Triggering AI response for NEW content:', newContent);
-    
-    // Clear speech end timer
-    clearSpeechEndTimer();
-    
-    // Add user message to conversation history
-    addUserMessage(newContent);
-    
-    setIsGemmaLoading(true);
-    runGemmaLocally(newContent)
-      .then(res => {
-        console.log('🔍 DEBUG: AI response received:', res);
-        
-        // Add AI response to conversation history
-        addAiMessage(res);
-        
-        // Clear transcript state (the history is preserved in conversationHistory)
-        clearSpeech();
-        prevTranscript.current = newContent;
-        
-        console.log('🔍 DEBUG: Response added to history, speech cleared');
-        
-        // Auto-clear after showing for 3 seconds (history remains)
-        setTimeout(() => {
-          console.log('🔍 DEBUG: Ready for next conversation input');
-          // Speech recognition continues automatically (continuous mode)
-        }, 3000);
-      })
-      .catch(() => {
-        console.log('🔍 DEBUG: AI error occurred');
-        addAiMessage('Error running Gemma locally.');
-        
-        // Clear transcript state even on error
-        clearSpeech();
-        prevTranscript.current = newContent;
-        
-        // Auto-clear error message
-        setTimeout(() => {
-          console.log('🔍 DEBUG: Ready for next input after error');
-        }, 3000);
-      })
-      .finally(() => setIsGemmaLoading(false));
     
   }, [getNewSpeechContent, clearSpeechEndTimer, addUserMessage, addAiMessage, runGemmaLocally, clearSpeech]);
 
@@ -721,32 +736,15 @@ export default function VideoCallScreen() {
           </View>
         ) : null}
 
-        {/* Speech recognition status (automatic operation) */}
-        <View style={{ marginTop: 10, alignItems: 'center' }}>
-          <Text style={{ color: interimTranscript ? '#FF9F0A' : (recognizing ? '#34C759' : '#8E8E93'), fontSize: 14, fontWeight: '500' }}>
+        {/* Speech recognition status - positioned below messages */}
+        <View style={{ marginTop: 15, alignItems: 'center' }}>
+          <Text style={{ color: interimTranscript ? '#FF9F0A' : (recognizing ? '#34C759' : '#8E8E93'), fontSize: 12, fontWeight: '500', backgroundColor: 'rgba(0, 0, 0, 0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
             {interimTranscript ? 'Voice Detected!' :
              recognitionState === 'starting' ? 'Starting...' : 
              recognitionState === 'recognizing' ? 'Listening...' : 
              recognitionState === 'stopping' ? 'Stopping...' : 'Initializing...'}
           </Text>
         </View>
-
-        {/* Clear conversation button */}
-        {conversationHistory.length > 0 && (
-          <TouchableOpacity
-            style={{
-              backgroundColor: '#6C6C70',
-              borderRadius: 20,
-              paddingVertical: 6,
-              paddingHorizontal: 16,
-              marginTop: 8,
-              alignSelf: 'center',
-            }}
-            onPress={clearConversationHistory}
-          >
-            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>Clear History</Text>
-          </TouchableOpacity>
-        )}
 
         {sttError ? (
           <Text style={{ color: '#FF3B30', marginTop: 8, textAlign: 'center' }}>{sttError}</Text>
