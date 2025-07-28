@@ -1,13 +1,13 @@
-import React from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  StyleSheet 
-} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import React from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { ConversationMessage } from '../services/apiService';
 
 interface ChatInterfaceProps {
@@ -193,12 +193,11 @@ const styles = StyleSheet.create({
   },
   textInputContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    marginTop: 10,
     gap: 10,
   },
   textInput: {
@@ -208,6 +207,7 @@ const styles = StyleSheet.create({
     maxHeight: 80,
     minHeight: 20,
     paddingVertical: 0,
+    textAlignVertical: 'center',
   },
   sendButton: {
     backgroundColor: '#007AFF',
