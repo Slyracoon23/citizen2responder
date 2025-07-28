@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Linking,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as SMS from 'expo-sms';
 import { videoCallStyles } from '../styles/videoCallStyles';
 
 interface ReportData {
@@ -35,9 +37,10 @@ interface ReportModalProps {
   report: ReportData | null;
   onClose: () => void;
   onSendToEmergency: () => void;
+  evidenceImageUri?: string;
 }
 
-export default function ReportModal({ visible, report, onClose, onSendToEmergency }: ReportModalProps) {
+export default function ReportModal({ visible, report, onClose, onSendToEmergency, evidenceImageUri }: ReportModalProps) {
   if (!report) return null;
 
   const formatTimestamp = (timestamp: string) => {
@@ -49,7 +52,15 @@ export default function ReportModal({ visible, report, onClose, onSendToEmergenc
   };
 
   const handleSendSMS = async () => {
-    const smsBody = `EMERGENCY REPORT
+    try {
+      const isAvailable = await SMS.isAvailableAsync();
+      
+      if (!isAvailable) {
+        Alert.alert('SMS Not Available', 'SMS messaging is not available on this device.');
+        return;
+      }
+
+      const smsBody = `EMERGENCY REPORT
 ID: ${report.report_id}
 Type: ${report.details.incident_type}
 Location: ${report.details.location.address}
@@ -59,19 +70,32 @@ People Involved: ${report.details.number_of_people_involved}
 Active Threat: ${report.details.is_active_threat ? 'YES' : 'NO'}
 Time: ${formatTimestamp(report.details.timestamp)}`;
 
-    const smsURL = `sms:911&body=${encodeURIComponent(smsBody)}`;
-    
-    try {
-      const canOpen = await Linking.canOpenURL(smsURL);
-      if (canOpen) {
-        await Linking.openURL(smsURL);
+      const smsOptions: SMS.SMSOptions = {
+        recipients: ['911'],
+        body: smsBody,
+      };
+
+      if (evidenceImageUri) {
+        smsOptions.attachments = [
+          {
+            uri: evidenceImageUri,
+            mimeType: 'image/jpeg',
+            filename: `evidence_${report.report_id}.jpg`,
+          }
+        ];
+      }
+
+      const result = await SMS.sendSMSAsync(smsOptions.recipients, smsOptions.body, smsOptions);
+      
+      if (result.result === 'sent') {
         onSendToEmergency();
-      } else {
-        // Fallback to just phone number
-        await Linking.openURL('sms:911');
+        Alert.alert('Success', 'Emergency report sent successfully.');
+      } else if (result.result === 'cancelled') {
+        Alert.alert('Cancelled', 'Message sending was cancelled.');
       }
     } catch (error) {
-      console.error('Error opening SMS:', error);
+      console.error('Error sending SMS:', error);
+      Alert.alert('Error', 'Failed to send emergency report. Please try again.');
     }
   };
 
