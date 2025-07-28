@@ -92,7 +92,12 @@ Time: ${formatTimestamp(report.details.timestamp)}`;
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={videoCallStyles.reportContent}>
+          <ScrollView 
+            style={videoCallStyles.reportContent}
+            contentContainerStyle={videoCallStyles.reportContentContainer}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+          >
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Report ID</Text>
               <Text style={videoCallStyles.reportText}>{report.report_id}</Text>
@@ -101,6 +106,13 @@ Time: ${formatTimestamp(report.details.timestamp)}`;
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Summary</Text>
               <Text style={videoCallStyles.reportText}>{report.summary}</Text>
+            </View>
+
+            <View style={videoCallStyles.reportImagePlaceholder}>
+              <MaterialIcons name="image" size={48} color="#666" />
+              <Text style={videoCallStyles.reportImagePlaceholderText}>
+                Evidence Photo/Video{'\n'}(Captured during incident)
+              </Text>
             </View>
 
             <View style={videoCallStyles.reportSection}>

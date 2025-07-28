@@ -76,14 +76,16 @@ export const videoCallStyles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.lg,
+    padding: spacing.sm,
   },
   reportModalContainer: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '80%',
+    borderRadius: borderRadius.large,
+    width: '95%',
+    maxWidth: 500,
+    maxHeight: '95%',
+    minHeight: 600,
+    flex: 0,
     ...shadows.large,
   },
   reportHeader: {
@@ -106,6 +108,10 @@ export const videoCallStyles = StyleSheet.create({
   reportContent: {
     flex: 1,
     padding: spacing.lg,
+    minHeight: 300,
+  },
+  reportContentContainer: {
+    paddingBottom: spacing.lg,
   },
   reportSection: {
     marginBottom: spacing.lg,
@@ -156,7 +162,7 @@ export const videoCallStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.md,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.medium,
     gap: spacing.xs,
   },
   reportCancelButton: {
@@ -176,5 +182,23 @@ export const videoCallStyles = StyleSheet.create({
     color: 'white',
     fontSize: fontSize.md,
     fontWeight: fontWeight.medium,
+  },
+  reportImagePlaceholder: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.overlay.light,
+    borderRadius: borderRadius.medium,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.text.tertiary,
+    borderStyle: 'dashed',
+  },
+  reportImagePlaceholderText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.md,
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
 });
