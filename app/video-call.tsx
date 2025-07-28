@@ -20,6 +20,7 @@ import { useAnimations } from './hooks/useAnimations';
 import { useConversation } from './hooks/useConversation';
 import { useLocation } from './hooks/useLocation';
 import { usePermissions } from './hooks/usePermissions';
+import { useSpeechToText } from './hooks/useSpeechToText';
 import { useToggleFeature } from './hooks/useToggleFeature';
 import apiService from './services/apiService';
 import { videoCallStyles } from './styles/videoCallStyles';
@@ -97,6 +98,14 @@ export default function VideoCallScreen() {
     toggleGenerateReport,
   } = useToggleFeature();
 
+  const {
+    recordingState,
+    errorMessage: sttError,
+    startRecording,
+    stopRecording,
+    clearError: clearSttError,
+  } = useSpeechToText();
+
   // Animation effects
   useEffect(() => {
     startSlideAnimation(isQuestionToggleOn ? 1 : 0);
@@ -127,6 +136,68 @@ export default function VideoCallScreen() {
   const handleShowDefaultReport = () => {
     setCurrentReport(defaultReportData);
     setIsReportModalVisible(true);
+  };
+
+  const handleSttPressIn = async () => {
+    console.log('🎤 STT: Press in - starting recording');
+    clearSttError(); // Clear any previous errors
+    await startRecording();
+  };
+
+  const handleSttPressOut = async () => {
+    console.log('🎤 STT: Press out - stopping recording');
+    const transcript = await stopRecording();
+    
+    if (transcript) {
+      console.log('🎤 STT: Transcript received:', transcript);
+      
+      // Stop any ongoing speech before sending new message
+      stopSpeech();
+      
+      // Add the transcribed message to the chat
+      addUserMessage(transcript);
+      
+      try {
+        setIsApiLoading(true);
+        let data;
+
+        if (isImageInputEnabled && cameraRef.current) {
+          // Capture a single frame if vision is enabled
+          const photo = await cameraRef.current.takePictureAsync({ base64: true });
+          if (photo && photo.base64) {
+            console.log(`🔍 CONV DEBUG: Sending STT message with 1 image frame.`);
+            data = await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], transcript);
+          } else {
+            // Fallback to text-only if frame capture fails
+            data = await apiService.callOpenRouterAPI(conversationHistory, transcript);
+          }
+        } else {
+          // Send text-only message
+          data = await apiService.callOpenRouterAPI(conversationHistory, transcript);
+        }
+
+        // Handle tool calls if present
+        const toolCalls = data.choices?.[0]?.message?.tool_calls;
+        if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+          handleToolCalls(toolCalls);
+        } else {
+          // Only add AI message content if no tool calls were made
+          const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
+          addAiMessage(aiContent);
+          console.log('🔍 CONV DEBUG: Added AI response to STT message:', aiContent);
+        }
+
+      } catch (error) {
+        console.error('Error sending STT message:', error);
+        addAiMessage('Sorry, I encountered an error processing your voice message.');
+      } finally {
+        setIsApiLoading(false);
+      }
+    } else if (sttError) {
+      console.log('🎤 STT: Error occurred:', sttError);
+      // Show error message briefly in chat
+      addAiMessage(`Voice recognition error: ${sttError}`);
+    }
   };
 
   // Helper to handle OpenRouter tool calls
@@ -344,6 +415,29 @@ export default function VideoCallScreen() {
             </View>
           )}
 
+          {/* STT Error Info */}
+          {sttError && (
+            <View style={{
+              position: 'absolute',
+              top: 150,
+              left: 20,
+              right: 20,
+              backgroundColor: 'rgba(255, 59, 48, 0.9)',
+              padding: 10,
+              borderRadius: 8,
+              zIndex: 1000,
+            }}>
+              <Text style={{
+                color: 'white',
+                fontSize: 14,
+                textAlign: 'center',
+                fontWeight: '600',
+              }}>
+                🎤 Speech Recognition Error: {sttError}
+              </Text>
+            </View>
+          )}
+
           {/* Video Feed with Overlays */}
           <VideoFeed
             isCameraOn={isCameraOn}
@@ -366,9 +460,10 @@ export default function VideoCallScreen() {
           {/* Control Buttons */}
           <VideoCallControls
             isCameraOn={isCameraOn}
-            isVoiceOn={isVoiceOn}
+            recordingState={recordingState}
             onCameraPress={handleCamera}
-            onVoicePress={handleVoice}
+            onSttPressIn={handleSttPressIn}
+            onSttPressOut={handleSttPressOut}
             onEndCall={handleEndCall}
             micPulseAnim={micPulseAnim}
           />

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { RecordingState } from '../hooks/useSpeechToText';
 
 interface ToggleButtonProps {
   isOn: boolean;
@@ -68,20 +69,135 @@ const ToggleButton = ({
   </TouchableOpacity>
 );
 
+interface SttButtonProps {
+  recordingState: RecordingState;
+  onPressIn: () => void;
+  onPressOut: () => void;
+  pulseAnim?: Animated.Value;
+}
+
+const SttButton = ({
+  recordingState,
+  onPressIn,
+  onPressOut,
+  pulseAnim
+}: SttButtonProps) => {
+  const getButtonStyle = () => {
+    switch (recordingState) {
+      case 'recording':
+        return [styles.buttonBackground, styles.recordingButton];
+      case 'processing':
+        return [styles.buttonBackground, styles.processingButton];
+      case 'error':
+        return [styles.buttonBackground, styles.errorButton];
+      default:
+        return styles.buttonBackground;
+    }
+  };
+
+  const getIcon = () => {
+    switch (recordingState) {
+      case 'recording':
+        return 'stop';
+      case 'processing':
+        return 'hourglass-empty';
+      case 'error':
+        return 'error';
+      default:
+        return 'keyboard-voice';
+    }
+  };
+
+  const getIconColor = () => {
+    switch (recordingState) {
+      case 'recording':
+        return 'white';
+      case 'processing':
+        return '#000';
+      case 'error':
+        return 'white';
+      default:
+        return '#000';
+    }
+  };
+
+  const getLabelText = () => {
+    switch (recordingState) {
+      case 'recording':
+        return 'Recording...';
+      case 'processing':
+        return 'Processing...';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Hold to Talk';
+    }
+  };
+
+  const isDisabled = recordingState === 'processing';
+
+  return (
+    <TouchableOpacity
+      style={styles.controlButton}
+      onPressIn={isDisabled ? undefined : onPressIn}
+      onPressOut={isDisabled ? undefined : onPressOut}
+      disabled={isDisabled}
+    >
+      <View style={getButtonStyle()}>
+        {recordingState === 'recording' && pulseAnim ? (
+          <Animated.View style={{
+            transform: [{ scale: pulseAnim }],
+          }}>
+            <MaterialIcons
+              name={getIcon()}
+              size={24}
+              color={getIconColor()}
+            />
+          </Animated.View>
+        ) : recordingState === 'processing' ? (
+          <Animated.View style={{
+            transform: [{
+              rotate: pulseAnim?.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0deg', '360deg'],
+              }) || '0deg',
+            }],
+          }}>
+            <MaterialIcons
+              name={getIcon()}
+              size={24}
+              color={getIconColor()}
+            />
+          </Animated.View>
+        ) : (
+          <MaterialIcons
+            name={getIcon()}
+            size={24}
+            color={getIconColor()}
+          />
+        )}
+      </View>
+      <Text style={styles.buttonLabel}>{getLabelText()}</Text>
+    </TouchableOpacity>
+  );
+};
+
 interface VideoCallControlsProps {
   isCameraOn: boolean;
-  isVoiceOn: boolean;
+  recordingState: RecordingState;
   onCameraPress: () => void;
-  onVoicePress: () => void;
+  onSttPressIn: () => void;
+  onSttPressOut: () => void;
   onEndCall: () => void;
   micPulseAnim?: Animated.Value;
 }
 
 export default function VideoCallControls({
   isCameraOn,
-  isVoiceOn,
+  recordingState,
   onCameraPress,
-  onVoicePress,
+  onSttPressIn,
+  onSttPressOut,
   onEndCall,
   micPulseAnim
 }: VideoCallControlsProps) {
@@ -96,12 +212,10 @@ export default function VideoCallControls({
         iconOff="videocam-off"
         label="Video"
       />
-      <ToggleButton
-        isOn={isVoiceOn}
-        onPress={onVoicePress}
-        iconOn="mic"
-        iconOff="mic-off"
-        label="Voice"
+      <SttButton
+        recordingState={recordingState}
+        onPressIn={onSttPressIn}
+        onPressOut={onSttPressOut}
         pulseAnim={micPulseAnim}
       />
       <ToggleButton
@@ -169,5 +283,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  recordingButton: {
+    backgroundColor: '#FF3B30',
+  },
+  processingButton: {
+    backgroundColor: '#FFA500',
+  },
+  errorButton: {
+    backgroundColor: '#FF3B30',
   },
 });
