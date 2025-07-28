@@ -12,37 +12,72 @@ interface LocationDisplayProps {
 }
 
 const LocationDisplay = ({ isLocationOn, isLocationLoading, currentLocation, rotateAnim }: LocationDisplayProps) => {
-  if (!isLocationOn) return <View style={styles.leftControls} />;
+  if (!isLocationOn) return null;
 
   return (
-    <View style={styles.leftControls}>
-      <View style={styles.headerLocationContainer}>
-        {isLocationLoading ? (
-          <Animated.View style={{
-            transform: [{
-              rotate: rotateAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: ['0deg', '360deg'],
-              }),
-            }],
-          }}>
-            <MaterialIcons name="hourglass-empty" size={14} color="#FF9F0A" />
-          </Animated.View>
-        ) : (
-          <MaterialIcons name="location-on" size={14} color="#34C759" />
-        )}
-        <Text style={styles.headerLocationText}>
-          {isLocationLoading
-            ? "Getting..."
-            : currentLocation
-              ? `${currentLocation.coords.latitude.toFixed(2)}, ${currentLocation.coords.longitude.toFixed(2)}`
-              : "Location"
-          }
-        </Text>
-      </View>
+    <View style={styles.headerLocationContainer}>
+      {isLocationLoading ? (
+        <Animated.View style={{
+          transform: [{
+            rotate: rotateAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0deg', '360deg'],
+            }),
+          }],
+        }}>
+          <MaterialIcons name="hourglass-empty" size={14} color="#FF9F0A" />
+        </Animated.View>
+      ) : (
+        <MaterialIcons name="location-on" size={14} color="#34C759" />
+      )}
+      <Text style={styles.headerLocationText}>
+        {isLocationLoading
+          ? "Getting..."
+          : currentLocation
+            ? `${currentLocation.coords.latitude.toFixed(2)}, ${currentLocation.coords.longitude.toFixed(2)}`
+            : "Location"
+        }
+      </Text>
     </View>
   );
 };
+
+interface LeftControlsProps {
+  isGenerateReportOn: boolean;
+  onGenerateReportToggle: () => void;
+  isLocationOn: boolean;
+  isLocationLoading: boolean;
+  currentLocation: Location.LocationObject | null;
+  rotateAnim: Animated.Value;
+}
+
+const LeftControls = ({ 
+  isGenerateReportOn, 
+  onGenerateReportToggle,
+  isLocationOn,
+  isLocationLoading,
+  currentLocation,
+  rotateAnim
+}: LeftControlsProps) => (
+  <View style={styles.leftControls}>
+    <LocationDisplay
+      isLocationOn={isLocationOn}
+      isLocationLoading={isLocationLoading}
+      currentLocation={currentLocation}
+      rotateAnim={rotateAnim}
+    />
+    <TouchableOpacity
+      style={[styles.headerToggle, isGenerateReportOn && styles.headerToggleActive]}
+      onPress={onGenerateReportToggle}
+    >
+      <MaterialIcons
+        name="assignment"
+        size={24}
+        color={isGenerateReportOn ? "#FF3B30" : "white"}
+      />
+    </TouchableOpacity>
+  </View>
+);
 
 const LiveIndicator = () => (
   <View style={styles.liveIndicator}>
@@ -111,37 +146,43 @@ const RightControls = ({
 );
 
 interface HeaderProps {
+  isImageInputEnabled: boolean;
+  isQuestionToggleOn: boolean;
+  isTranscriptionEnabled: boolean;
+  isGenerateReportOn: boolean;
+  isApiLoading: boolean;
   isLocationOn: boolean;
   isLocationLoading: boolean;
   currentLocation: Location.LocationObject | null;
   rotateAnim: Animated.Value;
-  isImageInputEnabled: boolean;
-  isQuestionToggleOn: boolean;
-  isTranscriptionEnabled: boolean;
-  isApiLoading: boolean;
   onImageInputToggle: () => void;
   onQuestionToggle: () => void;
   onTranscriptionToggle: () => void;
+  onGenerateReportToggle: () => void;
 }
 
 export default function Header({
+  isImageInputEnabled,
+  isQuestionToggleOn,
+  isTranscriptionEnabled,
+  isGenerateReportOn,
+  isApiLoading,
   isLocationOn,
   isLocationLoading,
   currentLocation,
   rotateAnim,
-  isImageInputEnabled,
-  isQuestionToggleOn,
-  isTranscriptionEnabled,
-  isApiLoading,
   onImageInputToggle,
   onQuestionToggle,
-  onTranscriptionToggle
+  onTranscriptionToggle,
+  onGenerateReportToggle
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.headerArea, { paddingTop: insets.top }]}>
-      <LocationDisplay
+      <LeftControls
+        isGenerateReportOn={isGenerateReportOn}
+        onGenerateReportToggle={onGenerateReportToggle}
         isLocationOn={isLocationOn}
         isLocationLoading={isLocationLoading}
         currentLocation={currentLocation}
@@ -174,6 +215,8 @@ const styles = StyleSheet.create({
     width: 142,
     justifyContent: 'flex-start',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
   },
   headerLocationContainer: {
     flexDirection: 'row',

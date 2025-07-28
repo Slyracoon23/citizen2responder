@@ -30,6 +30,26 @@ export default function VideoCallScreen() {
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [currentReport, setCurrentReport] = useState<any>(null);
+  const [showDefaultReport, setShowDefaultReport] = useState(false);
+
+  // Default report data to show when toggle is activated
+  const defaultReportData = {
+    report_id: "DEFAULT_001",
+    summary: "Emergency Report Ready",
+    details: {
+      incident_type: "System Notification",
+      description: "Report generation is now enabled. The system is ready to create emergency reports when needed based on the conversation and observations.",
+      location: {
+        address: "Current Location",
+        latitude: undefined,
+        longitude: undefined
+      },
+      injuries_reported: false,
+      number_of_people_involved: 0,
+      is_active_threat: false,
+      timestamp: new Date().toISOString()
+    }
+  };
 
   // Custom hooks
   const { hasCamera, hasAudio, requestCameraPermission, requestAudioPermission } = usePermissions();
@@ -65,12 +85,14 @@ export default function VideoCallScreen() {
     isTranscriptionEnabled,
     isQuestionToggleOn,
     isImageInputEnabled,
+    isGenerateReportOn,
     setIsQuestionToggleOn,
     handleCameraToggle,
     handleVoiceToggle,
     toggleTranscription,
     toggleQuestion,
     toggleImageInput,
+    toggleGenerateReport,
   } = useToggleFeature();
 
   // Animation effects
@@ -100,6 +122,11 @@ export default function VideoCallScreen() {
     handleVoiceToggle(hasAudio, requestAudioPermission);
   };
 
+  const handleShowDefaultReport = () => {
+    setCurrentReport(defaultReportData);
+    setIsReportModalVisible(true);
+  };
+
   // Helper to handle OpenRouter tool calls
   const handleToolCalls = (toolCalls: any[]) => {
     console.log('🔧 TOOL CALL HANDLER DEBUG: Processing tool calls:', JSON.stringify(toolCalls, null, 2));
@@ -126,6 +153,10 @@ export default function VideoCallScreen() {
         }
       } else if (toolCall.type === 'function' && toolCall.function?.name === 'generate_report') {
         console.log('🔧 GENERATE_REPORT DEBUG: Found generate_report tool call');
+        if (!isGenerateReportOn) {
+          console.log('🔧 GENERATE_REPORT DEBUG: Report toggle is OFF - ignoring report generation');
+          return;
+        }
         try {
           const args = JSON.parse(toolCall.function.arguments);
           console.log('🔧 GENERATE_REPORT DEBUG: Parsed arguments:', args);
@@ -266,17 +297,19 @@ export default function VideoCallScreen() {
 
           {/* Header */}
           <Header
+            isImageInputEnabled={isImageInputEnabled}
+            isQuestionToggleOn={isQuestionToggleOn}
+            isTranscriptionEnabled={isTranscriptionEnabled}
+            isGenerateReportOn={isGenerateReportOn}
+            isApiLoading={isApiLoading}
             isLocationOn={isLocationOn}
             isLocationLoading={isLocationLoading}
             currentLocation={currentLocation}
             rotateAnim={rotateAnim}
-            isImageInputEnabled={isImageInputEnabled}
-            isQuestionToggleOn={isQuestionToggleOn}
-            isTranscriptionEnabled={isTranscriptionEnabled}
-            isApiLoading={isApiLoading}
             onImageInputToggle={toggleImageInput}
             onQuestionToggle={toggleQuestion}
             onTranscriptionToggle={toggleTranscription}
+            onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
           />
 
           {/* Video Feed with Overlays */}
