@@ -16,19 +16,33 @@ class ApiService {
     return ApiService.instance;
   }
 
-  async callOpenRouterAPI(text: string): Promise<any> {
+  private convertConversationToMessages(conversationHistory: ConversationMessage[], currentMessage: string, currentMessageContent?: any[]): any[] {
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a helpful emergency response AI assistant. Keep all responses to 1-2 sentences maximum. Be concise, direct, and focus only on the most important information. Avoid long explanations or lists.\n\nIMPORTANT: If you need to ask the user a question, do not reply with a text message. Instead, use the ask_question tool to display the question in the UI. Use this tool whenever you need more information from the user to provide better assistance.\n\nFor testing purposes, when appropriate, generate an emergency report using the generate_report tool with realistic fake details to demonstrate the report functionality.'
+    };
+
+    const historyMessages = conversationHistory.map(msg => ({
+      role: msg.type === 'user' ? 'user' : 'assistant',
+      content: msg.content
+    }));
+
+    const currentUserMessage = {
+      role: 'user',
+      content: currentMessageContent || [{ type: 'text', text: currentMessage }]
+    };
+
+    return [systemMessage, ...historyMessages, currentUserMessage];
+  }
+
+  async callOpenRouterAPI(conversationHistory: ConversationMessage[], currentMessage: string): Promise<any> {
     try {
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error('OpenRouter API key not found');
       }
 
-      const messageContent = [
-        {
-          type: 'text',
-          text: text
-        }
-      ];
+      const messages = this.convertConversationToMessages(conversationHistory, currentMessage);
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -39,16 +53,7 @@ class ApiService {
         },
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash-lite',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a helpful emergency response AI assistant. Keep all responses to 1-2 sentences maximum. Be concise, direct, and focus only on the most important information. Avoid long explanations or lists.\n\nIMPORTANT: If you need to ask the user a question, do not reply with a text message. Instead, use the ask_question tool to display the question in the UI. Use this tool whenever you need more information from the user to provide better assistance.\n\nFor testing purposes, when appropriate, generate an emergency report using the generate_report tool with realistic fake details to demonstrate the report functionality.'
-            },
-            {
-              role: 'user',
-              content: messageContent
-            }
-          ],
+          messages: messages,
           tools: [
             {
               type: 'function',
@@ -134,7 +139,7 @@ class ApiService {
     }
   }
 
-  async callOpenRouterVisionAPI(frames: string[], text: string = 'Analyze the following sequence of images and provide a concise, one-sentence summary of the situation.'): Promise<any> {
+  async callOpenRouterVisionAPI(conversationHistory: ConversationMessage[], frames: string[], currentMessage: string): Promise<any> {
     try {
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
@@ -144,7 +149,7 @@ class ApiService {
       const messageContent = [
         {
           type: 'text',
-          text: 'Analyze the following sequence of images and provide a concise, one-sentence summary of the situation.'
+          text: currentMessage
         },
         ...frames.map(frame => ({
           type: 'image_url',
@@ -153,6 +158,8 @@ class ApiService {
           }
         }))
       ];
+
+      const messages = this.convertConversationToMessages(conversationHistory, currentMessage, messageContent);
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -163,16 +170,7 @@ class ApiService {
         },
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash-lite',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a helpful emergency response AI assistant. Keep all responses to 1-2 sentences maximum. Be concise, direct, and focus only on the most important information. Avoid long explanations or lists.\n\nIMPORTANT: If you need to ask the user a question, do not reply with a text message. Instead, use the ask_question tool to display the question in the UI. Use this tool whenever you need more information from the user to provide better assistance.\n\nFor testing purposes, when appropriate, generate an emergency report using the generate_report tool with realistic fake details to demonstrate the report functionality.'
-            },
-            {
-              role: 'user',
-              content: messageContent
-            }
-          ],
+          messages: messages,
           tools: [
             {
               type: 'function',

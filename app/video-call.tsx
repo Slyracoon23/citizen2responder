@@ -193,14 +193,14 @@ export default function VideoCallScreen() {
         const photo = await cameraRef.current.takePictureAsync({ base64: true });
         if (photo && photo.base64) {
           console.log(`🔍 CONV DEBUG: Sending message with 1 image frame.`);
-          data = await apiService.callOpenRouterVisionAPI([photo.base64], message);
+          data = await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], message);
         } else {
           // Fallback to text-only if frame capture fails
-          data = await apiService.callOpenRouterAPI(message);
+          data = await apiService.callOpenRouterAPI(conversationHistory, message);
         }
       } else {
         // Send text-only message
-        data = await apiService.callOpenRouterAPI(message);
+        data = await apiService.callOpenRouterAPI(conversationHistory, message);
       }
 
       // Handle tool calls if present
@@ -229,7 +229,7 @@ export default function VideoCallScreen() {
 
     try {
       setIsApiLoading(true);
-      const data = await apiService.callOpenRouterAPI(responseText);
+      const data = await apiService.callOpenRouterAPI(conversationHistory, responseText);
       // Handle tool calls if present
       const toolCalls = data.choices?.[0]?.message?.tool_calls;
       if (Array.isArray(toolCalls) && toolCalls.length > 0) {
