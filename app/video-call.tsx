@@ -15,6 +15,7 @@ import {
 import Header from './components/Header';
 import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
+import ReportModal from './components/ReportModal';
 import { useAnimations } from './hooks/useAnimations';
 import { useConversation } from './hooks/useConversation';
 import { useLocation } from './hooks/useLocation';
@@ -27,6 +28,8 @@ export default function VideoCallScreen() {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
+  const [isReportModalVisible, setIsReportModalVisible] = useState(false);
+  const [currentReport, setCurrentReport] = useState<any>(null);
 
   // Custom hooks
   const { hasCamera, hasAudio, requestCameraPermission, requestAudioPermission } = usePermissions();
@@ -121,6 +124,22 @@ export default function VideoCallScreen() {
         } catch (e) {
           console.error('🔧 ASK_QUESTION ERROR: Failed to parse tool call arguments:', e);
         }
+      } else if (toolCall.type === 'function' && toolCall.function?.name === 'generate_report') {
+        console.log('🔧 GENERATE_REPORT DEBUG: Found generate_report tool call');
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('🔧 GENERATE_REPORT DEBUG: Parsed arguments:', args);
+          if (args.report_id && args.summary && args.details) {
+            console.log('🔧 GENERATE_REPORT DEBUG: Setting report data');
+            setCurrentReport(args);
+            setIsReportModalVisible(true);
+            console.log('🔧 GENERATE_REPORT DEBUG: Report modal activated');
+          } else {
+            console.log('🔧 GENERATE_REPORT DEBUG: Missing required report data');
+          }
+        } catch (e) {
+          console.error('🔧 GENERATE_REPORT ERROR: Failed to parse tool call arguments:', e);
+        }
       } else {
         console.log('🔧 TOOL CALL DEBUG: Tool call not matched - type:', toolCall.type, 'name:', toolCall.function?.name);
       }
@@ -195,6 +214,16 @@ export default function VideoCallScreen() {
     } finally {
       setIsApiLoading(false);
     }
+  };
+
+  const handleCloseReport = () => {
+    setIsReportModalVisible(false);
+    setCurrentReport(null);
+  };
+
+  const handleSendToEmergency = () => {
+    setIsReportModalVisible(false);
+    setCurrentReport(null);
   };
 
   // Handle permission denied case
@@ -283,6 +312,14 @@ export default function VideoCallScreen() {
           <View style={videoCallStyles.progressContainer}>
             <View style={videoCallStyles.progressBar} />
           </View>
+
+          {/* Report Modal */}
+          <ReportModal
+            visible={isReportModalVisible}
+            report={currentReport}
+            onClose={handleCloseReport}
+            onSendToEmergency={handleSendToEmergency}
+          />
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
