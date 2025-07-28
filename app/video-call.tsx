@@ -3,7 +3,6 @@ import { Audio } from 'expo-av';
 import { Camera, CameraView } from 'expo-camera';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { initLlama, loadLlamaModelInfo } from 'llama.rn';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -17,51 +16,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
-import { GEMMA_SYSTEM_PROMPT, parseGemmaResponse } from './config/gemmaPrompts';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 
-// --- Types ---
-interface ModelInfo {
-  'general.name'?: string;
-  'general.architecture'?: string;
-  'gemma3n.context_length'?: string;
-  'gemma3n.embedding_length'?: string;
-  'gemma3n.block_count'?: string;
-  'gemma3n.attention.head_count'?: string;
-  'llama.context_length'?: string;
-  'llama.embedding_length'?: string;
-  'llama.block_count'?: string;
-  'llama.attention.head_count'?: string;
-  data_offset?: number;
-  size?: number;
-}
 
-interface LlamaContext {
-  completion: (params: any, callback?: (data: any) => void) => Promise<any>;
-  tokenize: (content: string) => Promise<any>;
-  detokenize: (tokens: number[]) => Promise<string>;
-  release: () => Promise<void>;
-}
-
-// --- Constants ---
-const STOP_WORDS = [
-  '<end_of_turn>', '</s>', '<|end|>', '<|eot_id|>', '<|end_of_text|>',
-  '<|im_end|>', '<|EOT|>', '<|END_OF_TURN_TOKEN|>',
-  '<|end_of_turn|>', '<|endoftext|>'
-];
-
-const MODEL_CONFIG = {
-  use_mlock: true,
-  n_ctx: 32768,
-  n_gpu_layers: 99,
-  temperature: 1.0,
-  top_k: 64,
-  top_p: 0.95,
-  min_p: 0.0,
-};
-
-const MODEL_PATH = '/Users/earlpotters/Documents/ai-projects/relay-responder-app/models/gemma-3n-E2B-it-Q4_K_M.gguf';
 
 // --- Custom Hook for Permissions ---
 function usePermission(requestAsync: () => Promise<{ status: string }>) {
@@ -306,7 +264,7 @@ export default function VideoCallScreen() {
   const [isVoiceOn, setIsVoiceOn] = useState(false);
   const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(true);
   const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
-  const [isOpenRouterOn, setIsOpenRouterOn] = useState(false);
+  const [isImageInputEnabled, setIsImageInputEnabled] = useState(true);
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [isLocationLoading, setIsLocationLoading] = useState(true);
@@ -375,7 +333,6 @@ export default function VideoCallScreen() {
   }
 
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
-  const [isGemmaLoading, setIsGemmaLoading] = useState(false);
   const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
   const prevTranscript = useRef('');
   const lastProcessedLength = useRef(0);
@@ -385,11 +342,6 @@ export default function VideoCallScreen() {
   const lastInterimTime = useRef<number>(0);
   const speechEndTimeout = 1500; // 1.5 seconds of silence before triggering AI
 
-  // Gemma model state
-  const [gemmaContext, setGemmaContext] = useState<LlamaContext | null>(null);
-  const [isGemmaModelLoaded, setIsGemmaModelLoaded] = useState(false);
-  const [isInitializingGemma, setIsInitializingGemma] = useState(false);
-  
   // OpenRouter state
   const [isOpenRouterLoading, setIsOpenRouterLoading] = useState(false);
 
@@ -413,16 +365,42 @@ export default function VideoCallScreen() {
   };
 
   // OpenRouter API call
-  const runOpenRouterAPI = async (text: string): Promise<string> => {
+  const runOpenRouterAPI = async (text: string, includeImage: boolean = true): Promise<string> => {
     try {
       setIsOpenRouterLoading(true);
-      
-      // Get base64 image
-      const imageBase64 = await convertImageToBase64();
       
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error('OpenRouter API key not found');
+      }
+
+      // Prepare message content based on image inclusion
+      let messageContent;
+      
+      if (includeImage) {
+        // Get base64 image
+        const imageBase64 = await convertImageToBase64();
+        
+        messageContent = [
+          {
+            type: 'text',
+            text: `${text}\n\nPlease analyze this image and provide a helpful response based on both the text and what you see in the image.`
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:image/png;base64,${imageBase64}`
+            }
+          }
+        ];
+      } else {
+        // Text only mode
+        messageContent = [
+          {
+            type: 'text',
+            text: text
+          }
+        ];
       }
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -437,18 +415,7 @@ export default function VideoCallScreen() {
           messages: [
             {
               role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: `${text}\n\nPlease analyze this image and provide a helpful response based on both the text and what you see in the image.`
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:image/png;base64,${imageBase64}`
-                  }
-                }
-              ]
+              content: messageContent
             }
           ],
           max_tokens: 150,
@@ -472,101 +439,7 @@ export default function VideoCallScreen() {
     }
   };
 
-  // Initialize Gemma model
-  const initializeGemmaModel = async () => {
-    if (isInitializingGemma || isGemmaModelLoaded) return;
 
-    try {
-      setIsInitializingGemma(true);
-      console.log('Initializing Gemma model...');
-
-      // Release existing context if any
-      if (gemmaContext) {
-        await gemmaContext.release();
-        setGemmaContext(null);
-        setIsGemmaModelLoaded(false);
-      }
-
-      const newContext = await initLlama({ model: MODEL_PATH, ...MODEL_CONFIG });
-      setGemmaContext(newContext);
-      setIsGemmaModelLoaded(true);
-
-      console.log('Gemma model initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize Gemma model:', error);
-      setGemmaContext(null);
-      setIsGemmaModelLoaded(false);
-    } finally {
-      setIsInitializingGemma(false);
-    }
-  };
-
-  // Run actual Gemma inference
-  async function runGemmaLocally(text: string): Promise<string> {
-    // Fallback to mock response if model not loaded
-    if (!gemmaContext || !isGemmaModelLoaded) {
-      console.log('Gemma model not loaded, attempting to initialize...');
-      await initializeGemmaModel();
-
-      // If still not loaded after initialization attempt, return fallback
-      if (!gemmaContext || !isGemmaModelLoaded) {
-        console.log('Gemma model initialization failed, using fallback response');
-        await new Promise(res => setTimeout(res, 500));
-        return `AI Assistant: I'm having trouble accessing the local model. You said: "${text}"`;
-      }
-    }
-
-    try {
-      // Format conversation using Gemma 3n chat template
-      let conversationText = '<bos>';
-
-      // Add system message
-      conversationText += `<start_of_turn>system\n${GEMMA_SYSTEM_PROMPT}<end_of_turn>\n`;
-
-      // Add current user message
-      conversationText += `<start_of_turn>user\n${text.trim()}<end_of_turn>\n`;
-
-      // Start model response
-      conversationText += '<start_of_turn>model\n';
-
-      let fullResponse = '';
-
-      await gemmaContext.completion(
-        {
-          prompt: conversationText,
-          n_predict: 150,
-          stop: STOP_WORDS,
-          stream: true,
-          ...MODEL_CONFIG,
-        },
-        (data) => {
-          if (data.token) {
-            fullResponse += data.token;
-          }
-        }
-      );
-
-      // Clean up response by removing any stop words that might have leaked through
-      for (const stopWord of STOP_WORDS) {
-        fullResponse = fullResponse.replace(stopWord, '');
-      }
-
-      const cleanedResponse = fullResponse.trim() || 'I understand what you said, but I need a moment to process it properly.';
-      
-      // Parse response to check for tool calls
-      const parsedResponse = parseGemmaResponse(cleanedResponse);
-      
-      // Return the response in a format that can be handled by the caller
-      if (parsedResponse.isToolCall) {
-        return JSON.stringify({ toolCall: parsedResponse.toolCall });
-      }
-      
-      return cleanedResponse;
-    } catch (error) {
-      console.error('Gemma inference error:', error);
-      return `AI Assistant: I encountered an issue processing your message: "${text}". Please try again.`;
-    }
-  }
 
   // Helper function to clear speech end timer
   const clearSpeechEndTimer = useCallback(() => {
@@ -691,8 +564,8 @@ export default function VideoCallScreen() {
       // Add user message to conversation history
       addUserMessage(newContent);
 
-      // Choose AI service based on OpenRouter toggle
-      const aiPromise = isOpenRouterOn ? runOpenRouterAPI(newContent) : runGemmaLocally(newContent);
+      // Use OpenRouter API for AI response
+      const aiPromise = runOpenRouterAPI(newContent, isImageInputEnabled);
       
       aiPromise
         .then(res => {
@@ -736,7 +609,7 @@ export default function VideoCallScreen() {
         })
         .catch(error => {
           console.log(`🔍 DEBUG [${timestamp}]: AI error occurred:`, error);
-          addAiMessage('Error running Gemma locally.');
+          addAiMessage('Error running OpenRouter API.');
 
           // Clear transcript state even on error
           clearSpeech();
@@ -747,7 +620,6 @@ export default function VideoCallScreen() {
           }, 3000);
         })
         .finally(() => {
-          setIsGemmaLoading(false);
           setIsOpenRouterLoading(false);
           setIsProcessingTranscript(false);
         });
@@ -757,7 +629,7 @@ export default function VideoCallScreen() {
       setIsProcessingTranscript(false);
     }
 
-  }, [getNewSpeechContent, clearSpeechEndTimer, addUserMessage, addAiMessage, runGemmaLocally, clearSpeech]);
+  }, [getNewSpeechContent, clearSpeechEndTimer, addUserMessage, addAiMessage, runOpenRouterAPI, clearSpeech]);
 
   // Effect: Monitor interim transcript changes to detect speech activity
   useEffect(() => {
@@ -848,22 +720,16 @@ export default function VideoCallScreen() {
           {/* Processing States */}
           {isOpenRouterLoading ? (
             <Text style={{ color: '#34C759', marginBottom: 8, fontWeight: '600' }}>🌐 OpenRouter AI is processing...</Text>
-          ) : isInitializingGemma ? (
-            <Text style={{ color: '#FF9F0A', marginBottom: 8, fontWeight: '600' }}>🔧 Initializing local AI model...</Text>
-          ) : isGemmaLoading ? (
-            <Text style={{ color: '#34C759', marginBottom: 8, fontWeight: '600' }}>🧠 Local AI is processing...</Text>
           ) : null}
           
-          {/* Ready States - Always show which AI is active */}
-          {!isOpenRouterLoading && !isGemmaLoading && !isInitializingGemma && (
+          {/* Ready States - Always show which AI mode is active */}
+          {!isOpenRouterLoading && (
             <>
-              {!isGemmaModelLoaded && !isOpenRouterOn ? (
-                <Text style={{ color: '#FF3B30', fontSize: 12, marginBottom: 8 }}>⚠️ Local AI model not ready</Text>
-              ) : isOpenRouterOn ? (
-                <Text style={{ color: '#007AFF', fontSize: 12, marginBottom: 8, fontWeight: '500' }}>🌐 Using OpenRouter AI</Text>
-              ) : isGemmaModelLoaded ? (
-                <Text style={{ color: '#007AFF', fontSize: 12, marginBottom: 8, fontWeight: '500' }}>🧠 Using Local AI</Text>
-              ) : null}
+              {isImageInputEnabled ? (
+                <Text style={{ color: '#007AFF', fontSize: 12, marginBottom: 8, fontWeight: '500' }}>🌐 OpenRouter AI (Images)</Text>
+              ) : (
+                <Text style={{ color: '#007AFF', fontSize: 12, marginBottom: 8, fontWeight: '500' }}>🌐 OpenRouter AI (Text Only)</Text>
+              )}
             </>
           )}
         </View>
@@ -964,11 +830,8 @@ export default function VideoCallScreen() {
     requestAndFetchLocation();
   }, []);
 
-  // Initialize Gemma model and auto-start speech recognition on component mount
+  // Auto-start speech recognition on component mount
   useEffect(() => {
-    // Initialize model when component mounts
-    initializeGemmaModel();
-
     // Auto-start speech recognition after a short delay
     const autoStartSpeech = async () => {
       try {
@@ -989,12 +852,8 @@ export default function VideoCallScreen() {
 
     autoStartSpeech();
 
-    // Cleanup function to release context when component unmounts
+    // Cleanup function when component unmounts
     return () => {
-      if (gemmaContext) {
-        console.log('Cleaning up Gemma context...');
-        gemmaContext.release().catch(console.error);
-      }
       // Stop speech recognition on cleanup
       try {
         stopSpeech();
@@ -1004,27 +863,8 @@ export default function VideoCallScreen() {
     };
   }, []);
 
-  // Additional cleanup effect to handle context changes
-  useEffect(() => {
-    return () => {
-      if (gemmaContext) {
-        gemmaContext.release().catch(console.error);
-      }
-    };
-  }, [gemmaContext]);
 
   const handleEndCall = async () => {
-    // Cleanup Gemma context before ending call
-    if (gemmaContext) {
-      try {
-        console.log('Releasing Gemma context on call end...');
-        await gemmaContext.release();
-        setGemmaContext(null);
-        setIsGemmaModelLoaded(false);
-      } catch (error) {
-        console.error('Error releasing Gemma context:', error);
-      }
-    }
     router.back();
   };
 
@@ -1115,8 +955,8 @@ export default function VideoCallScreen() {
     setIsQuestionToggleOn(!isQuestionToggleOn);
   };
 
-  const handleOpenRouterToggle = () => {
-    setIsOpenRouterOn(!isOpenRouterOn);
+  const handleImageInputToggle = () => {
+    setIsImageInputEnabled(!isImageInputEnabled);
   };
 
   const handleQuestionResponse = (response: 'yes' | 'no' | 'dont-know') => {
@@ -1130,7 +970,7 @@ export default function VideoCallScreen() {
     addUserMessage(responseText);
     
     // Trigger AI response to continue the conversation
-    const questionAiPromise = isOpenRouterOn ? runOpenRouterAPI(responseText) : runGemmaLocally(responseText);
+    const questionAiPromise = runOpenRouterAPI(responseText, isImageInputEnabled);
     
     questionAiPromise
       .then(res => {
@@ -1163,7 +1003,6 @@ export default function VideoCallScreen() {
         addAiMessage('Error processing your response.');
       })
       .finally(() => {
-        setIsGemmaLoading(false);
         setIsOpenRouterLoading(false);
       });
   };
@@ -1213,15 +1052,15 @@ export default function VideoCallScreen() {
           <TouchableOpacity
             style={[
               styles.headerToggle, 
-              isOpenRouterOn && styles.headerToggleActive,
+              isImageInputEnabled && styles.headerToggleActive,
               isOpenRouterLoading && { backgroundColor: 'rgba(52, 199, 89, 0.3)' }
             ]}
-            onPress={handleOpenRouterToggle}
+            onPress={handleImageInputToggle}
           >
             <MaterialIcons
-              name={isOpenRouterOn ? "visibility" : "visibility-off"}
+              name={isImageInputEnabled ? "visibility" : "visibility-off"}
               size={24}
-              color={isOpenRouterLoading ? "#FFD600" : isOpenRouterOn ? "#34C759" : "white"}
+              color={isOpenRouterLoading ? "#FFD600" : isImageInputEnabled ? "#34C759" : "white"}
             />
           </TouchableOpacity>
           <TouchableOpacity
