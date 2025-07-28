@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -275,6 +276,7 @@ export default function VideoCallScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const micPulseAnim = useRef(new Animated.Value(1)).current;
+  const chatScrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
 
   const {
@@ -351,12 +353,12 @@ export default function VideoCallScreen() {
       // Load the static logo asset
       const asset = Asset.fromModule(require('../assets/images/logo-with-text.png'));
       await asset.downloadAsync();
-      
+
       // Read the file as base64
       const base64 = await FileSystem.readAsStringAsync(asset.localUri!, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      
+
       return base64;
     } catch (error) {
       console.error('Error converting image to base64:', error);
@@ -368,7 +370,7 @@ export default function VideoCallScreen() {
   const runOpenRouterAPI = async (text: string, includeImage: boolean = true): Promise<string> => {
     try {
       setIsOpenRouterLoading(true);
-      
+
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error('OpenRouter API key not found');
@@ -376,11 +378,11 @@ export default function VideoCallScreen() {
 
       // Prepare message content based on image inclusion
       let messageContent;
-      
+
       if (includeImage) {
         // Get base64 image
         const imageBase64 = await convertImageToBase64();
-        
+
         messageContent = [
           {
             type: 'text',
@@ -459,6 +461,12 @@ export default function VideoCallScreen() {
     };
     setConversationHistory(prev => [...prev, message]);
     console.log('🔍 CONV DEBUG: Added user message:', content);
+
+    // Auto-scroll to bottom after adding message
+    setTimeout(() => {
+      chatScrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
     return message.id;
   }, []);
 
@@ -471,6 +479,12 @@ export default function VideoCallScreen() {
     };
     setConversationHistory(prev => [...prev, message]);
     console.log('🔍 CONV DEBUG: Added AI message:', content);
+
+    // Auto-scroll to bottom after adding message
+    setTimeout(() => {
+      chatScrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
     return message.id;
   }, []);
 
@@ -566,7 +580,7 @@ export default function VideoCallScreen() {
 
       // Use OpenRouter API for AI response
       const aiPromise = runOpenRouterAPI(newContent, isImageInputEnabled);
-      
+
       aiPromise
         .then(res => {
           console.log(`🔍 DEBUG [${timestamp}]: AI response received:`, res);
@@ -578,14 +592,14 @@ export default function VideoCallScreen() {
               // Handle tool call - show question UI AND add to chat history
               const question = parsedToolCall.toolCall.parameters.question;
               console.log(`🔍 TOOL CALL DEBUG [${timestamp}]: AI asked question:`, question);
-              
+
               // Add question to conversation history so it's visible in chat
               addAiMessage(question);
-              
+
               // Also trigger the question UI for user interaction
               setCurrentQuestion(question);
               setIsQuestionToggleOn(true);
-              
+
               clearSpeech();
               return;
             }
@@ -682,62 +696,77 @@ export default function VideoCallScreen() {
       <View style={styles.chatOverlay}>
         {/* Conversation History */}
         {conversationHistory.length > 0 ? (
-          <View style={{ maxHeight: 300 }}>
-            {conversationHistory.slice(-4).map((message) => (
+          <ScrollView
+            ref={chatScrollViewRef}
+            style={styles.chatScrollContainer}
+            contentContainerStyle={styles.chatContentContainer}
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => chatScrollViewRef.current?.scrollToEnd({ animated: true })}
+          >
+            {conversationHistory.map((message) => (
               <View
                 key={message.id}
                 style={[
-                  styles.chatBubble,
-                  {
-                    backgroundColor: message.type === 'user' ? '#007AFF' : '#222',
-                    marginTop: 5,
-                    marginBottom: 5,
-                    alignSelf: message.type === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: '85%'
-                  }
+                  styles.messageContainer,
+                  message.type === 'user' ? styles.userMessageContainer : styles.aiMessageContainer
                 ]}
               >
-                <Text style={[
-                  styles.chatText,
-                  { color: message.type === 'user' ? '#FFF' : '#FFD600', fontSize: 14 }
-                ]}>
-                  {message.content}
-                </Text>
+                <View
+                  style={[
+                    styles.chatBubble,
+                    message.type === 'user' ? styles.userBubble : styles.aiBubble
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chatText,
+                      message.type === 'user' ? styles.userText : styles.aiText
+                    ]}
+                  >
+                    {message.content}
+                  </Text>
+                </View>
               </View>
             ))}
-          </View>
+          </ScrollView>
         ) : (
           /* Welcome message when no conversation history */
-          <View style={[styles.chatBubble, { alignSelf: 'center' }]}>
-            <Text style={styles.chatText}>
-              Start speaking - I'm listening!
-            </Text>
+          <View style={styles.welcomeContainer}>
+            <View style={[styles.chatBubble, styles.welcomeBubble]}>
+              <Text style={styles.welcomeText}>
+                Start speaking - I'm listening!
+              </Text>
+            </View>
           </View>
         )}
 
-        {/* AI Service Status */}
-        <View style={{ marginTop: 10, alignItems: 'center' }}>
+      </View>
+    ) : null
+  );
+
+  // AI status overlay - positioned at top of video container (where location used to be)
+  const AIStatusOverlay = ({ isTranscriptionEnabled }: { isTranscriptionEnabled: boolean }) => (
+    isTranscriptionEnabled ? (
+      <View style={styles.aiStatusOverlay}>
+        <View style={styles.aiStatusIndicator}>
           {/* Processing States */}
           {isOpenRouterLoading ? (
-            <Text style={{ color: '#34C759', marginBottom: 8, fontWeight: '600' }}>🌐 OpenRouter AI is processing...</Text>
-          ) : null}
-          
-          {/* Ready States - Always show which AI mode is active */}
-          {!isOpenRouterLoading && (
-            <>
-              {isImageInputEnabled ? (
-                <Text style={{ color: '#007AFF', fontSize: 12, marginBottom: 8, fontWeight: '500' }}>🌐 OpenRouter AI (Images)</Text>
-              ) : (
-                <Text style={{ color: '#007AFF', fontSize: 12, marginBottom: 8, fontWeight: '500' }}>🌐 OpenRouter AI (Text Only)</Text>
-              )}
-            </>
+            <Text style={styles.processingText}>🌐 OpenRouter AI is processing...</Text>
+          ) : (
+            /* Ready States - Always show which AI mode is active */
+            <Text style={styles.readyText}>
+              {isImageInputEnabled
+                ? '🌐 OpenRouter AI (Images)'
+                : '🌐 OpenRouter AI (Text Only)'
+              }
+            </Text>
           )}
         </View>
       </View>
     ) : null
   );
 
-  // Simple speech status overlay - always center bottom of video
+  // Simple speech status overlay - positioned above chat status
   const SpeechStatusOverlay = ({ isTranscriptionEnabled }: { isTranscriptionEnabled: boolean }) => (
     isTranscriptionEnabled ? (
       <View style={styles.speechStatusOverlay}>
@@ -756,10 +785,6 @@ export default function VideoCallScreen() {
 
   // AllOverlaysProps type and AllOverlays component definition here
   type AllOverlaysProps = {
-    isLocationOn: boolean;
-    isLocationLoading: boolean;
-    currentLocation: Location.LocationObject | null;
-    rotateAnim: Animated.Value;
     isTranscriptionEnabled: boolean;
     isQuestionToggleOn: boolean;
     slideAnim: Animated.Value;
@@ -769,12 +794,7 @@ export default function VideoCallScreen() {
 
   const AllOverlays = (props: AllOverlaysProps) => (
     <>
-      <LocationOverlay
-        isLocationOn={props.isLocationOn}
-        isLocationLoading={props.isLocationLoading}
-        currentLocation={props.currentLocation}
-        rotateAnim={props.rotateAnim}
-      />
+      <AIStatusOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
       <ChatOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
       <SpeechStatusOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
       <QuestionPopover
@@ -962,30 +982,30 @@ export default function VideoCallScreen() {
   const handleQuestionResponse = (response: 'yes' | 'no' | 'dont-know') => {
     console.log('Question response:', response);
     setIsQuestionToggleOn(false);
-    
+
     // Send the user's response back to the AI
     const responseText = response === 'yes' ? 'Yes' : response === 'no' ? 'No' : "I can't tell";
-    
+
     // Add user response to conversation history
     addUserMessage(responseText);
-    
+
     // Trigger AI response to continue the conversation
     const questionAiPromise = runOpenRouterAPI(responseText, isImageInputEnabled);
-    
+
     questionAiPromise
       .then(res => {
         console.log('🔍 QUESTION RESPONSE DEBUG: AI response to user answer:', res);
-        
+
         // Check if response is another tool call
         try {
           const parsedToolCall = JSON.parse(res);
           if (parsedToolCall.toolCall && parsedToolCall.toolCall.name === 'ask_question') {
             const question = parsedToolCall.toolCall.parameters.question;
             console.log('🔍 QUESTION RESPONSE DEBUG: AI asked follow-up question:', question);
-            
+
             // Add follow-up question to conversation history
             addAiMessage(question);
-            
+
             // Also trigger the question UI for user interaction
             setCurrentQuestion(question);
             setIsQuestionToggleOn(true);
@@ -994,7 +1014,7 @@ export default function VideoCallScreen() {
         } catch (error) {
           // Not a tool call, handle as regular response
         }
-        
+
         // Handle regular AI response
         addAiMessage(res);
       })
@@ -1041,7 +1061,34 @@ export default function VideoCallScreen() {
 
       {/* Header */}
       <View style={[styles.headerArea, { paddingTop: insets.top }]}>
-        <View style={styles.leftControls} />
+        <View style={styles.leftControls}>
+          {isLocationOn && (
+            <View style={styles.headerLocationContainer}>
+              {isLocationLoading ? (
+                <Animated.View style={{
+                  transform: [{
+                    rotate: rotateAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '360deg'],
+                    }),
+                  }],
+                }}>
+                  <MaterialIcons name="hourglass-empty" size={14} color="#FF9F0A" />
+                </Animated.View>
+              ) : (
+                <MaterialIcons name="location-on" size={14} color="#34C759" />
+              )}
+              <Text style={styles.headerLocationText}>
+                {isLocationLoading
+                  ? "Getting..."
+                  : currentLocation
+                    ? `${currentLocation.coords.latitude.toFixed(2)}, ${currentLocation.coords.longitude.toFixed(2)}`
+                    : "Location"
+                }
+              </Text>
+            </View>
+          )}
+        </View>
         <View style={styles.liveIndicator}>
           <View style={styles.liveContainer}>
             <View style={styles.liveDot} />
@@ -1051,7 +1098,7 @@ export default function VideoCallScreen() {
         <View style={styles.rightControls}>
           <TouchableOpacity
             style={[
-              styles.headerToggle, 
+              styles.headerToggle,
               isImageInputEnabled && styles.headerToggleActive,
               isOpenRouterLoading && { backgroundColor: 'rgba(52, 199, 89, 0.3)' }
             ]}
@@ -1107,10 +1154,6 @@ export default function VideoCallScreen() {
 
         {/* All Overlays */}
         <AllOverlays
-          isLocationOn={isLocationOn}
-          isLocationLoading={isLocationLoading}
-          currentLocation={currentLocation}
-          rotateAnim={rotateAnim}
           isTranscriptionEnabled={isTranscriptionEnabled}
           isQuestionToggleOn={isQuestionToggleOn}
           slideAnim={slideAnim}
@@ -1218,6 +1261,22 @@ const styles = StyleSheet.create({
   },
   leftControls: {
     width: 142, // Same width as rightControls (44px per button + 10px margin * 3 buttons = 142px)
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  headerLocationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  headerLocationText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '500',
+    marginLeft: 4,
   },
   liveIndicator: {
     alignItems: 'center',
@@ -1290,32 +1349,124 @@ const styles = StyleSheet.create({
   },
   chatOverlay: {
     position: 'absolute',
-    top: 50,
-    left: 20,
-    right: 20,
+    top: 40, // Add more top space to avoid overlap with AI status
+    left: 15,
+    right: 15,
+    bottom: 15,
     zIndex: 5,
     flexDirection: 'column',
-    alignItems: 'stretch',
+  },
+  chatScrollContainer: {
+    flex: 1,
+    // Remove maxHeight to allow full container usage
+  },
+  chatContentContainer: {
+    paddingVertical: 10,
+    flexGrow: 1,
+  },
+  messageContainer: {
+    marginVertical: 3,
+    paddingHorizontal: 4,
+  },
+  userMessageContainer: {
+    alignItems: 'flex-end',
+  },
+  aiMessageContainer: {
+    alignItems: 'flex-start',
+  },
+  userBubble: {
+    backgroundColor: '#007AFF',
+    maxWidth: '80%',
+    borderBottomRightRadius: 4, // Subtle message tail effect
+  },
+  aiBubble: {
+    backgroundColor: 'rgba(34, 34, 34, 0.95)',
+    maxWidth: '80%',
+    borderBottomLeftRadius: 4, // Subtle message tail effect
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  userText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  aiText: {
+    color: '#FFD600',
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  welcomeContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  welcomeBubble: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    alignSelf: 'center',
+  },
+  welcomeText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  processingText: {
+    color: '#34C759',
+    marginBottom: 8,
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  readyText: {
+    color: '#007AFF',
+    fontSize: 12,
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  aiStatusOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingTop: 10,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  aiStatusIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 0,
+    alignSelf: 'center',
   },
   speechStatusOverlay: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 20, // Move back to original bottom position
     left: 0,
     right: 0,
     alignItems: 'center',
-    zIndex: 10,
+    zIndex: 7,
   },
   chatBubble: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 20,
-    padding: 16,
-    maxWidth: '85%',
-    alignSelf: 'center',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
   },
   chatText: {
-    color: 'white',
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400',
   },
   questionOverlay: {
     position: 'absolute',
@@ -1453,29 +1604,6 @@ const styles = StyleSheet.create({
     width: '60%',
     backgroundColor: 'white',
     borderRadius: 2,
-  },
-  locationOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    padding: 10,
-    alignItems: 'center',
-  },
-  locationIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 15,
-    padding: 8,
-    alignSelf: 'center',
-  },
-  locationText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
   },
   voiceOverlay: {
     position: 'absolute',
