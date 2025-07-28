@@ -40,89 +40,14 @@ export function useConversation() {
     return message.id;
   }, [scrollToBottom]);
 
-  const handleSendTextMessage = useCallback(async (
-    isImageInputEnabled: boolean,
-    onQuestionReceived?: (question: string) => void
-  ) => {
-    const message = textInput.trim();
-    if (!message || isApiLoading) return;
-
-    setTextInput('');
-    addUserMessage(message);
-
-    try {
-      setIsApiLoading(true);
-      const response = await ApiService.callOpenRouterAPI(message, isImageInputEnabled);
-      
-      // Check if response is a tool call
-      try {
-        const parsedToolCall = JSON.parse(response);
-        if (parsedToolCall.toolCall && parsedToolCall.toolCall.name === 'ask_question') {
-          const question = parsedToolCall.toolCall.parameters.question;
-          addAiMessage(question);
-          if (onQuestionReceived) {
-            onQuestionReceived(question);
-          }
-          return;
-        }
-      } catch (error) {
-        // Not a tool call, handle as regular response
-      }
-
-      addAiMessage(response);
-    } catch (error) {
-      console.error('Error sending text message:', error);
-      addAiMessage('Error processing your message.');
-    } finally {
-      setIsApiLoading(false);
-    }
-  }, [textInput, isApiLoading, addUserMessage, addAiMessage]);
-
-  const handleQuestionResponse = useCallback(async (
-    response: 'yes' | 'no' | 'dont-know',
-    isImageInputEnabled: boolean,
-    onQuestionReceived?: (question: string) => void
-  ) => {
-    const responseText = response === 'yes' ? 'Yes' : response === 'no' ? 'No' : "I can't tell";
-    addUserMessage(responseText);
-
-    try {
-      setIsApiLoading(true);
-      const aiResponse = await ApiService.callOpenRouterAPI(responseText, isImageInputEnabled);
-
-      // Check if response is another tool call
-      try {
-        const parsedToolCall = JSON.parse(aiResponse);
-        if (parsedToolCall.toolCall && parsedToolCall.toolCall.name === 'ask_question') {
-          const question = parsedToolCall.toolCall.parameters.question;
-          addAiMessage(question);
-          if (onQuestionReceived) {
-            onQuestionReceived(question);
-          }
-          return;
-        }
-      } catch (error) {
-        // Not a tool call, handle as regular response
-      }
-
-      addAiMessage(aiResponse);
-    } catch (error) {
-      console.error('Error processing question response:', error);
-      addAiMessage('Error processing your response.');
-    } finally {
-      setIsApiLoading(false);
-    }
-  }, [addUserMessage, addAiMessage]);
-
   return {
     conversationHistory,
     isApiLoading,
+    setIsApiLoading,
     textInput,
     setTextInput,
     chatScrollViewRef,
     addUserMessage,
     addAiMessage,
-    handleSendTextMessage,
-    handleQuestionResponse,
   };
 }

@@ -21,6 +21,7 @@ import { useToggleFeature } from './hooks/useToggleFeature';
 import Header from './components/Header';
 import VideoFeed from './components/VideoFeed';
 import VideoCallControls from './components/VideoCallControls';
+import apiService from './services/apiService';
 
 export default function VideoCallScreen() {
   const router = useRouter();
@@ -41,11 +42,12 @@ export default function VideoCallScreen() {
   const {
     conversationHistory,
     isApiLoading,
+    setIsApiLoading,
     textInput,
     setTextInput,
     chatScrollViewRef,
-    handleSendTextMessage,
-    handleQuestionResponse,
+    addUserMessage,
+    addAiMessage,
   } = useConversation();
 
   const {
@@ -95,21 +97,60 @@ export default function VideoCallScreen() {
     handleVoiceToggle(hasAudio, requestAudioPermission);
   };
 
-  const handleSendMessage = () => {
-    handleSendTextMessage(isImageInputEnabled, (question: string) => {
-      setCurrentQuestion(question);
-      setIsQuestionToggleOn(true);
-    });
+  const handleSendMessage = async () => {
+    const message = textInput.trim();
+    if (!message) return;
+
+    addUserMessage(message);
+    setTextInput('');
+
+    try {
+      setIsApiLoading(true);
+      let response = '';
+
+      if (isImageInputEnabled && cameraRef.current) {
+        // Capture a single frame if vision is enabled
+        const photo = await cameraRef.current.takePictureAsync({ base64: true });
+        
+        if (photo && photo.base64) {
+          console.log(`🔍 CONV DEBUG: Sending message with 1 image frame.`);
+          response = await apiService.callOpenRouterVisionAPI([photo.base64], message);
+        } else {
+          // Fallback to text-only if frame capture fails
+          response = await apiService.callOpenRouterAPI(message);
+        }
+
+      } else {
+        // Send text-only message
+        response = await apiService.callOpenRouterAPI(message);
+      }
+      
+      addAiMessage(response);
+      console.log('🔍 CONV DEBUG: Added AI response:', response);
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      addAiMessage('Sorry, I encountered an error.');
+    } finally {
+      setIsApiLoading(false);
+    }
   };
 
-  const handleQuestionResponseWrapper = (response: 'yes' | 'no' | 'dont-know') => {
-    console.log('Question response:', response);
+  const handleQuestionResponseWrapper = async (response: 'yes' | 'no' | 'dont-know') => {
+    const responseText = response === 'yes' ? 'Yes' : response === 'no' ? 'No' : "I can't tell";
+    addUserMessage(responseText);
     setIsQuestionToggleOn(false);
-    
-    handleQuestionResponse(response, isImageInputEnabled, (question: string) => {
-      setCurrentQuestion(question);
-      setIsQuestionToggleOn(true);
-    });
+
+    try {
+      setIsApiLoading(true);
+      const aiResponse = await apiService.callOpenRouterAPI(responseText);
+      addAiMessage(aiResponse);
+    } catch (error) {
+      console.error('Error processing question response:', error);
+      addAiMessage('Error processing your response.');
+    } finally {
+      setIsApiLoading(false);
+    }
   };
 
   // Handle permission denied case
