@@ -7,13 +7,12 @@
     "icon": "./assets/images/icon.png",
     "scheme": "relayresponderapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.slyracoon23.relayresponderapp",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "This app needs access to the microphone to convert your speech to text for creating reports and responding to emergencies.",
-        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your voice into text for creating incident reports and emergency communications."
+        "NSMicrophoneUsageDescription": "This app needs access to the microphone for audio recording features."
       }
     },
     "android": {
@@ -39,14 +38,6 @@
           "resizeMode": "contain",
           "backgroundColor": "#D93636"
         }
-      ],
-      [
-        "expo-speech-recognition",
-        {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone for speech recognition.",
-          "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to use speech recognition.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
-        }
       ]
     ],
     "experiments": {
@@ -58,9 +49,7 @@
         "projectId": "bb716e6f-12c3-4027-8469-842404ef30f5"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/bb716e6f-12c3-4027-8469-842404ef30f5"
     }

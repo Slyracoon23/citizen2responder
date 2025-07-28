@@ -11,12 +11,11 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSpeechToText } from '../hooks/useSpeechToText';
-import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 import * as FileSystem from 'expo-file-system';
 import { Asset } from 'expo-asset';
 
@@ -279,50 +278,9 @@ export default function VideoCallScreen() {
   const chatScrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
 
-  const {
-    transcript,
-    interimTranscript,
-    errorMessage: sttError,
-    recognizing,
-    recognitionState,
-    stop: stopSpeech,
-    clear: clearSpeech,
-    permissionStatus: sttPermissionStatus,
-    checkPermissions: checkSttPermissions,
-    checkAndRequestPermissions: checkAndRequestSttPermissions,
-  } = useSpeechToText();
+  // Speech recognition removed for Expo Go compatibility
 
-  // Custom start function with continuous recognition
-  const startContinuousSpeech = async () => {
-    try {
-      const isAvailable = ExpoSpeechRecognitionModule.isRecognitionAvailable();
-      if (!isAvailable) {
-        console.error('Speech recognition is not available on this device');
-        return false;
-      }
-
-      const hasPermissions = await checkAndRequestSttPermissions();
-      if (!hasPermissions) {
-        console.error('Speech recognition permissions not granted');
-        return false;
-      }
-
-      console.log('Starting continuous speech recognition...');
-      ExpoSpeechRecognitionModule.start({
-        lang: 'en-US',
-        interimResults: true,
-        continuous: true, // Enable continuous recognition
-        maxAlternatives: 1,
-        requiresOnDeviceRecognition: false,
-        addsPunctuation: true,
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Failed to start continuous speech recognition:', error);
-      return false;
-    }
-  };
+  // Speech recognition functions removed for Expo Go compatibility
 
   // Removed VAD - using only speech-to-text for voice detection
 
@@ -336,13 +294,11 @@ export default function VideoCallScreen() {
 
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
+  const [textInput, setTextInput] = useState('');
   const prevTranscript = useRef('');
   const lastProcessedLength = useRef(0);
 
-  // Speech end detection
-  const speechEndTimer = useRef<NodeJS.Timeout | null>(null);
-  const lastInterimTime = useRef<number>(0);
-  const speechEndTimeout = 1500; // 1.5 seconds of silence before triggering AI
+  // Speech functionality removed for Expo Go compatibility
 
   // OpenRouter state
   const [isOpenRouterLoading, setIsOpenRouterLoading] = useState(false);
@@ -447,13 +403,7 @@ export default function VideoCallScreen() {
 
 
 
-  // Helper function to clear speech end timer
-  const clearSpeechEndTimer = useCallback(() => {
-    if (speechEndTimer.current) {
-      clearTimeout(speechEndTimer.current);
-      speechEndTimer.current = null;
-    }
-  }, []);
+  // Speech processing functions removed for Expo Go compatibility
 
   // Conversation history management functions
   const addUserMessage = useCallback((content: string) => {
@@ -492,207 +442,51 @@ export default function VideoCallScreen() {
     return message.id;
   }, []);
 
+  const handleSendTextMessage = useCallback(async () => {
+    const message = textInput.trim();
+    if (!message || isOpenRouterLoading) return;
 
-  // Position-based diffing to extract new speech content
-  const getNewSpeechContent = useCallback((fullTranscript: string) => {
-    const timestamp = new Date().toISOString();
-    console.log(`🔍 DIFF DEBUG [${timestamp}]: fullTranscript:`, `"${fullTranscript}"`);
-    console.log(`🔍 DIFF DEBUG [${timestamp}]: lastProcessedLength:`, lastProcessedLength.current);
-    console.log(`🔍 DIFF DEBUG [${timestamp}]: prevTranscript:`, `"${prevTranscript.current}"`);
+    // Clear input immediately
+    setTextInput('');
 
-    // Normalize the transcript
-    const normalizedTranscript = fullTranscript.replace(/\s+/g, ' ').trim();
-
-    // Simple position-based approach
-    let newContent = '';
-
-    if (lastProcessedLength.current === 0) {
-      // First time processing any transcript
-      newContent = normalizedTranscript;
-      console.log(`🔍 DIFF DEBUG [${timestamp}]: First transcript case`);
-    } else if (normalizedTranscript.length > lastProcessedLength.current) {
-      // Extract content after the last processed position
-      newContent = normalizedTranscript.slice(lastProcessedLength.current).trim();
-      console.log(`🔍 DIFF DEBUG [${timestamp}]: Position-based extraction from ${lastProcessedLength.current}`);
-    } else if (normalizedTranscript === prevTranscript.current) {
-      // Exact same as previous - no new content
-      newContent = '';
-      console.log(`🔍 DIFF DEBUG [${timestamp}]: Identical to previous transcript`);
-    } else {
-      // Different transcript but not longer - treat as new (speech recognition restart)
-      newContent = normalizedTranscript;
-      console.log(`🔍 DIFF DEBUG [${timestamp}]: Different transcript - treating as new`);
-      // Reset the position counter for new speech session
-      lastProcessedLength.current = 0;
-    }
-
-    console.log(`🔍 DIFF DEBUG [${timestamp}]: Final extracted newContent:`, `"${newContent}"`);
-    return newContent;
-  }, []);
-
-  // Helper function to trigger AI response with smart diffing
-  const triggerAIResponse = useCallback((finalTranscript: string) => {
-    const timestamp = new Date().toISOString();
-    console.log(`🔍 DEBUG [${timestamp}]: triggerAIResponse called with:`, finalTranscript);
-
-    // Prevent multiple simultaneous processing
-    if (isProcessingTranscript) {
-      console.log(`❌ DEBUG [${timestamp}]: Already processing transcript, skipping`);
-      return;
-    }
-
-    setIsProcessingTranscript(true);
+    // Add user message to conversation history
+    addUserMessage(message);
 
     try {
-      // Use position-based diffing to extract only new content
-      const newContent = getNewSpeechContent(finalTranscript);
-
-      // Only proceed if we have meaningful new content
-      if (!newContent || newContent.length < 2) {
-        console.log(`❌ DEBUG [${timestamp}]: No meaningful new content to process:`, newContent);
-        return;
-      }
-
-      // Check if this exact content was already processed
-      if (newContent === prevTranscript.current) {
-        console.log(`❌ DEBUG [${timestamp}]: Content already processed:`, newContent);
-        return;
-      }
-
-      // Additional safeguard: check if this content already exists in conversation history
-      const existingUserMessage = conversationHistory
-        .filter(msg => msg.type === 'user')
-        .find(msg => msg.content.trim() === newContent.trim());
-
-      if (existingUserMessage) {
-        console.log(`❌ DEBUG [${timestamp}]: Content already exists in conversation history:`, newContent);
-        return;
-      }
-
-      console.log(`✅ [${timestamp}] Triggering AI response for NEW content:`, newContent);
-
-      // Update tracking variables IMMEDIATELY to prevent race conditions
-      const normalizedTranscript = finalTranscript.replace(/\s+/g, ' ').trim();
-      lastProcessedLength.current = normalizedTranscript.length;
-      prevTranscript.current = newContent;
-
-      // Clear speech end timer
-      clearSpeechEndTimer();
-
-      // Add user message to conversation history
-      addUserMessage(newContent);
-
-      // Use OpenRouter API for AI response
-      const aiPromise = runOpenRouterAPI(newContent, isImageInputEnabled);
-
-      aiPromise
-        .then(res => {
-          console.log(`🔍 DEBUG [${timestamp}]: AI response received:`, res);
-
-          // Check if response is a tool call
-          try {
-            const parsedToolCall = JSON.parse(res);
-            if (parsedToolCall.toolCall && parsedToolCall.toolCall.name === 'ask_question') {
-              // Handle tool call - show question UI AND add to chat history
-              const question = parsedToolCall.toolCall.parameters.question;
-              console.log(`🔍 TOOL CALL DEBUG [${timestamp}]: AI asked question:`, question);
-
-              // Add question to conversation history so it's visible in chat
-              addAiMessage(question);
-
-              // Also trigger the question UI for user interaction
-              setCurrentQuestion(question);
-              setIsQuestionToggleOn(true);
-
-              clearSpeech();
-              return;
-            }
-          } catch (error) {
-            // Not a tool call, handle as regular response
-          }
-
-          // Handle regular AI response
-          addAiMessage(res);
-
-          // Clear transcript state (the history is preserved in conversationHistory)
-          clearSpeech();
-
-          console.log(`🔍 DEBUG [${timestamp}]: Response added to history, speech cleared`);
-
-          // Auto-clear after showing for 3 seconds (history remains)
-          setTimeout(() => {
-            console.log(`🔍 DEBUG [${timestamp}]: Ready for next conversation input`);
-            // Speech recognition continues automatically (continuous mode)
-          }, 3000);
-        })
-        .catch(error => {
-          console.log(`🔍 DEBUG [${timestamp}]: AI error occurred:`, error);
-          addAiMessage('Error running OpenRouter API.');
-
-          // Clear transcript state even on error
-          clearSpeech();
-
-          // Auto-clear error message
-          setTimeout(() => {
-            console.log(`🔍 DEBUG [${timestamp}]: Ready for next input after error`);
-          }, 3000);
-        })
-        .finally(() => {
-          setIsOpenRouterLoading(false);
-          setIsProcessingTranscript(false);
-        });
-
-    } catch (error) {
-      console.error(`🔍 ERROR [${timestamp}]: Exception in triggerAIResponse:`, error);
-      setIsProcessingTranscript(false);
-    }
-
-  }, [getNewSpeechContent, clearSpeechEndTimer, addUserMessage, addAiMessage, runOpenRouterAPI, clearSpeech]);
-
-  // Effect: Monitor interim transcript changes to detect speech activity
-  useEffect(() => {
-    console.log('🔍 DEBUG: Speech monitoring effect triggered');
-    console.log('🔍 DEBUG: interimTranscript:', interimTranscript);
-    console.log('🔍 DEBUG: transcript:', transcript);
-    console.log('🔍 DEBUG: prevTranscript.current:', prevTranscript.current);
-
-    const now = Date.now();
-
-    if (interimTranscript && interimTranscript.trim()) {
-      // User is actively speaking - reset timer
-      console.log('🎤 Speech activity detected:', interimTranscript);
-      lastInterimTime.current = now;
-      clearSpeechEndTimer();
-
-      // Start new timer for speech end detection
-      speechEndTimer.current = setTimeout(() => {
-        console.log('⏰ Speech ended, checking for final transcript');
-        const currentTranscript = transcript || interimTranscript;
-        console.log('🔍 DEBUG: currentTranscript for AI trigger:', currentTranscript);
-        if (currentTranscript && currentTranscript.trim()) {
-          triggerAIResponse(currentTranscript);
+      // Send to OpenRouter API
+      const response = await runOpenRouterAPI(message, isImageInputEnabled);
+      
+      // Check if response is a tool call
+      try {
+        const parsedToolCall = JSON.parse(response);
+        if (parsedToolCall.toolCall && parsedToolCall.toolCall.name === 'ask_question') {
+          const question = parsedToolCall.toolCall.parameters.question;
+          
+          // Add question to conversation history
+          addAiMessage(question);
+          
+          // Show question UI
+          setCurrentQuestion(question);
+          setIsQuestionToggleOn(true);
+          return;
         }
-      }, speechEndTimeout);
-    } else if (transcript && transcript.trim() && !interimTranscript) {
-      // We have final transcript but no interim (speech likely ended)
-      console.log('📝 Final transcript without interim, starting end timer');
-      console.log('🔍 DEBUG: Final transcript value:', transcript);
-      clearSpeechEndTimer();
+      } catch (error) {
+        // Not a tool call, handle as regular response
+      }
 
-      speechEndTimer.current = setTimeout(() => {
-        console.log('⏰ Speech end timeout reached');
-        console.log('🔍 DEBUG: About to trigger AI with transcript:', transcript);
-        triggerAIResponse(transcript);
-      }, speechEndTimeout);
+      // Handle regular AI response
+      addAiMessage(response);
+    } catch (error) {
+      console.error('Error sending text message:', error);
+      addAiMessage('Error processing your message.');
     }
-  }, [interimTranscript, transcript, triggerAIResponse, clearSpeechEndTimer]);
+  }, [textInput, isOpenRouterLoading, addUserMessage, runOpenRouterAPI, isImageInputEnabled, addAiMessage]);
 
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      clearSpeechEndTimer();
-    };
-  }, [clearSpeechEndTimer]);
+  // Speech processing functions removed for Expo Go compatibility
+
+  // Speech processing functions removed for Expo Go compatibility
+
+  // Speech monitoring effects removed for Expo Go compatibility
 
   // Move ChatOverlay definition here so it has access to the above variables
   const ChatOverlay = ({ isTranscriptionEnabled }: { isTranscriptionEnabled: boolean }) => (
@@ -738,11 +532,39 @@ export default function VideoCallScreen() {
           <View style={styles.welcomeContainer}>
             <View style={[styles.chatBubble, styles.welcomeBubble]}>
               <Text style={styles.welcomeText}>
-                Start speaking - I'm listening!
+                Type a message to get started!
               </Text>
             </View>
           </View>
         )}
+
+        {/* Text Input Area */}
+        <View style={styles.textInputContainer}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Type your message..."
+            placeholderTextColor="#888"
+            value={textInput}
+            onChangeText={setTextInput}
+            multiline
+            maxLength={500}
+            editable={!isOpenRouterLoading}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!textInput.trim() || isOpenRouterLoading) && styles.sendButtonDisabled
+            ]}
+            onPress={handleSendTextMessage}
+            disabled={!textInput.trim() || isOpenRouterLoading}
+          >
+            {isOpenRouterLoading ? (
+              <MaterialIcons name="hourglass-empty" size={20} color="#fff" />
+            ) : (
+              <MaterialIcons name="send" size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
+        </View>
 
       </View>
     ) : null
@@ -770,22 +592,7 @@ export default function VideoCallScreen() {
     ) : null
   );
 
-  // Simple speech status overlay - positioned above chat status
-  const SpeechStatusOverlay = ({ isTranscriptionEnabled }: { isTranscriptionEnabled: boolean }) => (
-    isTranscriptionEnabled ? (
-      <View style={styles.speechStatusOverlay}>
-        <Text style={{ color: interimTranscript ? '#FF9F0A' : (recognizing ? '#34C759' : '#8E8E93'), fontSize: 12, fontWeight: '500', backgroundColor: 'rgba(0, 0, 0, 0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 }}>
-          {interimTranscript ? 'Voice Detected!' :
-            recognitionState === 'starting' ? 'Starting...' :
-              recognitionState === 'recognizing' ? 'Listening...' :
-                recognitionState === 'stopping' ? 'Stopping...' : 'Initializing...'}
-        </Text>
-        {sttError ? (
-          <Text style={{ color: '#FF3B30', marginTop: 8, textAlign: 'center', fontSize: 11 }}>{sttError}</Text>
-        ) : null}
-      </View>
-    ) : null
-  );
+  // Speech status overlay removed for Expo Go compatibility
 
   // AllOverlaysProps type and AllOverlays component definition here
   type AllOverlaysProps = {
@@ -800,7 +607,6 @@ export default function VideoCallScreen() {
     <>
       <AIStatusOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
       <ChatOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
-      <SpeechStatusOverlay isTranscriptionEnabled={props.isTranscriptionEnabled} />
       <QuestionPopover
         isQuestionToggleOn={props.isQuestionToggleOn}
         slideAnim={props.slideAnim}
@@ -854,38 +660,7 @@ export default function VideoCallScreen() {
     requestAndFetchLocation();
   }, []);
 
-  // Auto-start speech recognition on component mount
-  useEffect(() => {
-    // Auto-start speech recognition after a short delay
-    const autoStartSpeech = async () => {
-      try {
-        // Wait a bit for component to fully mount and permissions to be checked
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        console.log('Auto-starting continuous speech recognition...');
-        const success = await startContinuousSpeech();
-        if (success) {
-          console.log('Continuous speech recognition auto-started successfully');
-        } else {
-          console.log('Failed to auto-start continuous speech recognition');
-        }
-      } catch (error) {
-        console.error('Error auto-starting speech recognition:', error);
-      }
-    };
-
-    autoStartSpeech();
-
-    // Cleanup function when component unmounts
-    return () => {
-      // Stop speech recognition on cleanup
-      try {
-        stopSpeech();
-      } catch (error) {
-        console.error('Error stopping speech recognition on cleanup:', error);
-      }
-    };
-  }, []);
+  // Auto-start speech recognition removed for Expo Go compatibility
 
 
   const handleEndCall = async () => {
@@ -1631,5 +1406,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     marginLeft: 4,
+  },
+  textInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 10,
+    gap: 10,
+  },
+  textInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+    maxHeight: 80,
+    minHeight: 20,
+    paddingVertical: 0,
+  },
+  sendButton: {
+    backgroundColor: '#007AFF',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#666',
   },
 }); 
