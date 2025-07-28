@@ -56,3 +56,91 @@ export const getSlideInterpolation = (
     outputRange: [fromValue, toValue],
   });
 };
+
+// Button-specific animations
+export const createScaleAnimation = (
+  animatedValue: Animated.Value, 
+  toValue: number, 
+  duration: number = 150
+) => {
+  return Animated.timing(animatedValue, {
+    toValue,
+    duration,
+    useNativeDriver: true,
+  });
+};
+
+export const createBounceAnimation = (
+  animatedValue: Animated.Value, 
+  toValue: number, 
+  duration: number = 300
+) => {
+  return Animated.spring(animatedValue, {
+    toValue,
+    tension: 300,
+    friction: 10,
+    useNativeDriver: true,
+  });
+};
+
+export const createPressAnimation = (animatedValue: Animated.Value) => {
+  return Animated.timing(animatedValue, {
+    toValue: 0.9,
+    duration: 150,
+    useNativeDriver: true,
+  });
+};
+
+export const createReleaseAnimation = (animatedValue: Animated.Value) => {
+  return Animated.spring(animatedValue, {
+    toValue: 1,
+    tension: 300,
+    friction: 10,
+    useNativeDriver: true,
+  });
+};
+
+export const createRecordingPulseAnimation = (animatedValue: Animated.Value) => {
+  return Animated.loop(
+    Animated.sequence([
+      Animated.timing(animatedValue, {
+        toValue: 1.05,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ])
+  );
+};
+
+export const createGlowAnimation = (animatedValue: Animated.Value) => {
+  return Animated.loop(
+    Animated.sequence([
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animatedValue, {
+        toValue: 0.3,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ])
+  );
+};
+
+export const getScaleInterpolation = (animatedValue: Animated.Value) => {
+  return animatedValue;
+};
+
+export const getGlowOpacityInterpolation = (animatedValue: Animated.Value) => {
+  return animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 1],
+  });
+};

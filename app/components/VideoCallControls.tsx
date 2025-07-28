@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSttButtonAnimations } from '../hooks/useSttButtonAnimations';
 import type { RecordingState } from '../hooks/useSpeechToText';
 
 interface ToggleButtonProps {
@@ -82,16 +83,34 @@ const SttButton = ({
   onPressOut,
   pulseAnim
 }: SttButtonProps) => {
-  const getButtonStyle = () => {
+  const {
+    animatePress,
+    animateRelease,
+    startRecordingAnimation,
+    stopRecordingAnimation,
+    getButtonStyle: getAnimatedButtonStyle,
+    getGlowStyle,
+  } = useSttButtonAnimations();
+
+  // Handle recording state changes
+  useEffect(() => {
+    if (recordingState === 'recording') {
+      startRecordingAnimation();
+    } else if (recordingState === 'idle' || recordingState === 'processing') {
+      stopRecordingAnimation();
+    }
+  }, [recordingState, startRecordingAnimation, stopRecordingAnimation]);
+
+  const getButtonBackgroundStyle = () => {
     switch (recordingState) {
       case 'recording':
-        return [styles.buttonBackground, styles.recordingButton];
+        return [styles.sttButtonBackground, styles.recordingButton];
       case 'processing':
-        return [styles.buttonBackground, styles.processingButton];
+        return [styles.sttButtonBackground, styles.processingButton];
       case 'error':
-        return [styles.buttonBackground, styles.errorButton];
+        return [styles.sttButtonBackground, styles.errorButton];
       default:
-        return styles.buttonBackground;
+        return styles.sttButtonBackground;
     }
   };
 
@@ -136,49 +155,70 @@ const SttButton = ({
 
   const isDisabled = recordingState === 'processing';
 
+  const handlePressIn = () => {
+    if (!isDisabled) {
+      animatePress();
+      onPressIn();
+    }
+  };
+
+  const handlePressOut = () => {
+    if (!isDisabled) {
+      animateRelease();
+      onPressOut();
+    }
+  };
+
   return (
-    <TouchableOpacity
-      style={styles.controlButton}
-      onPressIn={isDisabled ? undefined : onPressIn}
-      onPressOut={isDisabled ? undefined : onPressOut}
-      disabled={isDisabled}
-    >
-      <View style={getButtonStyle()}>
-        {recordingState === 'recording' && pulseAnim ? (
-          <Animated.View style={{
-            transform: [{ scale: pulseAnim }],
-          }}>
+    <View style={styles.sttControlButton}>
+      {/* Glow effect for recording state */}
+      {recordingState === 'recording' && (
+        <Animated.View style={[styles.glowEffect, getGlowStyle()]} />
+      )}
+      
+      <TouchableOpacity
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={isDisabled}
+        activeOpacity={0.8}
+        style={styles.sttTouchable}
+      >
+        <Animated.View style={[
+          getButtonBackgroundStyle(),
+          getAnimatedButtonStyle(recordingState)
+        ]}>
+          {recordingState === 'processing' && pulseAnim ? (
+            <Animated.View style={{
+              transform: [{
+                rotate: pulseAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '360deg'],
+                }),
+              }],
+            }}>
+              <MaterialIcons
+                name={getIcon()}
+                size={28}
+                color={getIconColor()}
+              />
+            </Animated.View>
+          ) : (
             <MaterialIcons
               name={getIcon()}
-              size={24}
+              size={28}
               color={getIconColor()}
             />
-          </Animated.View>
-        ) : recordingState === 'processing' ? (
-          <Animated.View style={{
-            transform: [{
-              rotate: pulseAnim?.interpolate({
-                inputRange: [0, 1],
-                outputRange: ['0deg', '360deg'],
-              }) || '0deg',
-            }],
-          }}>
-            <MaterialIcons
-              name={getIcon()}
-              size={24}
-              color={getIconColor()}
-            />
-          </Animated.View>
-        ) : (
-          <MaterialIcons
-            name={getIcon()}
-            size={24}
-            color={getIconColor()}
-          />
-        )}
-      </View>
-      <Text style={styles.buttonLabel}>{getLabelText()}</Text>
-    </TouchableOpacity>
+          )}
+        </Animated.View>
+      </TouchableOpacity>
+      
+      <Text style={[
+        styles.buttonLabel,
+        recordingState === 'recording' && styles.recordingLabel
+      ]}>
+        {getLabelText()}
+      </Text>
+    </View>
   );
 };
 
@@ -292,5 +332,44 @@ const styles = StyleSheet.create({
   },
   errorButton: {
     backgroundColor: '#FF3B30',
+  },
+  sttButtonBackground: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  glowEffect: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FF3B30',
+    top: -10,
+    alignSelf: 'center',
+    zIndex: -1,
+  },
+  recordingLabel: {
+    color: '#FF3B30',
+    fontWeight: '600',
+  },
+  sttControlButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  sttTouchable: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
