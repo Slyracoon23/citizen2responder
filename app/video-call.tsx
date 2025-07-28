@@ -1,27 +1,27 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { 
-  View, 
-  StatusBar, 
-  TouchableOpacity, 
-  Text, 
-  KeyboardAvoidingView, 
-  TouchableWithoutFeedback, 
-  Keyboard, 
-  Platform 
-} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CameraView } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import { videoCallStyles } from './styles/videoCallStyles';
-import { usePermissions } from './hooks/usePermissions';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
+} from 'react-native';
+import Header from './components/Header';
+import VideoCallControls from './components/VideoCallControls';
+import VideoFeed from './components/VideoFeed';
 import { useAnimations } from './hooks/useAnimations';
 import { useConversation } from './hooks/useConversation';
 import { useLocation } from './hooks/useLocation';
+import { usePermissions } from './hooks/usePermissions';
 import { useToggleFeature } from './hooks/useToggleFeature';
-import Header from './components/Header';
-import VideoFeed from './components/VideoFeed';
-import VideoCallControls from './components/VideoCallControls';
 import apiService from './services/apiService';
+import { videoCallStyles } from './styles/videoCallStyles';
 
 export default function VideoCallScreen() {
   const router = useRouter();
@@ -97,6 +97,36 @@ export default function VideoCallScreen() {
     handleVoiceToggle(hasAudio, requestAudioPermission);
   };
 
+  // Helper to handle OpenRouter tool calls
+  const handleToolCalls = (toolCalls: any[]) => {
+    console.log('🔧 TOOL CALL HANDLER DEBUG: Processing tool calls:', JSON.stringify(toolCalls, null, 2));
+    toolCalls.forEach((toolCall) => {
+      console.log('🔧 TOOL CALL DEBUG: Processing tool call:', toolCall);
+      console.log('🔧 TOOL CALL DEBUG: Type:', toolCall.type);
+      console.log('🔧 TOOL CALL DEBUG: Function name:', toolCall.function?.name);
+      
+      if (toolCall.type === 'function' && toolCall.function?.name === 'ask_question') {
+        console.log('🔧 ASK_QUESTION DEBUG: Found ask_question tool call');
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('🔧 ASK_QUESTION DEBUG: Parsed arguments:', args);
+          if (args.question) {
+            console.log('🔧 ASK_QUESTION DEBUG: Setting question:', args.question);
+            setCurrentQuestion(args.question);
+            setIsQuestionToggleOn(true);
+            console.log('🔧 ASK_QUESTION DEBUG: Question toggle activated');
+          } else {
+            console.log('🔧 ASK_QUESTION DEBUG: No question found in arguments');
+          }
+        } catch (e) {
+          console.error('🔧 ASK_QUESTION ERROR: Failed to parse tool call arguments:', e);
+        }
+      } else {
+        console.log('🔧 TOOL CALL DEBUG: Tool call not matched - type:', toolCall.type, 'name:', toolCall.function?.name);
+      }
+    });
+  };
+
   const handleSendMessage = async () => {
     const message = textInput.trim();
     if (!message) return;
@@ -106,27 +136,33 @@ export default function VideoCallScreen() {
 
     try {
       setIsApiLoading(true);
-      let response = '';
+      let data;
 
       if (isImageInputEnabled && cameraRef.current) {
         // Capture a single frame if vision is enabled
         const photo = await cameraRef.current.takePictureAsync({ base64: true });
-        
         if (photo && photo.base64) {
           console.log(`🔍 CONV DEBUG: Sending message with 1 image frame.`);
-          response = await apiService.callOpenRouterVisionAPI([photo.base64], message);
+          data = await apiService.callOpenRouterVisionAPI([photo.base64], message);
         } else {
           // Fallback to text-only if frame capture fails
-          response = await apiService.callOpenRouterAPI(message);
+          data = await apiService.callOpenRouterAPI(message);
         }
-
       } else {
         // Send text-only message
-        response = await apiService.callOpenRouterAPI(message);
+        data = await apiService.callOpenRouterAPI(message);
       }
-      
-      addAiMessage(response);
-      console.log('🔍 CONV DEBUG: Added AI response:', response);
+
+      // Handle tool calls if present
+      const toolCalls = data.choices?.[0]?.message?.tool_calls;
+      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+        handleToolCalls(toolCalls);
+      } else {
+        // Only add AI message content if no tool calls were made
+        const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
+        addAiMessage(aiContent);
+        console.log('🔍 CONV DEBUG: Added AI response:', aiContent);
+      }
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -143,8 +179,16 @@ export default function VideoCallScreen() {
 
     try {
       setIsApiLoading(true);
-      const aiResponse = await apiService.callOpenRouterAPI(responseText);
-      addAiMessage(aiResponse);
+      const data = await apiService.callOpenRouterAPI(responseText);
+      // Handle tool calls if present
+      const toolCalls = data.choices?.[0]?.message?.tool_calls;
+      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+        handleToolCalls(toolCalls);
+      } else {
+        // Only add AI message content if no tool calls were made
+        const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
+        addAiMessage(aiContent);
+      }
     } catch (error) {
       console.error('Error processing question response:', error);
       addAiMessage('Error processing your response.');
