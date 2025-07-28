@@ -843,17 +843,29 @@ export default function VideoCallScreen() {
           </View>
         )}
 
-        {/* Loading states positioned below messages */}
+        {/* AI Service Status */}
         <View style={{ marginTop: 10, alignItems: 'center' }}>
+          {/* Processing States */}
           {isOpenRouterLoading ? (
-            <Text style={{ color: '#34C759', marginBottom: 8 }}>OpenRouter AI is thinking...</Text>
+            <Text style={{ color: '#34C759', marginBottom: 8, fontWeight: '600' }}>🌐 OpenRouter AI is processing...</Text>
           ) : isInitializingGemma ? (
-            <Text style={{ color: '#FF9F0A', marginBottom: 8 }}>Initializing AI model...</Text>
+            <Text style={{ color: '#FF9F0A', marginBottom: 8, fontWeight: '600' }}>🔧 Initializing local AI model...</Text>
           ) : isGemmaLoading ? (
-            <Text style={{ color: '#34C759', marginBottom: 8 }}>AI is thinking...</Text>
-          ) : !isGemmaModelLoaded && !isOpenRouterOn ? (
-            <Text style={{ color: '#FF3B30', fontSize: 12, marginBottom: 8 }}>AI model not ready</Text>
+            <Text style={{ color: '#34C759', marginBottom: 8, fontWeight: '600' }}>🧠 Local AI is processing...</Text>
           ) : null}
+          
+          {/* Ready States - Always show which AI is active */}
+          {!isOpenRouterLoading && !isGemmaLoading && !isInitializingGemma && (
+            <>
+              {!isGemmaModelLoaded && !isOpenRouterOn ? (
+                <Text style={{ color: '#FF3B30', fontSize: 12, marginBottom: 8 }}>⚠️ Local AI model not ready</Text>
+              ) : isOpenRouterOn ? (
+                <Text style={{ color: '#007AFF', fontSize: 12, marginBottom: 8, fontWeight: '500' }}>🌐 Using OpenRouter AI</Text>
+              ) : isGemmaModelLoaded ? (
+                <Text style={{ color: '#007AFF', fontSize: 12, marginBottom: 8, fontWeight: '500' }}>🧠 Using Local AI</Text>
+              ) : null}
+            </>
+          )}
         </View>
       </View>
     ) : null
@@ -1199,13 +1211,17 @@ export default function VideoCallScreen() {
         </View>
         <View style={styles.rightControls}>
           <TouchableOpacity
-            style={[styles.headerToggle, isOpenRouterOn && styles.headerToggleActive]}
+            style={[
+              styles.headerToggle, 
+              isOpenRouterOn && styles.headerToggleActive,
+              isOpenRouterLoading && { backgroundColor: 'rgba(52, 199, 89, 0.3)' }
+            ]}
             onPress={handleOpenRouterToggle}
           >
             <MaterialIcons
               name={isOpenRouterOn ? "visibility" : "visibility-off"}
               size={24}
-              color={isOpenRouterOn ? "#34C759" : "white"}
+              color={isOpenRouterLoading ? "#FFD600" : isOpenRouterOn ? "#34C759" : "white"}
             />
           </TouchableOpacity>
           <TouchableOpacity
