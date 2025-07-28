@@ -1,12 +1,14 @@
 import { useState, useCallback, useRef } from 'react';
 import { ScrollView } from 'react-native';
 import ApiService, { ConversationMessage } from '../services/apiService';
+import { useTextToSpeech } from './useTextToSpeech';
 
 export function useConversation() {
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [textInput, setTextInput] = useState('');
   const chatScrollViewRef = useRef<ScrollView>(null);
+  const { speak, stop: stopSpeech, isSpeaking } = useTextToSpeech();
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -15,6 +17,10 @@ export function useConversation() {
   }, []);
 
   const addUserMessage = useCallback((content: string) => {
+    // Stop any ongoing speech when user sends a message
+    console.log('🔍 CONV DEBUG: User sending message, stopping speech');
+    stopSpeech();
+    
     const message: ConversationMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -25,9 +31,9 @@ export function useConversation() {
     console.log('🔍 CONV DEBUG: Added user message:', content);
     scrollToBottom();
     return message.id;
-  }, [scrollToBottom]);
+  }, [scrollToBottom, stopSpeech]);
 
-  const addAiMessage = useCallback((content: string) => {
+  const addAiMessage = useCallback((content: string, enableSpeech: boolean = true) => {
     const message: ConversationMessage = {
       id: Date.now().toString(),
       type: 'ai',
@@ -36,9 +42,21 @@ export function useConversation() {
     };
     setConversationHistory(prev => [...prev, message]);
     console.log('🔍 CONV DEBUG: Added AI message:', content);
+    
+    // Speak the AI message if speech is enabled
+    if (enableSpeech && content.trim()) {
+      console.log('🔍 CONV DEBUG: Attempting to speak AI message');
+      // Add a small delay to ensure UI updates before speech starts
+      setTimeout(() => {
+        speak(content.trim());
+      }, 200);
+    } else {
+      console.log('🔍 CONV DEBUG: Speech disabled or empty content, skipping TTS');
+    }
+    
     scrollToBottom();
     return message.id;
-  }, [scrollToBottom]);
+  }, [scrollToBottom, speak]);
 
   return {
     conversationHistory,
@@ -49,5 +67,7 @@ export function useConversation() {
     chatScrollViewRef,
     addUserMessage,
     addAiMessage,
+    stopSpeech,
+    isSpeaking,
   };
 }

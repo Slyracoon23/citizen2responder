@@ -8,7 +8,7 @@ export function useToggleFeature() {
   const [isVoiceOn, setIsVoiceOn] = useState(false);
   const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(true);
   const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
-  const [isImageInputEnabled, setIsImageInputEnabled] = useState(true);
+  const [isImageInputEnabled, setIsImageInputEnabled] = useState(false);
   const [isGenerateReportOn, setIsGenerateReportOn] = useState(false);
 
   const handleCameraToggle = async (

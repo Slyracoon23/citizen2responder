@@ -71,6 +71,8 @@ export default function VideoCallScreen() {
     chatScrollViewRef,
     addUserMessage,
     addAiMessage,
+    stopSpeech,
+    isSpeaking,
   } = useConversation();
 
   const {
@@ -181,6 +183,9 @@ export default function VideoCallScreen() {
     const message = textInput.trim();
     if (!message) return;
 
+    // Stop any ongoing speech before sending new message
+    stopSpeech();
+    
     addUserMessage(message);
     setTextInput('');
 
@@ -224,6 +229,10 @@ export default function VideoCallScreen() {
 
   const handleQuestionResponseWrapper = async (response: 'yes' | 'no' | 'dont-know') => {
     const responseText = response === 'yes' ? 'Yes' : response === 'no' ? 'No' : "I can't tell";
+    
+    // Stop any ongoing speech before sending response
+    stopSpeech();
+    
     addUserMessage(responseText);
     setIsQuestionToggleOn(false);
 
@@ -311,6 +320,29 @@ export default function VideoCallScreen() {
             onTranscriptionToggle={toggleTranscription}
             onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
           />
+
+          {/* TTS Debug Info */}
+          {isSpeaking && (
+            <View style={{
+              position: 'absolute',
+              top: 100,
+              left: 20,
+              right: 20,
+              backgroundColor: 'rgba(76, 175, 80, 0.9)',
+              padding: 10,
+              borderRadius: 8,
+              zIndex: 1000,
+            }}>
+              <Text style={{
+                color: 'white',
+                fontSize: 14,
+                textAlign: 'center',
+                fontWeight: '600',
+              }}>
+                🔊 Speaking AI Response...
+              </Text>
+            </View>
+          )}
 
           {/* Video Feed with Overlays */}
           <VideoFeed
