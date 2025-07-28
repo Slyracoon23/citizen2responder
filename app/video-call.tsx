@@ -1,5 +1,14 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, StatusBar, TouchableOpacity, Text } from 'react-native';
+import { 
+  View, 
+  StatusBar, 
+  TouchableOpacity, 
+  Text, 
+  KeyboardAvoidingView, 
+  TouchableWithoutFeedback, 
+  Keyboard, 
+  Platform 
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CameraView } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -132,57 +141,65 @@ export default function VideoCallScreen() {
   }
 
   return (
-    <View style={videoCallStyles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+    <KeyboardAvoidingView 
+      style={videoCallStyles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={videoCallStyles.container}>
+          <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Header */}
-      <Header
-        isLocationOn={isLocationOn}
-        isLocationLoading={isLocationLoading}
-        currentLocation={currentLocation}
-        rotateAnim={rotateAnim}
-        isImageInputEnabled={isImageInputEnabled}
-        isQuestionToggleOn={isQuestionToggleOn}
-        isTranscriptionEnabled={isTranscriptionEnabled}
-        isApiLoading={isApiLoading}
-        onImageInputToggle={toggleImageInput}
-        onQuestionToggle={toggleQuestion}
-        onTranscriptionToggle={toggleTranscription}
-      />
+          {/* Header */}
+          <Header
+            isLocationOn={isLocationOn}
+            isLocationLoading={isLocationLoading}
+            currentLocation={currentLocation}
+            rotateAnim={rotateAnim}
+            isImageInputEnabled={isImageInputEnabled}
+            isQuestionToggleOn={isQuestionToggleOn}
+            isTranscriptionEnabled={isTranscriptionEnabled}
+            isApiLoading={isApiLoading}
+            onImageInputToggle={toggleImageInput}
+            onQuestionToggle={toggleQuestion}
+            onTranscriptionToggle={toggleTranscription}
+          />
 
-      {/* Video Feed with Overlays */}
-      <VideoFeed
-        isCameraOn={isCameraOn}
-        hasPermission={hasCamera}
-        cameraRef={cameraRef}
-        isTranscriptionEnabled={isTranscriptionEnabled}
-        isQuestionToggleOn={isQuestionToggleOn}
-        slideAnim={slideAnim}
-        currentQuestion={currentQuestion}
-        handleQuestionResponse={handleQuestionResponseWrapper}
-        conversationHistory={conversationHistory}
-        textInput={textInput}
-        setTextInput={setTextInput}
-        chatScrollViewRef={chatScrollViewRef}
-        onSendMessage={handleSendMessage}
-        isApiLoading={isApiLoading}
-        isImageInputEnabled={isImageInputEnabled}
-      />
+          {/* Video Feed with Overlays */}
+          <VideoFeed
+            isCameraOn={isCameraOn}
+            hasPermission={hasCamera}
+            cameraRef={cameraRef}
+            isTranscriptionEnabled={isTranscriptionEnabled}
+            isQuestionToggleOn={isQuestionToggleOn}
+            slideAnim={slideAnim}
+            currentQuestion={currentQuestion}
+            handleQuestionResponse={handleQuestionResponseWrapper}
+            conversationHistory={conversationHistory}
+            textInput={textInput}
+            setTextInput={setTextInput}
+            chatScrollViewRef={chatScrollViewRef}
+            onSendMessage={handleSendMessage}
+            isApiLoading={isApiLoading}
+            isImageInputEnabled={isImageInputEnabled}
+          />
 
-      {/* Control Buttons */}
-      <VideoCallControls
-        isCameraOn={isCameraOn}
-        isVoiceOn={isVoiceOn}
-        onCameraPress={handleCamera}
-        onVoicePress={handleVoice}
-        onEndCall={handleEndCall}
-        micPulseAnim={micPulseAnim}
-      />
+          {/* Control Buttons */}
+          <VideoCallControls
+            isCameraOn={isCameraOn}
+            isVoiceOn={isVoiceOn}
+            onCameraPress={handleCamera}
+            onVoicePress={handleVoice}
+            onEndCall={handleEndCall}
+            micPulseAnim={micPulseAnim}
+          />
 
-      {/* Progress Bar */}
-      <View style={videoCallStyles.progressContainer}>
-        <View style={videoCallStyles.progressBar} />
-      </View>
-    </View>
+          {/* Progress Bar */}
+          <View style={videoCallStyles.progressContainer}>
+            <View style={videoCallStyles.progressBar} />
+          </View>
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
