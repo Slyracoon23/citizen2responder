@@ -416,11 +416,15 @@ export default function VideoCallScreen() {
           model: 'google/gemma-3n-e4b-it',
           messages: [
             {
+              role: 'system',
+              content: 'You are a helpful emergency response AI assistant. Keep all responses to 1-2 sentences maximum. Be concise, direct, and focus only on the most important information. Avoid long explanations or lists.'
+            },
+            {
               role: 'user',
               content: messageContent
             }
           ],
-          max_tokens: 150,
+          max_tokens: 50,
           temperature: 0.7,
         }),
       });
@@ -1365,8 +1369,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   messageContainer: {
-    marginVertical: 3,
-    paddingHorizontal: 4,
+    marginVertical: 2,
+    paddingHorizontal: 3,
   },
   userMessageContainer: {
     alignItems: 'flex-end',
@@ -1388,12 +1392,12 @@ const styles = StyleSheet.create({
   },
   userText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
   },
   aiText: {
     color: '#FFD600',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '400',
   },
   welcomeContainer: {
@@ -1407,19 +1411,19 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 13,
     textAlign: 'center',
   },
   processingText: {
     color: '#34C759',
-    marginBottom: 8,
+    marginBottom: 4,
     fontWeight: '600',
-    fontSize: 12,
+    fontSize: 10,
   },
   readyText: {
     color: '#007AFF',
-    fontSize: 12,
-    marginBottom: 8,
+    fontSize: 10,
+    marginBottom: 4,
     fontWeight: '500',
   },
   aiStatusOverlay: {
@@ -1436,9 +1440,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingTop: 8,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingTop: 4,
     paddingBottom: 0,
     alignSelf: 'center',
   },
@@ -1451,9 +1455,9 @@ const styles = StyleSheet.create({
     zIndex: 7,
   },
   chatBubble: {
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1464,8 +1468,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   chatText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '400',
   },
   questionOverlay: {
