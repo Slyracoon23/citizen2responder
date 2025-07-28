@@ -1,4 +1,6 @@
 import { Animated } from 'react-native';
+// Import constants for consistent animation values
+import { STT_CONFIG, SPRING_CONFIG } from '../constants/sttConstants';
 
 export const createRotateAnimation = (animatedValue: Animated.Value, duration: number = 1000) => {
   return Animated.loop(
@@ -85,17 +87,17 @@ export const createBounceAnimation = (
 
 export const createPressAnimation = (animatedValue: Animated.Value) => {
   return Animated.timing(animatedValue, {
-    toValue: 0.9,
-    duration: 150,
+    toValue: STT_CONFIG.SCALE.PRESSED,
+    duration: STT_CONFIG.ANIMATION_DURATION.PRESS,
     useNativeDriver: true,
   });
 };
 
 export const createReleaseAnimation = (animatedValue: Animated.Value) => {
   return Animated.spring(animatedValue, {
-    toValue: 1,
-    tension: 300,
-    friction: 10,
+    toValue: STT_CONFIG.SCALE.NORMAL,
+    tension: SPRING_CONFIG.tension,
+    friction: SPRING_CONFIG.friction,
     useNativeDriver: true,
   });
 };
@@ -104,13 +106,13 @@ export const createRecordingPulseAnimation = (animatedValue: Animated.Value) => 
   return Animated.loop(
     Animated.sequence([
       Animated.timing(animatedValue, {
-        toValue: 1.05,
-        duration: 800,
+        toValue: STT_CONFIG.SCALE.PULSE_MAX,
+        duration: STT_CONFIG.ANIMATION_DURATION.PULSE,
         useNativeDriver: true,
       }),
       Animated.timing(animatedValue, {
-        toValue: 1,
-        duration: 800,
+        toValue: STT_CONFIG.SCALE.NORMAL,
+        duration: STT_CONFIG.ANIMATION_DURATION.PULSE,
         useNativeDriver: true,
       }),
     ])
@@ -122,12 +124,12 @@ export const createGlowAnimation = (animatedValue: Animated.Value) => {
     Animated.sequence([
       Animated.timing(animatedValue, {
         toValue: 1,
-        duration: 1000,
+        duration: STT_CONFIG.ANIMATION_DURATION.GLOW,
         useNativeDriver: true,
       }),
       Animated.timing(animatedValue, {
         toValue: 0.3,
-        duration: 1000,
+        duration: STT_CONFIG.ANIMATION_DURATION.GLOW,
         useNativeDriver: true,
       }),
     ])

@@ -9,21 +9,11 @@ import {
   getScaleInterpolation,
   getGlowOpacityInterpolation,
 } from '../services/animationUtils';
+import { STT_CONFIG } from '../constants/sttConstants';
 import type { RecordingState } from './useSpeechToText';
+import type { UseSttButtonReturn } from '../types/stt';
 
-interface UseSttButtonAnimationsReturn {
-  scaleAnim: Animated.Value;
-  glowAnim: Animated.Value;
-  recordingPulseAnim: Animated.Value;
-  animatePress: () => void;
-  animateRelease: () => void;
-  startRecordingAnimation: () => void;
-  stopRecordingAnimation: () => void;
-  getButtonStyle: (recordingState: RecordingState) => any;
-  getGlowStyle: () => any;
-}
-
-export function useSttButtonAnimations(): UseSttButtonAnimationsReturn {
+export function useSttButtonAnimations(): UseSttButtonReturn {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const recordingPulseAnim = useRef(new Animated.Value(1)).current;

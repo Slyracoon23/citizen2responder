@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSttButtonAnimations } from '../hooks/useSttButtonAnimations';
+import { STT_CONFIG, STT_BUTTON_STATES } from '../constants/sttConstants';
 import type { RecordingState } from '../hooks/useSpeechToText';
+import type { SttButtonProps } from '../types/stt';
 
 interface ToggleButtonProps {
   isOn: boolean;
@@ -70,12 +72,6 @@ const ToggleButton = ({
   </TouchableOpacity>
 );
 
-interface SttButtonProps {
-  recordingState: RecordingState;
-  onPressIn: () => void;
-  onPressOut: () => void;
-  pulseAnim?: Animated.Value;
-}
 
 const SttButton = ({
   recordingState,
@@ -92,6 +88,9 @@ const SttButton = ({
     getGlowStyle,
   } = useSttButtonAnimations();
 
+  // Get current button configuration based on state
+  const buttonConfig = useMemo(() => STT_BUTTON_STATES[recordingState], [recordingState]);
+
   // Handle recording state changes
   useEffect(() => {
     if (recordingState === 'recording') {
@@ -101,72 +100,58 @@ const SttButton = ({
     }
   }, [recordingState, startRecordingAnimation, stopRecordingAnimation]);
 
-  const getButtonBackgroundStyle = () => {
-    switch (recordingState) {
-      case 'recording':
-        return [styles.sttButtonBackground, styles.recordingButton];
-      case 'processing':
-        return [styles.sttButtonBackground, styles.processingButton];
-      case 'error':
-        return [styles.sttButtonBackground, styles.errorButton];
-      default:
-        return styles.sttButtonBackground;
-    }
-  };
+  // Memoize styles for better performance
+  const buttonBackgroundStyle = useMemo(() => [
+    styles.sttButtonBackground,
+    { backgroundColor: buttonConfig.backgroundColor }
+  ], [buttonConfig.backgroundColor]);
 
-  const getIcon = () => {
-    switch (recordingState) {
-      case 'recording':
-        return 'stop';
-      case 'processing':
-        return 'hourglass-empty';
-      case 'error':
-        return 'error';
-      default:
-        return 'keyboard-voice';
-    }
-  };
-
-  const getIconColor = () => {
-    switch (recordingState) {
-      case 'recording':
-        return 'white';
-      case 'processing':
-        return '#000';
-      case 'error':
-        return 'white';
-      default:
-        return '#000';
-    }
-  };
-
-  const getLabelText = () => {
-    switch (recordingState) {
-      case 'recording':
-        return 'Recording...';
-      case 'processing':
-        return 'Processing...';
-      case 'error':
-        return 'Error';
-      default:
-        return 'Hold to Talk';
-    }
-  };
-
-  const isDisabled = recordingState === 'processing';
+  const labelStyle = useMemo(() => [
+    styles.buttonLabel,
+    recordingState === 'recording' && styles.recordingLabel
+  ], [recordingState]);
 
   const handlePressIn = () => {
-    if (!isDisabled) {
+    if (!buttonConfig.isDisabled) {
       animatePress();
       onPressIn();
     }
   };
 
   const handlePressOut = () => {
-    if (!isDisabled) {
+    if (!buttonConfig.isDisabled) {
       animateRelease();
       onPressOut();
     }
+  };
+
+  const renderIcon = () => {
+    if (recordingState === 'processing' && pulseAnim) {
+      return (
+        <Animated.View style={{
+          transform: [{
+            rotate: pulseAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0deg', '360deg'],
+            }),
+          }],
+        }}>
+          <MaterialIcons
+            name={buttonConfig.icon as any}
+            size={STT_CONFIG.ICON_SIZE}
+            color={buttonConfig.iconColor}
+          />
+        </Animated.View>
+      );
+    }
+
+    return (
+      <MaterialIcons
+        name={buttonConfig.icon as any}
+        size={STT_CONFIG.ICON_SIZE}
+        color={buttonConfig.iconColor}
+      />
+    );
   };
 
   return (
@@ -179,44 +164,20 @@ const SttButton = ({
       <TouchableOpacity
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        disabled={isDisabled}
+        disabled={buttonConfig.isDisabled}
         activeOpacity={0.8}
         style={styles.sttTouchable}
       >
         <Animated.View style={[
-          getButtonBackgroundStyle(),
+          buttonBackgroundStyle,
           getAnimatedButtonStyle(recordingState)
         ]}>
-          {recordingState === 'processing' && pulseAnim ? (
-            <Animated.View style={{
-              transform: [{
-                rotate: pulseAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0deg', '360deg'],
-                }),
-              }],
-            }}>
-              <MaterialIcons
-                name={getIcon()}
-                size={28}
-                color={getIconColor()}
-              />
-            </Animated.View>
-          ) : (
-            <MaterialIcons
-              name={getIcon()}
-              size={28}
-              color={getIconColor()}
-            />
-          )}
+          {renderIcon()}
         </Animated.View>
       </TouchableOpacity>
       
-      <Text style={[
-        styles.buttonLabel,
-        recordingState === 'recording' && styles.recordingLabel
-      ]}>
-        {getLabelText()}
+      <Text style={labelStyle}>
+        {buttonConfig.label}
       </Text>
     </View>
   );
@@ -334,33 +295,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF3B30',
   },
   sttButtonBackground: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'white',
+    width: STT_CONFIG.BUTTON_SIZE,
+    height: STT_CONFIG.BUTTON_SIZE,
+    borderRadius: STT_CONFIG.BUTTON_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
+    shadowColor: STT_CONFIG.SHADOW.COLOR,
+    shadowOffset: STT_CONFIG.SHADOW.OFFSET,
+    shadowOpacity: STT_CONFIG.SHADOW.OPACITY,
+    shadowRadius: STT_CONFIG.SHADOW.RADIUS,
+    elevation: STT_CONFIG.SHADOW.ELEVATION,
   },
   glowEffect: {
     position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#FF3B30',
-    top: -10,
+    width: STT_CONFIG.GLOW_SIZE,
+    height: STT_CONFIG.GLOW_SIZE,
+    borderRadius: STT_CONFIG.GLOW_SIZE / 2,
+    backgroundColor: STT_CONFIG.COLORS.RECORDING,
+    top: -(STT_CONFIG.GLOW_SIZE - STT_CONFIG.BUTTON_SIZE) / 2,
     alignSelf: 'center',
     zIndex: -1,
   },
   recordingLabel: {
-    color: '#FF3B30',
+    color: STT_CONFIG.COLORS.RECORDING,
     fontWeight: '600',
   },
   sttControlButton: {

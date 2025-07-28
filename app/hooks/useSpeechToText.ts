@@ -3,6 +3,7 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import deepgramService from '../services/deepgramService';
+import { STT_CONFIG } from '../constants/sttConstants';
 
 export type RecordingState = 'idle' | 'recording' | 'processing' | 'error';
 
@@ -18,27 +19,27 @@ interface UseSpeechToTextReturn {
 
 const RECORDING_OPTIONS: Audio.RecordingOptions = {
   android: {
-    extension: '.wav',
+    extension: STT_CONFIG.RECORDING.EXTENSION,
     outputFormat: Audio.AndroidOutputFormat.PCM_16BIT,
     audioEncoder: Audio.AndroidAudioEncoder.PCM_16BIT,
-    sampleRate: 16000,
-    numberOfChannels: 1,
-    bitRate: 128000,
+    sampleRate: STT_CONFIG.RECORDING.SAMPLE_RATE,
+    numberOfChannels: STT_CONFIG.RECORDING.CHANNELS,
+    bitRate: STT_CONFIG.RECORDING.BIT_RATE,
   },
   ios: {
-    extension: '.wav',
+    extension: STT_CONFIG.RECORDING.EXTENSION,
     outputFormat: Audio.IOSOutputFormat.LINEARPCM,
     audioQuality: Audio.IOSAudioQuality.HIGH,
-    sampleRate: 16000,
-    numberOfChannels: 1,
-    bitRate: 128000,
+    sampleRate: STT_CONFIG.RECORDING.SAMPLE_RATE,
+    numberOfChannels: STT_CONFIG.RECORDING.CHANNELS,
+    bitRate: STT_CONFIG.RECORDING.BIT_RATE,
     linearPCMBitDepth: 16,
     linearPCMIsBigEndian: false,
     linearPCMIsFloat: false,
   },
   web: {
     mimeType: 'audio/webm',
-    bitsPerSecond: 128000,
+    bitsPerSecond: STT_CONFIG.RECORDING.BIT_RATE,
   },
 };
 
