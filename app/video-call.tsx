@@ -18,6 +18,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
 import { GEMMA_SYSTEM_PROMPT, parseGemmaResponse } from './config/gemmaPrompts';
+import * as FileSystem from 'expo-file-system';
+import { Asset } from 'expo-asset';
 
 // --- Types ---
 interface ModelInfo {
@@ -304,6 +306,7 @@ export default function VideoCallScreen() {
   const [isVoiceOn, setIsVoiceOn] = useState(false);
   const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(true);
   const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
+  const [isOpenRouterOn, setIsOpenRouterOn] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [isLocationLoading, setIsLocationLoading] = useState(true);
@@ -386,6 +389,88 @@ export default function VideoCallScreen() {
   const [gemmaContext, setGemmaContext] = useState<LlamaContext | null>(null);
   const [isGemmaModelLoaded, setIsGemmaModelLoaded] = useState(false);
   const [isInitializingGemma, setIsInitializingGemma] = useState(false);
+  
+  // OpenRouter state
+  const [isOpenRouterLoading, setIsOpenRouterLoading] = useState(false);
+
+  // Base64 image conversion utility
+  const convertImageToBase64 = async (): Promise<string> => {
+    try {
+      // Load the static logo asset
+      const asset = Asset.fromModule(require('../assets/images/logo-with-text.png'));
+      await asset.downloadAsync();
+      
+      // Read the file as base64
+      const base64 = await FileSystem.readAsStringAsync(asset.localUri!, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      
+      return base64;
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      throw error;
+    }
+  };
+
+  // OpenRouter API call
+  const runOpenRouterAPI = async (text: string): Promise<string> => {
+    try {
+      setIsOpenRouterLoading(true);
+      
+      // Get base64 image
+      const imageBase64 = await convertImageToBase64();
+      
+      const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error('OpenRouter API key not found');
+      }
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'X-Title': 'Relay Responder App',
+        },
+        body: JSON.stringify({
+          model: 'google/gemma-3n-e4b-it',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `${text}\n\nPlease analyze this image and provide a helpful response based on both the text and what you see in the image.`
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:image/png;base64,${imageBase64}`
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 150,
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`OpenRouter API error: ${response.status} - ${errorData}`);
+      }
+
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
+
+    } catch (error) {
+      console.error('OpenRouter API error:', error);
+      throw error;
+    } finally {
+      setIsOpenRouterLoading(false);
+    }
+  };
 
   // Initialize Gemma model
   const initializeGemmaModel = async () => {
@@ -606,8 +691,10 @@ export default function VideoCallScreen() {
       // Add user message to conversation history
       addUserMessage(newContent);
 
-      setIsGemmaLoading(true);
-      runGemmaLocally(newContent)
+      // Choose AI service based on OpenRouter toggle
+      const aiPromise = isOpenRouterOn ? runOpenRouterAPI(newContent) : runGemmaLocally(newContent);
+      
+      aiPromise
         .then(res => {
           console.log(`🔍 DEBUG [${timestamp}]: AI response received:`, res);
 
@@ -661,6 +748,7 @@ export default function VideoCallScreen() {
         })
         .finally(() => {
           setIsGemmaLoading(false);
+          setIsOpenRouterLoading(false);
           setIsProcessingTranscript(false);
         });
 
@@ -757,11 +845,13 @@ export default function VideoCallScreen() {
 
         {/* Loading states positioned below messages */}
         <View style={{ marginTop: 10, alignItems: 'center' }}>
-          {isInitializingGemma ? (
+          {isOpenRouterLoading ? (
+            <Text style={{ color: '#34C759', marginBottom: 8 }}>OpenRouter AI is thinking...</Text>
+          ) : isInitializingGemma ? (
             <Text style={{ color: '#FF9F0A', marginBottom: 8 }}>Initializing AI model...</Text>
           ) : isGemmaLoading ? (
             <Text style={{ color: '#34C759', marginBottom: 8 }}>AI is thinking...</Text>
-          ) : !isGemmaModelLoaded ? (
+          ) : !isGemmaModelLoaded && !isOpenRouterOn ? (
             <Text style={{ color: '#FF3B30', fontSize: 12, marginBottom: 8 }}>AI model not ready</Text>
           ) : null}
         </View>
@@ -1013,6 +1103,10 @@ export default function VideoCallScreen() {
     setIsQuestionToggleOn(!isQuestionToggleOn);
   };
 
+  const handleOpenRouterToggle = () => {
+    setIsOpenRouterOn(!isOpenRouterOn);
+  };
+
   const handleQuestionResponse = (response: 'yes' | 'no' | 'dont-know') => {
     console.log('Question response:', response);
     setIsQuestionToggleOn(false);
@@ -1024,8 +1118,9 @@ export default function VideoCallScreen() {
     addUserMessage(responseText);
     
     // Trigger AI response to continue the conversation
-    setIsGemmaLoading(true);
-    runGemmaLocally(responseText)
+    const questionAiPromise = isOpenRouterOn ? runOpenRouterAPI(responseText) : runGemmaLocally(responseText);
+    
+    questionAiPromise
       .then(res => {
         console.log('🔍 QUESTION RESPONSE DEBUG: AI response to user answer:', res);
         
@@ -1057,6 +1152,7 @@ export default function VideoCallScreen() {
       })
       .finally(() => {
         setIsGemmaLoading(false);
+        setIsOpenRouterLoading(false);
       });
   };
 
@@ -1102,6 +1198,16 @@ export default function VideoCallScreen() {
           </View>
         </View>
         <View style={styles.rightControls}>
+          <TouchableOpacity
+            style={[styles.headerToggle, isOpenRouterOn && styles.headerToggleActive]}
+            onPress={handleOpenRouterToggle}
+          >
+            <MaterialIcons
+              name={isOpenRouterOn ? "visibility" : "visibility-off"}
+              size={24}
+              color={isOpenRouterOn ? "#34C759" : "white"}
+            />
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.headerToggle, isQuestionToggleOn && styles.headerToggleActive]}
             onPress={handleQuestionToggle}
@@ -1256,7 +1362,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   leftControls: {
-    width: 98, // Same width as rightControls (44px per button + 10px margin + 44px = 98px)
+    width: 142, // Same width as rightControls (44px per button + 10px margin * 3 buttons = 142px)
   },
   liveIndicator: {
     alignItems: 'center',
@@ -1284,7 +1390,7 @@ const styles = StyleSheet.create({
   rightControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: 98, // Fixed width to match leftControls
+    width: 142, // Fixed width to match leftControls (3 buttons)
   },
   headerToggle: {
     width: 44,

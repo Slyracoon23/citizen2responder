@@ -88,3 +88,6 @@ yarn-error.*
 *.tsbuildinfo
 
 # @end expo-cli
+
+
+*.mp4
