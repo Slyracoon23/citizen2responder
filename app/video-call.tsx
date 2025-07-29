@@ -35,7 +35,7 @@ export default function VideoCallScreen() {
   const [showDefaultReport, setShowDefaultReport] = useState(false);
   const [isPreCareModalVisible, setIsPreCareModalVisible] = useState(false);
   const [currentPreCareData, setCurrentPreCareData] = useState<any>(null);
-  const [isTextInputVisible, setIsTextInputVisible] = useState(true);
+  const [isTextInputVisible, setIsTextInputVisible] = useState(false);
 
   // Default report data to show when toggle is activated
   const defaultReportData = {

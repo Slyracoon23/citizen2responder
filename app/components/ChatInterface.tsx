@@ -34,58 +34,31 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
   if (!isTranscriptionEnabled) return null;
 
+  // Find the last AI message
+  const lastAiMessage = conversationHistory
+    .slice()
+    .reverse()
+    .find(message => message.type === 'ai');
+
   return (
     <View style={styles.chatOverlay}>
-      <LinearGradient
-        colors={colors.gradients.darkGlass}
-        style={styles.chatBackground}
-      >
-        {/* Conversation History */}
-        {conversationHistory.length > 0 ? (
-        <ScrollView
-          ref={chatScrollViewRef}
-          style={styles.chatScrollContainer}
-          contentContainerStyle={styles.chatContentContainer}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => chatScrollViewRef.current?.scrollToEnd({ animated: true })}
-        >
-          {conversationHistory.map((message) => (
-            <View
-              key={message.id}
-              style={[
-                styles.messageContainer,
-                message.type === 'user' ? styles.userMessageContainer : styles.aiMessageContainer
-              ]}
-            >
-              <View
-                style={[
-                  styles.chatBubble,
-                  message.type === 'user' ? styles.userBubble : styles.aiBubble
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.chatText,
-                    message.type === 'user' ? styles.userText : styles.aiText
-                  ]}
-                >
-                  {message.content}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+      {/* Show only the last AI message */}
+      {lastAiMessage ? (
+        <View style={[styles.centeredMessage]}>
+          <Text style={[styles.messageText]}>
+            {lastAiMessage.content}
+          </Text>
+        </View>
       ) : (
-        /* Welcome message when no conversation history */
+        /* Welcome message when no AI messages exist */
         <View style={styles.welcomeContainer}>
           <View style={[styles.chatBubble, styles.welcomeBubble]}>
             <Text style={styles.welcomeText}>
-              Type a message to get started!
+              Hold to Talk to get Started!
             </Text>
           </View>
         </View>
       )}
-      </LinearGradient>
     </View>
   );
 }
@@ -146,12 +119,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.glass.light,
   },
-  chatScrollContainer: {
-    flex: 1,
+  centeredMessage: {
+    position: 'absolute',
+    top: '40%',
+    left: '5%',
+    right: '5%',
+    backgroundColor: colors.glass.dark,
+    borderRadius: borderRadius.large,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.glass.light,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  chatContentContainer: {
-    paddingVertical: 10,
-    flexGrow: 1,
+  messageText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.normal,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   messageContainer: {
     marginVertical: 2,
