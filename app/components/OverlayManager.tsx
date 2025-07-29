@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ConversationMessage } from '../services/apiService';
 import ChatInterface from './ChatInterface';
 
@@ -48,7 +47,7 @@ const QuestionPopover = ({ isQuestionToggleOn, slideAnim, currentQuestion, handl
         transform: [{
           translateY: slideAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [200, 0],
+            outputRange: [600, 0],
           })
         }]
       }
@@ -174,14 +173,13 @@ const styles = StyleSheet.create({
   },
   questionOverlay: {
     position: 'absolute',
-    bottom: 0,
+    bottom: '20%',
     left: 0,
     right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.0)',
     padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    zIndex: 10,
+    borderRadius: 20,
+    zIndex: 1003,
   },
   questionPopover: {
     backgroundColor: '#1C1C1E',

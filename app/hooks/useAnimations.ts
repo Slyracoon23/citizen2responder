@@ -20,7 +20,7 @@ export function useAnimations() {
   const startSlideAnimation = (toValue: number) => {
     Animated.timing(slideAnim, {
       toValue,
-      duration: animations.normal,
+      duration: animations.verySlow,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
