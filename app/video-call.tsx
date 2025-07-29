@@ -15,6 +15,7 @@ import {
 import Header from './components/Header';
 import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
+import ChatInterface from './components/ChatInterface';
 import ReportModal from './components/ReportModal';
 import PreCareModal from './components/PreCareModal';
 import { useAnimations } from './hooks/useAnimations';
@@ -447,13 +448,13 @@ export default function VideoCallScreen() {
               left: 20,
               right: 20,
               backgroundColor: 'rgba(76, 175, 80, 0.9)',
-              padding: 10,
+              padding: 12,
               borderRadius: 8,
               zIndex: 1000,
             }}>
               <Text style={{
                 color: 'white',
-                fontSize: 14,
+                fontSize: 16,
                 textAlign: 'center',
                 fontWeight: '600',
               }}>
@@ -470,13 +471,13 @@ export default function VideoCallScreen() {
               left: 20,
               right: 20,
               backgroundColor: 'rgba(255, 59, 48, 0.9)',
-              padding: 10,
+              padding: 12,
               borderRadius: 8,
               zIndex: 1000,
             }}>
               <Text style={{
                 color: 'white',
-                fontSize: 14,
+                fontSize: 16,
                 textAlign: 'center',
                 fontWeight: '600',
               }}>
@@ -485,35 +486,52 @@ export default function VideoCallScreen() {
             </View>
           )}
 
-          {/* Video Feed with Overlays */}
-          <VideoFeed
-            isCameraOn={isCameraOn}
-            hasPermission={hasCamera}
-            cameraRef={cameraRef}
-            isTranscriptionEnabled={isTranscriptionEnabled}
-            isQuestionToggleOn={isQuestionToggleOn}
-            slideAnim={slideAnim}
-            currentQuestion={currentQuestion}
-            handleQuestionResponse={handleQuestionResponseWrapper}
-            conversationHistory={conversationHistory}
-            textInput={textInput}
-            setTextInput={setTextInput}
-            chatScrollViewRef={chatScrollViewRef}
-            onSendMessage={handleSendMessage}
-            isApiLoading={isApiLoading}
-            isImageInputEnabled={isImageInputEnabled}
-          />
+          {/* Full Screen Video */}
+          <View style={videoCallStyles.fullScreenVideoContainer}>
+            <VideoFeed
+              isCameraOn={isCameraOn}
+              hasPermission={hasCamera}
+              cameraRef={cameraRef}
+              isTranscriptionEnabled={false} // Remove built-in overlays
+              isQuestionToggleOn={isQuestionToggleOn}
+              slideAnim={slideAnim}
+              currentQuestion={currentQuestion}
+              handleQuestionResponse={handleQuestionResponseWrapper}
+              conversationHistory={[]} // Remove built-in overlays
+              textInput=""
+              setTextInput={() => {}}
+              chatScrollViewRef={chatScrollViewRef}
+              onSendMessage={() => {}}
+              isApiLoading={isApiLoading}
+              isImageInputEnabled={isImageInputEnabled}
+            />
 
-          {/* Control Buttons */}
-          <VideoCallControls
-            isCameraOn={isCameraOn}
-            recordingState={recordingState}
-            onCameraPress={handleCamera}
-            onSttPressIn={handleSttPressIn}
-            onSttPressOut={handleSttPressOut}
-            onEndCall={handleEndCall}
-            micPulseAnim={micPulseAnim}
-          />
+            {/* Chat Overlay at Top */}
+            <View style={videoCallStyles.chatOverlayTop}>
+              <ChatInterface
+                isTranscriptionEnabled={isTranscriptionEnabled}
+                conversationHistory={conversationHistory}
+                textInput={textInput}
+                setTextInput={setTextInput}
+                chatScrollViewRef={chatScrollViewRef}
+                onSendMessage={handleSendMessage}
+                isLoading={isApiLoading}
+              />
+            </View>
+
+            {/* Control Buttons Overlay at Bottom */}
+            <View style={videoCallStyles.controlsOverlayBottom}>
+              <VideoCallControls
+                isCameraOn={isCameraOn}
+                recordingState={recordingState}
+                onCameraPress={handleCamera}
+                onSttPressIn={handleSttPressIn}
+                onSttPressOut={handleSttPressOut}
+                onEndCall={handleEndCall}
+                micPulseAnim={micPulseAnim}
+              />
+            </View>
+          </View>
 
           {/* Progress Bar */}
           <View style={videoCallStyles.progressContainer}>

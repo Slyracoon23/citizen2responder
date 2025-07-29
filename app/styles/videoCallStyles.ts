@@ -70,6 +70,58 @@ export const videoCallStyles = StyleSheet.create({
     borderRadius: 2,
   },
 
+  // Status indicators
+  statusIndicator: {
+    position: 'absolute',
+    top: 100,
+    left: spacing.xl,
+    right: spacing.xl,
+    backgroundColor: 'rgba(76, 175, 80, 0.9)',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.medium,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  errorIndicator: {
+    backgroundColor: 'rgba(255, 59, 48, 0.9)',
+    top: 150,
+  },
+  statusText: {
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
+    textAlign: 'center',
+    fontWeight: fontWeight.semibold,
+  },
+
+  // Full screen layout styles
+  fullScreenVideoContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  chatOverlayTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '40%', // Chat takes top 40% of screen
+    zIndex: 1000,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  controlsOverlayBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+    paddingBottom: spacing.md,
+  },
+
   // Report Modal Styles
   reportModalOverlay: {
     flex: 1,

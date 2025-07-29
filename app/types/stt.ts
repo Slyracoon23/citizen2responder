@@ -42,7 +42,8 @@ export interface SttButtonStyles {
 
 // Hook return types
 export interface UseSttButtonReturn extends AnimationRefs, AnimationControls {
-  getButtonStyle: (recordingState: RecordingState) => any;
+  getPressScale: () => Animated.Value;
+  getRecordingScale: () => Animated.Value;
   getGlowStyle: () => any;
 }
 

@@ -8,9 +8,11 @@ import {
   Linking,
   Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as SMS from 'expo-sms';
 import { videoCallStyles } from '../styles/videoCallStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 
 interface ReportData {
   report_id: string;

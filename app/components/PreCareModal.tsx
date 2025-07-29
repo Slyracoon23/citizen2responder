@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { videoCallStyles } from '../styles/videoCallStyles';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 
 interface PreCareData {
   title: string;
@@ -27,13 +29,26 @@ export default function PreCareModal({ visible, preCareData, onClose }: PreCareM
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return '#FF3B30';
+        return colors.error;
       case 'medium':
-        return '#FF9F0A';
+        return colors.warning;
       case 'low':
-        return '#34C759';
+        return colors.success;
       default:
-        return '#34C759';
+        return colors.success;
+    }
+  };
+
+  const getPriorityGradient = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return colors.gradients.error;
+      case 'medium':
+        return colors.gradients.warning;
+      case 'low':
+        return colors.gradients.secondary;
+      default:
+        return colors.gradients.secondary;
     }
   };
 
@@ -106,24 +121,31 @@ export default function PreCareModal({ visible, preCareData, onClose }: PreCareM
                   marginBottom: 12,
                   paddingLeft: 8
                 }}>
-                  <View style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: 12,
-                    backgroundColor: getPriorityColor(preCareData.priority),
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginRight: 12,
-                    marginTop: 2
-                  }}>
+                  <LinearGradient
+                    colors={getPriorityGradient(preCareData.priority)}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginRight: spacing.md,
+                      marginTop: 2,
+                      shadowColor: getPriorityColor(preCareData.priority),
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 4,
+                    }}
+                  >
                     <Text style={{
-                      color: 'white',
-                      fontSize: 12,
-                      fontWeight: '600'
+                      color: colors.text.primary,
+                      fontSize: fontSize.sm,
+                      fontWeight: fontWeight.bold
                     }}>
                       {index + 1}
                     </Text>
-                  </View>
+                  </LinearGradient>
                   <Text style={[
                     videoCallStyles.reportText,
                     { 
@@ -140,15 +162,29 @@ export default function PreCareModal({ visible, preCareData, onClose }: PreCareM
 
           <View style={videoCallStyles.reportActions}>
             <TouchableOpacity
-              style={[
-                videoCallStyles.reportButton, 
-                videoCallStyles.reportSendButton,
-                { backgroundColor: getPriorityColor(preCareData.priority) }
-              ]}
+              style={[videoCallStyles.reportButton, { overflow: 'hidden' }]}
               onPress={onClose}
             >
-              <MaterialIcons name="check" size={20} color="white" />
-              <Text style={videoCallStyles.reportSendButtonText}>Got It</Text>
+              <LinearGradient
+                colors={getPriorityGradient(preCareData.priority)}
+                style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: spacing.md,
+                  paddingHorizontal: spacing.lg,
+                  gap: spacing.xs,
+                }}
+              >
+                <MaterialIcons name="check" size={20} color={colors.text.primary} />
+                <Text style={[
+                  videoCallStyles.reportSendButtonText,
+                  { fontWeight: fontWeight.semibold }
+                ]}>
+                  Got It
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>

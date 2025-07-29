@@ -1,15 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { Animated } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import {
-  createPressAnimation,
-  createReleaseAnimation,
-  createRecordingPulseAnimation,
-  createGlowAnimation,
-  getScaleInterpolation,
-  getGlowOpacityInterpolation,
-} from '../services/animationUtils';
-import { STT_CONFIG } from '../constants/sttConstants';
 import type { RecordingState } from './useSpeechToText';
 import type { UseSttButtonReturn } from '../types/stt';
 
@@ -25,25 +16,60 @@ export function useSttButtonAnimations(): UseSttButtonReturn {
     // Haptic feedback for press
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // Scale down animation
-    createPressAnimation(scaleAnim).start();
+    // Simple scale down animation
+    Animated.timing(scaleAnim, {
+      toValue: 0.95,
+      duration: 100,
+      useNativeDriver: true,
+    }).start();
   }, [scaleAnim]);
 
   const animateRelease = useCallback(async () => {
     // Haptic feedback for release
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    // Bounce back animation
-    createReleaseAnimation(scaleAnim).start();
+    // Simple bounce back animation
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      tension: 300,
+      friction: 10,
+      useNativeDriver: true,
+    }).start();
   }, [scaleAnim]);
 
   const startRecordingAnimation = useCallback(() => {
-    // Start recording pulse animation
-    recordingAnimationRef.current = createRecordingPulseAnimation(recordingPulseAnim);
+    // Simple recording pulse animation
+    recordingAnimationRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(recordingPulseAnim, {
+          toValue: 1.1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(recordingPulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
     recordingAnimationRef.current.start();
 
-    // Start glow animation
-    glowAnimationRef.current = createGlowAnimation(glowAnim);
+    // Simple glow animation
+    glowAnimationRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
     glowAnimationRef.current.start();
   }, [recordingPulseAnim, glowAnim]);
 
@@ -73,22 +99,21 @@ export function useSttButtonAnimations(): UseSttButtonReturn {
     }).start();
   }, [recordingPulseAnim, glowAnim]);
 
-  const getButtonStyle = useCallback((recordingState: RecordingState) => {
-    const baseTransform = [
-      { scale: getScaleInterpolation(scaleAnim) }
-    ];
+  // Simplified style getters that return proper values
+  const getPressScale = useCallback(() => {
+    return scaleAnim;
+  }, [scaleAnim]);
 
-    if (recordingState === 'recording') {
-      baseTransform.push({ scale: getScaleInterpolation(recordingPulseAnim) });
-    }
-
-    return {
-      transform: baseTransform
-    };
-  }, [scaleAnim, recordingPulseAnim]);
+  const getRecordingScale = useCallback(() => {
+    return recordingPulseAnim;
+  }, [recordingPulseAnim]);
 
   const getGlowStyle = useCallback(() => ({
-    opacity: getGlowOpacityInterpolation(glowAnim),
+    opacity: glowAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 0.6],
+      extrapolate: 'clamp',
+    }),
   }), [glowAnim]);
 
   return {
@@ -99,7 +124,8 @@ export function useSttButtonAnimations(): UseSttButtonReturn {
     animateRelease,
     startRecordingAnimation,
     stopRecordingAnimation,
-    getButtonStyle,
+    getPressScale,
+    getRecordingScale,
     getGlowStyle,
   };
 }

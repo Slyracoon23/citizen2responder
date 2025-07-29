@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ConversationMessage } from '../services/apiService';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 
 interface ChatInterfaceProps {
   isTranscriptionEnabled: boolean;
@@ -33,8 +35,12 @@ export default function ChatInterface({
 
   return (
     <View style={styles.chatOverlay}>
-      {/* Conversation History */}
-      {conversationHistory.length > 0 ? (
+      <LinearGradient
+        colors={colors.gradients.darkGlass}
+        style={styles.chatBackground}
+      >
+        {/* Conversation History */}
+        {conversationHistory.length > 0 ? (
         <ScrollView
           ref={chatScrollViewRef}
           style={styles.chatScrollContainer}
@@ -106,19 +112,22 @@ export default function ChatInterface({
           )}
         </TouchableOpacity>
       </View>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   chatOverlay: {
-    position: 'absolute',
-    top: 40,
-    left: 15,
-    right: 15,
-    bottom: 15,
-    zIndex: 5,
+    flex: 1,
     flexDirection: 'column',
+  },
+  chatBackground: {
+    flex: 1,
+    backgroundColor: colors.glass.dark,
+    borderRadius: borderRadius.large,
+    padding: spacing.md,
+    margin: spacing.sm,
   },
   chatScrollContainer: {
     flex: 1,
@@ -138,26 +147,26 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   userBubble: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
     maxWidth: '80%',
     borderBottomRightRadius: 4,
   },
   aiBubble: {
-    backgroundColor: 'rgba(34, 34, 34, 0.95)',
+    backgroundColor: colors.glass.dark,
     maxWidth: '80%',
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.glass.light,
   },
   userText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '500',
+    color: colors.text.primary,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.medium,
   },
   aiText: {
-    color: '#FFD600',
-    fontSize: 12,
-    fontWeight: '400',
+    color: colors.text.secondary,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.normal,
   },
   welcomeContainer: {
     flex: 1,
@@ -165,13 +174,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   welcomeBubble: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: colors.glass.dark,
     alignSelf: 'center',
   },
   welcomeText: {
-    color: 'white',
-    fontSize: 13,
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
     textAlign: 'center',
+    fontWeight: fontWeight.medium,
   },
   chatBubble: {
     borderRadius: 14,
@@ -194,30 +204,31 @@ const styles = StyleSheet.create({
   textInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 10,
+    backgroundColor: colors.glass.dark,
+    borderRadius: borderRadius.large,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
   textInput: {
     flex: 1,
-    color: '#fff',
-    fontSize: 14,
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
     maxHeight: 80,
     minHeight: 20,
     paddingVertical: 0,
     textAlignVertical: 'center',
   },
   sendButton: {
-    backgroundColor: '#007AFF',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    backgroundColor: colors.primary,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: '#666',
+    backgroundColor: colors.text.quaternary,
   },
 });

@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import OverlayManager from './OverlayManager';
 import { ConversationMessage } from '../services/apiService';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 
 interface VideoFeedProps {
   isCameraOn: boolean;
@@ -54,12 +56,15 @@ export default function VideoFeed({
         />
       ) : (
         <View style={styles.camera}>
-          <View style={styles.cameraOffOverlay}>
-            <MaterialIcons name="videocam-off" size={48} color="white" />
+          <LinearGradient
+            colors={colors.gradients.darkGlass}
+            style={styles.cameraOffOverlay}
+          >
+            <MaterialIcons name="videocam-off" size={64} color={colors.text.primary} />
             <Text style={styles.cameraOffText}>
               {hasPermission === null ? 'Checking camera permissions...' : 'Camera is off'}
             </Text>
-          </View>
+          </LinearGradient>
         </View>
       )}
 
@@ -85,11 +90,7 @@ export default function VideoFeed({
 const styles = StyleSheet.create({
   videoContainer: {
     flex: 1,
-    marginHorizontal: 8,
-    marginBottom: 8,
-    borderRadius: 24,
-    overflow: 'hidden',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: colors.surface,
   },
   camera: {
     flex: 1,
@@ -101,15 +102,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(128, 128, 128, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
   },
   cameraOffText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-    marginTop: 12,
+    color: colors.text.primary,
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.medium,
+    marginTop: spacing.lg,
+    textAlign: 'center',
   },
 });
