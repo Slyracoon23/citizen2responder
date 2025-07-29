@@ -45,7 +45,7 @@ class CartesiaService {
    */
   async generateSpeech(
     text: string,
-    voiceId: string = "a0e99841-438c-4a64-b679-ae501e7d6091", // Default voice - Barbershop Man
+    voiceId: string = "156fb8d2-335b-4950-9cb3-a2d33befec77", // Default voice - Helpful Woman
     options: {
       language?: string;
       speed?: "slow" | "normal" | "fast";
@@ -113,6 +113,26 @@ class CartesiaService {
     // Common Cartesia voice IDs - in a real implementation, this would come from an API
     return [
       {
+        id: "156fb8d2-335b-4950-9cb3-a2d33befec77",
+        name: "Helpful Woman",
+        description: "Energetic, supportive, caring female voice"
+      },
+      {
+        id: "f9836c6e-a0bd-460e-9d3c-f7299fa60f94",
+        name: "California Girl",
+        description: "Energetic, friendly female voice with American accent"
+      },
+      {
+        id: "694f9389-aac1-45b6-b726-9d9369183238",
+        name: "British Lady",
+        description: "Professional, clear female voice with British accent"
+      },
+      {
+        id: "2ee87190-8f84-4925-97da-e52547f9462c",
+        name: "Australian Woman",
+        description: "Confident female voice with Australian accent"
+      },
+      {
         id: "a0e99841-438c-4a64-b679-ae501e7d6091",
         name: "Barbershop Man",
         description: "Warm, friendly male voice"
@@ -139,7 +159,17 @@ class CartesiaService {
    * Convert ArrayBuffer to base64 data URI for audio playback
    */
   private arrayBufferToDataUri(buffer: ArrayBuffer, mimeType: string = 'audio/mp3'): string {
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    const uint8Array = new Uint8Array(buffer);
+    let binaryString = '';
+    
+    // Process in chunks to avoid stack overflow
+    const chunkSize = 8192;
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const base64 = btoa(binaryString);
     return `data:${mimeType};base64,${base64}`;
   }
 
