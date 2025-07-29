@@ -367,9 +367,6 @@ export default function VideoCallScreen() {
     setCurrentPreCareData(null);
   };
 
-  const toggleTextInput = () => {
-    setIsTextInputVisible(!isTextInputVisible);
-  };
 
   // Handle permission denied case
   if (hasCamera === false) {
@@ -435,10 +432,10 @@ export default function VideoCallScreen() {
               <LeftSideToggles
                 isPreCareToggleOn={isPreCareToggleOn}
                 isGenerateReportOn={isGenerateReportOn}
-                isTextInputVisible={isTextInputVisible}
                 onPreCareToggle={() => togglePreCare(handleShowDefaultPreCare)}
                 onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
-                onTextInputToggle={toggleTextInput}
+                isQuestionToggleOn={isQuestionToggleOn}
+                onQuestionToggle={toggleQuestion}
               />
             </View>
 
@@ -452,6 +449,10 @@ export default function VideoCallScreen() {
                 onImageInputToggle={toggleImageInput}
                 onQuestionToggle={toggleQuestion}
                 onTranscriptionToggle={toggleTranscription}
+                isPreCareToggleOn={isPreCareToggleOn}
+                isGenerateReportOn={isGenerateReportOn}
+                onPreCareToggle={() => togglePreCare(handleShowDefaultPreCare)}
+                onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
               />
             </View>
 

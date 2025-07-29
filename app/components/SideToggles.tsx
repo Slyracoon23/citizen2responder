@@ -73,19 +73,19 @@ const SideToggleButton = ({
 interface LeftSideTogglesProps {
   isPreCareToggleOn: boolean;
   isGenerateReportOn: boolean;
-  isTextInputVisible: boolean;
   onPreCareToggle: () => void;
   onGenerateReportToggle: () => void;
-  onTextInputToggle: () => void;
+  isQuestionToggleOn: boolean;
+  onQuestionToggle: () => void;
 }
 
 export const LeftSideToggles = ({
   isPreCareToggleOn,
   isGenerateReportOn,
-  isTextInputVisible,
   onPreCareToggle,
   onGenerateReportToggle,
-  onTextInputToggle
+  isQuestionToggleOn,
+  onQuestionToggle
 }: LeftSideTogglesProps) => (
   <View style={styles.leftSideContainer}>
     <SideToggleButton
@@ -103,11 +103,11 @@ export const LeftSideToggles = ({
       gradientColors={colors.gradients.error}
     />
     <SideToggleButton
-      isOn={isTextInputVisible}
-      onPress={onTextInputToggle}
-      icon={isTextInputVisible ? "keyboard" : "keyboard-hide"}
-      label="CHAT"
-      gradientColors={colors.gradients.accent}
+      isOn={isQuestionToggleOn}
+      onPress={onQuestionToggle}
+      icon="quiz"
+      label="QUESTIONS"
+      gradientColors={colors.gradients.error}
     />
   </View>
 );
@@ -120,6 +120,10 @@ interface RightSideTogglesProps {
   onImageInputToggle: () => void;
   onQuestionToggle: () => void;
   onTranscriptionToggle: () => void;
+  isPreCareToggleOn: boolean;
+  isGenerateReportOn: boolean;
+  onPreCareToggle: () => void;
+  onGenerateReportToggle: () => void;
 }
 
 export const RightSideToggles = ({
@@ -129,31 +133,14 @@ export const RightSideToggles = ({
   isApiLoading,
   onImageInputToggle,
   onQuestionToggle,
-  onTranscriptionToggle
+  onTranscriptionToggle,
+  isPreCareToggleOn,
+  isGenerateReportOn,
+  onPreCareToggle,
+  onGenerateReportToggle
 }: RightSideTogglesProps) => (
   <View style={styles.rightSideContainer}>
-    <SideToggleButton
-      isOn={isImageInputEnabled}
-      onPress={onImageInputToggle}
-      icon={isImageInputEnabled ? "visibility" : "visibility-off"}
-      label="VISION"
-      gradientColors={colors.gradients.secondary}
-      isLoading={isApiLoading}
-    />
-    <SideToggleButton
-      isOn={isQuestionToggleOn}
-      onPress={onQuestionToggle}
-      icon="quiz"
-      label="QUESTIONS"
-      gradientColors={colors.gradients.error}
-    />
-    <SideToggleButton
-      isOn={isTranscriptionEnabled}
-      onPress={onTranscriptionToggle}
-      icon={isTranscriptionEnabled ? "closed-caption" : "closed-caption-disabled"}
-      label="CAPTIONS"
-      gradientColors={colors.gradients.primary}
-    />
+    {/* Right side is now empty - vision and captions always on */}
   </View>
 );
 
