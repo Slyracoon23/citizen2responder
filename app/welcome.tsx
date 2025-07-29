@@ -227,6 +227,7 @@ const styles = StyleSheet.create({
   topSection: {
     alignItems: 'center',
     width: '100%',
+    paddingRight: 20,
   },
   logo: {
     width: 340,
