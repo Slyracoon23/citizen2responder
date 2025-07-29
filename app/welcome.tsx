@@ -63,7 +63,7 @@ export default function WelcomeScreen() {
           </View>
           <View style={styles.bottomSection}>
             {/* Title and Description */}
-            <View style={{alignSelf: 'stretch', marginBottom: 10}}>
+            <View style={{marginBottom: 10}}>
               <Text style={styles.title}>
                 Help responders
               </Text>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     fontSize: 38,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    textAlign: 'left',
+    textAlign: 'center',
     lineHeight: 40,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 1, height: 1 },
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     color: '#FFFFFF',
-    textAlign: 'left',
+    textAlign: 'center',
     marginBottom: 24,
     lineHeight: 24,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
