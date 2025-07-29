@@ -32,6 +32,7 @@ export const colors = {
     accent: ['#FFD600', '#FFCC00'],
     glass: ['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.05)'],
     darkGlass: ['rgba(0, 0, 0, 0.4)', 'rgba(0, 0, 0, 0.1)'],
+    gray: ['#666666', '#444444'],
   },
   
   text: {

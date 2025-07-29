@@ -30,7 +30,7 @@ const SideToggleButton = ({
   >
     <View style={styles.buttonContainer}>
       <LinearGradient
-        colors={isOn ? gradientColors : colors.gradients.glass}
+        colors={isOn ? gradientColors : colors.gradients.gray}
         style={[
           styles.buttonGradient,
           isOn && styles.buttonActive
