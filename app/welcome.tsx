@@ -5,7 +5,6 @@ import {
   Image,
   Linking,
   Platform,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -56,11 +55,22 @@ export default function WelcomeScreen() {
         
         {/* Overlay Content */}
         <View style={styles.overlay}>
+          <View style={styles.topSection}>
+            <Image 
+              source={require('@/assets/images/logo-transparent-with-white-text-and-full-icon.png')} 
+              style={styles.logo}
+            />
+          </View>
           <View style={styles.bottomSection}>
             {/* Title and Description */}
-            <Text style={styles.title}>
-              citizen2responder
-            </Text>
+            <View style={{alignSelf: 'stretch', marginBottom: 10}}>
+              <Text style={styles.title}>
+                Help responders
+              </Text>
+              <Text style={[styles.title, styles.titleRed]}>
+                Help you
+              </Text>
+            </View>
 
             <Text style={styles.description}>
               AI-powered emergency response guidance{'\n'}
@@ -114,12 +124,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   title: {
-    fontSize: 32,
+    fontSize: 38,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 15,
-    lineHeight: 36,
+    textAlign: 'left',
+    lineHeight: 40,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
@@ -127,8 +136,8 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 40,
+    textAlign: 'left',
+    marginBottom: 24,
     lineHeight: 24,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 1, height: 1 },
@@ -210,8 +219,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     paddingHorizontal: 40,
+    paddingTop: 60,
     paddingBottom: 40,
+  },
+  topSection: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  logo: {
+    width: 340,
+    height: 140,
+    resizeMode: 'contain',
+  },
+  titleRed: {
+    color: '#DC2626',
   },
 });
