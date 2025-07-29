@@ -95,18 +95,18 @@ export const LeftSideToggles = ({
       gradientColors={colors.gradients.error}
     />
     <SideToggleButton
-      isOn={isPreCareToggleOn}
-      onPress={onPreCareToggle}
-      icon="local-hospital"
-      label="PRE-CARE"
-      gradientColors={colors.gradients.secondary}
-    />
-    <SideToggleButton
       isOn={isGenerateReportOn}
       onPress={onGenerateReportToggle}
       icon="assignment"
       label="REPORT"
       gradientColors={colors.gradients.error}
+    />
+    <SideToggleButton
+      isOn={isPreCareToggleOn}
+      onPress={onPreCareToggle}
+      icon="local-hospital"
+      label="PRE-CARE"
+      gradientColors={colors.gradients.secondary}
     />
   </View>
 );
