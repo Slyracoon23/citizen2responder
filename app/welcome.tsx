@@ -87,7 +87,7 @@ export default function WelcomeScreen() {
             disabled={!termsAccepted}
           >
             <Text style={[styles.startButtonText, !termsAccepted && styles.startButtonTextDisabled]}>
-              I'm new here!
+              Report Emergency
             </Text>
           </TouchableOpacity>
 
