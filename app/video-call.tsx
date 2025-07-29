@@ -12,12 +12,13 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import ChatInterface, { ChatInput } from './components/ChatInterface';
 import Header from './components/Header';
+import PreCareModal from './components/PreCareModal';
+import ReportModal from './components/ReportModal';
+import { LeftSideToggles, RightSideToggles } from './components/SideToggles';
 import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
-import ChatInterface, { ChatInput } from './components/ChatInterface';
-import ReportModal from './components/ReportModal';
-import PreCareModal from './components/PreCareModal';
 import { useAnimations } from './hooks/useAnimations';
 import { useConversation } from './hooks/useConversation';
 import { useLocation } from './hooks/useLocation';
@@ -426,74 +427,7 @@ export default function VideoCallScreen() {
         <View style={videoCallStyles.container}>
           <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-          {/* Header */}
-          <Header
-            isImageInputEnabled={isImageInputEnabled}
-            isQuestionToggleOn={isQuestionToggleOn}
-            isTranscriptionEnabled={isTranscriptionEnabled}
-            isTextInputVisible={isTextInputVisible}
-            isGenerateReportOn={isGenerateReportOn}
-            isPreCareToggleOn={isPreCareToggleOn}
-            isApiLoading={isApiLoading}
-            isLocationOn={isLocationOn}
-            isLocationLoading={isLocationLoading}
-            currentLocation={currentLocation}
-            rotateAnim={rotateAnim}
-            onImageInputToggle={toggleImageInput}
-            onQuestionToggle={toggleQuestion}
-            onTranscriptionToggle={toggleTranscription}
-            onTextInputToggle={toggleTextInput}
-            onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
-            onPreCareToggle={() => togglePreCare(handleShowDefaultPreCare)}
-          />
-
-          {/* TTS Debug Info */}
-          {isSpeaking && (
-            <View style={{
-              position: 'absolute',
-              top: 100,
-              left: 20,
-              right: 20,
-              backgroundColor: 'rgba(76, 175, 80, 0.9)',
-              padding: 12,
-              borderRadius: 8,
-              zIndex: 1000,
-            }}>
-              <Text style={{
-                color: 'white',
-                fontSize: 16,
-                textAlign: 'center',
-                fontWeight: '600',
-              }}>
-                🔊 Speaking AI Response...
-              </Text>
-            </View>
-          )}
-
-          {/* STT Error Info */}
-          {sttError && (
-            <View style={{
-              position: 'absolute',
-              top: 150,
-              left: 20,
-              right: 20,
-              backgroundColor: 'rgba(255, 59, 48, 0.9)',
-              padding: 12,
-              borderRadius: 8,
-              zIndex: 1000,
-            }}>
-              <Text style={{
-                color: 'white',
-                fontSize: 16,
-                textAlign: 'center',
-                fontWeight: '600',
-              }}>
-                🎤 Speech Recognition Error: {sttError}
-              </Text>
-            </View>
-          )}
-
-          {/* Full Screen Video */}
+          {/* Full Screen Video - Now extends to top */}
           <View style={videoCallStyles.fullScreenVideoContainer}>
             <VideoFeed
               isCameraOn={isCameraOn}
@@ -512,6 +446,41 @@ export default function VideoCallScreen() {
               isApiLoading={isApiLoading}
               isImageInputEnabled={isImageInputEnabled}
             />
+
+            {/* Header Overlay */}
+            <View style={videoCallStyles.headerOverlay}>
+              <Header
+                isLocationOn={isLocationOn}
+                isLocationLoading={isLocationLoading}
+                currentLocation={currentLocation}
+                rotateAnim={rotateAnim}
+              />
+            </View>
+
+            {/* Left Side Toggle Buttons */}
+            <View style={videoCallStyles.leftSideTogglesOverlay}>
+              <LeftSideToggles
+                isPreCareToggleOn={isPreCareToggleOn}
+                isGenerateReportOn={isGenerateReportOn}
+                isTextInputVisible={isTextInputVisible}
+                onPreCareToggle={() => togglePreCare(handleShowDefaultPreCare)}
+                onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
+                onTextInputToggle={toggleTextInput}
+              />
+            </View>
+
+            {/* Right Side Toggle Buttons */}
+            <View style={videoCallStyles.rightSideTogglesOverlay}>
+              <RightSideToggles
+                isImageInputEnabled={isImageInputEnabled}
+                isQuestionToggleOn={isQuestionToggleOn}
+                isTranscriptionEnabled={isTranscriptionEnabled}
+                isApiLoading={isApiLoading}
+                onImageInputToggle={toggleImageInput}
+                onQuestionToggle={toggleQuestion}
+                onTranscriptionToggle={toggleTranscription}
+              />
+            </View>
 
             {/* Chat History Overlay at Top */}
             <View style={videoCallStyles.chatOverlayTop}>

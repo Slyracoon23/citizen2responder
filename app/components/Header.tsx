@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -49,241 +49,21 @@ const LocationDisplay = ({ isLocationOn, isLocationLoading, currentLocation, rot
   );
 };
 
-interface LeftControlsProps {
-  isGenerateReportOn: boolean;
-  isPreCareToggleOn: boolean;
-  onGenerateReportToggle: () => void;
-  onPreCareToggle: () => void;
+
+
+
+interface HeaderProps {
   isLocationOn: boolean;
   isLocationLoading: boolean;
   currentLocation: Location.LocationObject | null;
   rotateAnim: Animated.Value;
 }
 
-const LeftControls = ({ 
-  isGenerateReportOn,
-  isPreCareToggleOn,
-  onGenerateReportToggle,
-  onPreCareToggle,
+export default function Header({
   isLocationOn,
   isLocationLoading,
   currentLocation,
   rotateAnim
-}: LeftControlsProps) => (
-  <View style={styles.leftControls}>
-    <LocationDisplay
-      isLocationOn={isLocationOn}
-      isLocationLoading={isLocationLoading}
-      currentLocation={currentLocation}
-      rotateAnim={rotateAnim}
-    />
-    <TouchableOpacity
-      style={styles.modernToggle}
-      onPress={onPreCareToggle}
-      activeOpacity={0.8}
-    >
-      <LinearGradient
-        colors={isPreCareToggleOn 
-          ? colors.gradients.secondary 
-          : colors.gradients.glass
-        }
-        style={[
-          styles.toggleGradient,
-          isPreCareToggleOn && styles.toggleActive
-        ]}
-      >
-        <MaterialIcons
-          name="local-hospital"
-          size={22}
-          color={isPreCareToggleOn ? colors.text.primary : colors.controls.inactive}
-        />
-      </LinearGradient>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.modernToggle}
-      onPress={onGenerateReportToggle}
-      activeOpacity={0.8}
-    >
-      <LinearGradient
-        colors={isGenerateReportOn 
-          ? colors.gradients.error 
-          : colors.gradients.glass
-        }
-        style={[
-          styles.toggleGradient,
-          isGenerateReportOn && styles.toggleActive
-        ]}
-      >
-        <MaterialIcons
-          name="assignment"
-          size={22}
-          color={isGenerateReportOn ? colors.text.primary : colors.controls.inactive}
-        />
-      </LinearGradient>
-    </TouchableOpacity>
-  </View>
-);
-
-
-interface RightControlsProps {
-  isImageInputEnabled: boolean;
-  isQuestionToggleOn: boolean;
-  isTranscriptionEnabled: boolean;
-  isTextInputVisible: boolean;
-  isApiLoading: boolean;
-  onImageInputToggle: () => void;
-  onQuestionToggle: () => void;
-  onTranscriptionToggle: () => void;
-  onTextInputToggle: () => void;
-}
-
-const RightControls = ({
-  isImageInputEnabled,
-  isQuestionToggleOn,
-  isTranscriptionEnabled,
-  isTextInputVisible,
-  isApiLoading,
-  onImageInputToggle,
-  onQuestionToggle,
-  onTranscriptionToggle,
-  onTextInputToggle
-}: RightControlsProps) => (
-  <View style={styles.rightControls}>
-    <TouchableOpacity
-      style={styles.modernToggle}
-      onPress={onImageInputToggle}
-      activeOpacity={0.8}
-    >
-      <LinearGradient
-        colors={isImageInputEnabled 
-          ? colors.gradients.secondary 
-          : colors.gradients.glass
-        }
-        style={[
-          styles.toggleGradient,
-          isImageInputEnabled && styles.toggleActive,
-          isApiLoading && styles.toggleLoading
-        ]}
-      >
-        <MaterialIcons
-          name={isImageInputEnabled ? "visibility" : "visibility-off"}
-          size={22}
-          color={isApiLoading 
-            ? colors.accent 
-            : isImageInputEnabled 
-              ? colors.text.primary 
-              : colors.controls.inactive
-          }
-        />
-      </LinearGradient>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.modernToggle}
-      onPress={onQuestionToggle}
-      activeOpacity={0.8}
-    >
-      <LinearGradient
-        colors={isQuestionToggleOn 
-          ? colors.gradients.error 
-          : colors.gradients.glass
-        }
-        style={[
-          styles.toggleGradient,
-          isQuestionToggleOn && styles.toggleActive
-        ]}
-      >
-        <MaterialIcons
-          name="quiz"
-          size={22}
-          color={isQuestionToggleOn ? colors.text.primary : colors.controls.inactive}
-        />
-      </LinearGradient>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.modernToggle}
-      onPress={onTranscriptionToggle}
-      activeOpacity={0.8}
-    >
-      <LinearGradient
-        colors={isTranscriptionEnabled 
-          ? colors.gradients.primary 
-          : colors.gradients.glass
-        }
-        style={[
-          styles.toggleGradient,
-          isTranscriptionEnabled && styles.toggleActive
-        ]}
-      >
-        <MaterialIcons
-          name={isTranscriptionEnabled ? "closed-caption" : "closed-caption-disabled"}
-          size={22}
-          color={isTranscriptionEnabled ? colors.text.primary : colors.controls.inactive}
-        />
-      </LinearGradient>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={styles.modernToggle}
-      onPress={onTextInputToggle}
-      activeOpacity={0.8}
-    >
-      <LinearGradient
-        colors={isTextInputVisible 
-          ? colors.gradients.accent 
-          : colors.gradients.glass
-        }
-        style={[
-          styles.toggleGradient,
-          isTextInputVisible && styles.toggleActive
-        ]}
-      >
-        <MaterialIcons
-          name={isTextInputVisible ? "keyboard" : "keyboard-hide"}
-          size={22}
-          color={isTextInputVisible ? colors.text.primary : colors.controls.inactive}
-        />
-      </LinearGradient>
-    </TouchableOpacity>
-  </View>
-);
-
-interface HeaderProps {
-  isImageInputEnabled: boolean;
-  isQuestionToggleOn: boolean;
-  isTranscriptionEnabled: boolean;
-  isTextInputVisible: boolean;
-  isGenerateReportOn: boolean;
-  isPreCareToggleOn: boolean;
-  isApiLoading: boolean;
-  isLocationOn: boolean;
-  isLocationLoading: boolean;
-  currentLocation: Location.LocationObject | null;
-  rotateAnim: Animated.Value;
-  onImageInputToggle: () => void;
-  onQuestionToggle: () => void;
-  onTranscriptionToggle: () => void;
-  onTextInputToggle: () => void;
-  onGenerateReportToggle: () => void;
-  onPreCareToggle: () => void;
-}
-
-export default function Header({
-  isImageInputEnabled,
-  isQuestionToggleOn,
-  isTranscriptionEnabled,
-  isTextInputVisible,
-  isGenerateReportOn,
-  isPreCareToggleOn,
-  isApiLoading,
-  isLocationOn,
-  isLocationLoading,
-  currentLocation,
-  rotateAnim,
-  onImageInputToggle,
-  onQuestionToggle,
-  onTranscriptionToggle,
-  onTextInputToggle,
-  onGenerateReportToggle,
-  onPreCareToggle
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
 
@@ -294,27 +74,19 @@ export default function Header({
           colors={colors.gradients.darkGlass}
           style={styles.headerGradient}
         >
-          <LeftControls
-            isGenerateReportOn={isGenerateReportOn}
-            isPreCareToggleOn={isPreCareToggleOn}
-            onGenerateReportToggle={onGenerateReportToggle}
-            onPreCareToggle={onPreCareToggle}
-            isLocationOn={isLocationOn}
-            isLocationLoading={isLocationLoading}
-            currentLocation={currentLocation}
-            rotateAnim={rotateAnim}
-          />
-          <RightControls
-            isImageInputEnabled={isImageInputEnabled}
-            isQuestionToggleOn={isQuestionToggleOn}
-            isTranscriptionEnabled={isTranscriptionEnabled}
-            isTextInputVisible={isTextInputVisible}
-            isApiLoading={isApiLoading}
-            onImageInputToggle={onImageInputToggle}
-            onQuestionToggle={onQuestionToggle}
-            onTranscriptionToggle={onTranscriptionToggle}
-            onTextInputToggle={onTextInputToggle}
-          />
+          <View style={styles.headerContent}>
+            <Image
+              source={require('../../assets/images/logo-transparent-with-white-text-and-full-icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <LocationDisplay
+              isLocationOn={isLocationOn}
+              isLocationLoading={isLocationLoading}
+              currentLocation={currentLocation}
+              rotateAnim={rotateAnim}
+            />
+          </View>
         </LinearGradient>
       </View>
     </View>
@@ -339,26 +111,25 @@ const styles = StyleSheet.create({
   },
   headerGradient: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderRadius: spacing.button.medium.radius,
   },
   
-  // Controls containers
-  leftControls: {
+  // Header content container
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.md,
-    flex: 1,
   },
-  rightControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    justifyContent: 'flex-end',
-    flex: 1,
+  
+  // Logo styles
+  logo: {
+    height: 32,
+    width: 120,
   },
   
   // Location display
@@ -385,41 +156,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
     marginLeft: spacing.xs,
-  },
-  
-  // Modern toggle buttons
-  modernToggle: {
-    borderRadius: spacing.button.medium.radius,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
-  },
-  toggleGradient: {
-    width: 48,
-    height: 48,
-    borderRadius: spacing.button.medium.radius,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.glass.light,
-  },
-  toggleActive: {
-    borderColor: colors.glass.strong,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  toggleLoading: {
-    borderColor: colors.accent,
-    shadowColor: '#FFFFFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 0,
   },
 });

@@ -15,7 +15,7 @@ import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constant
 interface ChatInterfaceProps {
   isTranscriptionEnabled: boolean;
   conversationHistory: ConversationMessage[];
-  chatScrollViewRef: React.RefObject<ScrollView>;
+  chatScrollViewRef: React.RefObject<ScrollView | null>;
   isLoading: boolean;
 }
 

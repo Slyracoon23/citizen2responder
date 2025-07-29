@@ -102,6 +102,19 @@ export const videoCallStyles = StyleSheet.create({
   fullScreenVideoContainer: {
     flex: 1,
     position: 'relative',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  
+  // Header overlay on top of video
+  headerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1002,
   },
   chatOverlayTop: {
     position: 'absolute',
@@ -127,6 +140,26 @@ export const videoCallStyles = StyleSheet.create({
     right: 0,
     zIndex: 1000,
     paddingBottom: spacing.md,
+  },
+
+  // Side toggle overlays
+  leftSideTogglesOverlay: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 1001,
+    justifyContent: 'center',
+    paddingLeft: spacing.lg,
+  },
+  rightSideTogglesOverlay: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 1001,
+    justifyContent: 'center',
+    paddingRight: spacing.lg,
   },
 
   // Report Modal Styles

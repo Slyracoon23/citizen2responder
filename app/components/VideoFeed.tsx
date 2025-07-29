@@ -10,7 +10,7 @@ import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constant
 interface VideoFeedProps {
   isCameraOn: boolean;
   hasPermission: boolean | null;
-  cameraRef: React.RefObject<CameraView>;
+  cameraRef: React.RefObject<CameraView | null>;
   
   // Overlay props
   isTranscriptionEnabled: boolean;
