@@ -16,6 +16,7 @@ import Header from './components/Header';
 import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
 import ReportModal from './components/ReportModal';
+import PreCareModal from './components/PreCareModal';
 import { useAnimations } from './hooks/useAnimations';
 import { useConversation } from './hooks/useConversation';
 import { useLocation } from './hooks/useLocation';
@@ -32,6 +33,8 @@ export default function VideoCallScreen() {
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [currentReport, setCurrentReport] = useState<any>(null);
   const [showDefaultReport, setShowDefaultReport] = useState(false);
+  const [isPreCareModalVisible, setIsPreCareModalVisible] = useState(false);
+  const [currentPreCareData, setCurrentPreCareData] = useState<any>(null);
 
   // Default report data to show when toggle is activated
   const defaultReportData = {
@@ -89,13 +92,16 @@ export default function VideoCallScreen() {
     isQuestionToggleOn,
     isImageInputEnabled,
     isGenerateReportOn,
+    isPreCareToggleOn,
     setIsQuestionToggleOn,
+    setIsPreCareToggleOn,
     handleCameraToggle,
     handleVoiceToggle,
     toggleTranscription,
     toggleQuestion,
     toggleImageInput,
     toggleGenerateReport,
+    togglePreCare,
   } = useToggleFeature();
 
   const {
@@ -136,6 +142,23 @@ export default function VideoCallScreen() {
   const handleShowDefaultReport = () => {
     setCurrentReport(defaultReportData);
     setIsReportModalVisible(true);
+  };
+
+  const handleShowDefaultPreCare = () => {
+    const defaultPreCareData = {
+      title: "General Emergency Pre-Care",
+      instructions: [
+        "Stay calm and assess the situation",
+        "Check if the area is safe for you and others",
+        "Call emergency services if needed",
+        "Provide basic first aid if trained to do so",
+        "Monitor the person's breathing and consciousness",
+        "Keep the person comfortable until help arrives"
+      ],
+      priority: "medium" as const
+    };
+    setCurrentPreCareData(defaultPreCareData);
+    setIsPreCareModalVisible(true);
   };
 
   const handleSttPressIn = async () => {
@@ -244,6 +267,23 @@ export default function VideoCallScreen() {
         } catch (e) {
           console.error('🔧 GENERATE_REPORT ERROR: Failed to parse tool call arguments:', e);
         }
+      } else if (toolCall.type === 'function' && toolCall.function?.name === 'show_precare_instructions') {
+        console.log('🔧 PRECARE_INSTRUCTIONS DEBUG: Found show_precare_instructions tool call');
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          console.log('🔧 PRECARE_INSTRUCTIONS DEBUG: Parsed arguments:', args);
+          if (args.title && args.instructions && args.priority) {
+            console.log('🔧 PRECARE_INSTRUCTIONS DEBUG: Auto-enabling pre-care toggle and setting data');
+            setIsPreCareToggleOn(true);
+            setCurrentPreCareData(args);
+            setIsPreCareModalVisible(true);
+            console.log('🔧 PRECARE_INSTRUCTIONS DEBUG: PreCare modal activated with auto-toggle');
+          } else {
+            console.log('🔧 PRECARE_INSTRUCTIONS DEBUG: Missing required pre-care data');
+          }
+        } catch (e) {
+          console.error('🔧 PRECARE_INSTRUCTIONS ERROR: Failed to parse tool call arguments:', e);
+        }
       } else {
         console.log('🔧 TOOL CALL DEBUG: Tool call not matched - type:', toolCall.type, 'name:', toolCall.function?.name);
       }
@@ -337,6 +377,11 @@ export default function VideoCallScreen() {
     setCurrentReport(null);
   };
 
+  const handleClosePreCare = () => {
+    setIsPreCareModalVisible(false);
+    setCurrentPreCareData(null);
+  };
+
   // Handle permission denied case
   if (hasCamera === false) {
     return (
@@ -381,6 +426,7 @@ export default function VideoCallScreen() {
             isQuestionToggleOn={isQuestionToggleOn}
             isTranscriptionEnabled={isTranscriptionEnabled}
             isGenerateReportOn={isGenerateReportOn}
+            isPreCareToggleOn={isPreCareToggleOn}
             isApiLoading={isApiLoading}
             isLocationOn={isLocationOn}
             isLocationLoading={isLocationLoading}
@@ -390,6 +436,7 @@ export default function VideoCallScreen() {
             onQuestionToggle={toggleQuestion}
             onTranscriptionToggle={toggleTranscription}
             onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
+            onPreCareToggle={() => togglePreCare(handleShowDefaultPreCare)}
           />
 
           {/* TTS Debug Info */}
@@ -479,6 +526,13 @@ export default function VideoCallScreen() {
             report={currentReport}
             onClose={handleCloseReport}
             onSendToEmergency={handleSendToEmergency}
+          />
+
+          {/* PreCare Modal */}
+          <PreCareModal
+            visible={isPreCareModalVisible}
+            preCareData={currentPreCareData}
+            onClose={handleClosePreCare}
           />
         </View>
       </TouchableWithoutFeedback>

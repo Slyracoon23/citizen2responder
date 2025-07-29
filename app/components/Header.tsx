@@ -44,7 +44,9 @@ const LocationDisplay = ({ isLocationOn, isLocationLoading, currentLocation, rot
 
 interface LeftControlsProps {
   isGenerateReportOn: boolean;
+  isPreCareToggleOn: boolean;
   onGenerateReportToggle: () => void;
+  onPreCareToggle: () => void;
   isLocationOn: boolean;
   isLocationLoading: boolean;
   currentLocation: Location.LocationObject | null;
@@ -52,8 +54,10 @@ interface LeftControlsProps {
 }
 
 const LeftControls = ({ 
-  isGenerateReportOn, 
+  isGenerateReportOn,
+  isPreCareToggleOn,
   onGenerateReportToggle,
+  onPreCareToggle,
   isLocationOn,
   isLocationLoading,
   currentLocation,
@@ -67,6 +71,16 @@ const LeftControls = ({
       rotateAnim={rotateAnim}
     />
     <TouchableOpacity
+      style={[styles.headerToggle, isPreCareToggleOn && styles.headerToggleActive]}
+      onPress={onPreCareToggle}
+    >
+      <MaterialIcons
+        name="local-hospital"
+        size={24}
+        color={isPreCareToggleOn ? "#34C759" : "white"}
+      />
+    </TouchableOpacity>
+    <TouchableOpacity
       style={[styles.headerToggle, isGenerateReportOn && styles.headerToggleActive]}
       onPress={onGenerateReportToggle}
     >
@@ -79,14 +93,6 @@ const LeftControls = ({
   </View>
 );
 
-const LiveIndicator = () => (
-  <View style={styles.liveIndicator}>
-    <View style={styles.liveContainer}>
-      <View style={styles.liveDot} />
-      <Text style={styles.liveText}>Live</Text>
-    </View>
-  </View>
-);
 
 interface RightControlsProps {
   isImageInputEnabled: boolean;
@@ -150,6 +156,7 @@ interface HeaderProps {
   isQuestionToggleOn: boolean;
   isTranscriptionEnabled: boolean;
   isGenerateReportOn: boolean;
+  isPreCareToggleOn: boolean;
   isApiLoading: boolean;
   isLocationOn: boolean;
   isLocationLoading: boolean;
@@ -159,6 +166,7 @@ interface HeaderProps {
   onQuestionToggle: () => void;
   onTranscriptionToggle: () => void;
   onGenerateReportToggle: () => void;
+  onPreCareToggle: () => void;
 }
 
 export default function Header({
@@ -166,6 +174,7 @@ export default function Header({
   isQuestionToggleOn,
   isTranscriptionEnabled,
   isGenerateReportOn,
+  isPreCareToggleOn,
   isApiLoading,
   isLocationOn,
   isLocationLoading,
@@ -174,7 +183,8 @@ export default function Header({
   onImageInputToggle,
   onQuestionToggle,
   onTranscriptionToggle,
-  onGenerateReportToggle
+  onGenerateReportToggle,
+  onPreCareToggle
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
 
@@ -182,13 +192,14 @@ export default function Header({
     <View style={[styles.headerArea, { paddingTop: insets.top }]}>
       <LeftControls
         isGenerateReportOn={isGenerateReportOn}
+        isPreCareToggleOn={isPreCareToggleOn}
         onGenerateReportToggle={onGenerateReportToggle}
+        onPreCareToggle={onPreCareToggle}
         isLocationOn={isLocationOn}
         isLocationLoading={isLocationLoading}
         currentLocation={currentLocation}
         rotateAnim={rotateAnim}
       />
-      <LiveIndicator />
       <RightControls
         isImageInputEnabled={isImageInputEnabled}
         isQuestionToggleOn={isQuestionToggleOn}
@@ -212,7 +223,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   leftControls: {
-    width: 142,
+    width: 186,
     justifyContent: 'flex-start',
     alignItems: 'center',
     flexDirection: 'row',
@@ -231,29 +242,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     marginLeft: 4,
-  },
-  liveIndicator: {
-    alignItems: 'center',
-  },
-  liveContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF3B30',
-    marginRight: 6,
-  },
-  liveText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
   },
   rightControls: {
     flexDirection: 'row',

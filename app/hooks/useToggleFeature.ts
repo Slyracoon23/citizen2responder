@@ -10,6 +10,7 @@ export function useToggleFeature() {
   const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
   const [isImageInputEnabled, setIsImageInputEnabled] = useState(false);
   const [isGenerateReportOn, setIsGenerateReportOn] = useState(false);
+  const [isPreCareToggleOn, setIsPreCareToggleOn] = useState(false);
 
   const handleCameraToggle = async (
     hasPermission: boolean | null,
@@ -92,6 +93,14 @@ export function useToggleFeature() {
     }
   };
 
+  const togglePreCare = (onActivate?: () => void) => {
+    const newState = !isPreCareToggleOn;
+    setIsPreCareToggleOn(newState);
+    if (newState && onActivate) {
+      onActivate();
+    }
+  };
+
   return {
     isCameraOn,
     isVoiceOn,
@@ -99,12 +108,15 @@ export function useToggleFeature() {
     isQuestionToggleOn,
     isImageInputEnabled,
     isGenerateReportOn,
+    isPreCareToggleOn,
     setIsQuestionToggleOn,
+    setIsPreCareToggleOn,
     handleCameraToggle,
     handleVoiceToggle,
     toggleTranscription,
     toggleQuestion,
     toggleImageInput,
     toggleGenerateReport,
+    togglePreCare,
   };
 }
