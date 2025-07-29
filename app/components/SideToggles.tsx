@@ -1,9 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors, spacing, fontSize, fontWeight } from '../constants/theme';
-import * as Location from 'expo-location';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { colors, fontSize, fontWeight, spacing } from '../constants/theme';
 
 interface SideToggleButtonProps {
   isOn: boolean;
@@ -89,6 +88,13 @@ export const LeftSideToggles = ({
 }: LeftSideTogglesProps) => (
   <View style={styles.leftSideContainer}>
     <SideToggleButton
+      isOn={isQuestionToggleOn}
+      onPress={onQuestionToggle}
+      icon="quiz"
+      label="ASSESS"
+      gradientColors={colors.gradients.error}
+    />
+    <SideToggleButton
       isOn={isPreCareToggleOn}
       onPress={onPreCareToggle}
       icon="local-hospital"
@@ -100,13 +106,6 @@ export const LeftSideToggles = ({
       onPress={onGenerateReportToggle}
       icon="assignment"
       label="REPORT"
-      gradientColors={colors.gradients.error}
-    />
-    <SideToggleButton
-      isOn={isQuestionToggleOn}
-      onPress={onQuestionToggle}
-      icon="quiz"
-      label="QUESTIONS"
       gradientColors={colors.gradients.error}
     />
   </View>
@@ -149,7 +148,7 @@ const styles = StyleSheet.create({
   leftSideContainer: {
     position: 'absolute',
     left: spacing.lg,
-    top: '35%',
+    top: '38%',
     zIndex: 1001,
     gap: spacing.lg,
   },
@@ -158,7 +157,7 @@ const styles = StyleSheet.create({
   rightSideContainer: {
     position: 'absolute',
     right: spacing.lg,
-    top: '35%',
+    top: '40%',
     zIndex: 1001,
     gap: spacing.lg,
   },
