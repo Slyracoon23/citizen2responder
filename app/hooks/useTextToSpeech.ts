@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
-import * as Speech from 'expo-speech';
+import { Audio } from 'expo-av';
+import cartesiaService from '../services/cartesiaService';
 
 type SpeechState = 'idle' | 'speaking';
 
@@ -8,22 +9,29 @@ export function useTextToSpeech() {
   const [speechState, setSpeechState] = useState<SpeechState>('idle');
   const [availableVoices, setAvailableVoices] = useState<any[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>('');
+  const audioRef = useRef<Audio.Sound | null>(null);
 
   // Load available voices on component mount
   useEffect(() => {
     const loadVoices = async () => {
       try {
-        const voices = await Speech.getAvailableVoicesAsync();
-        console.log('TTS: Available voices:', voices.length);
+        // Set audio mode for proper playback
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          staysActiveInBackground: false,
+        });
+
+        const voices = cartesiaService.getAvailableVoices();
+        console.log('TTS: Available Cartesia voices:', voices.length);
         setAvailableVoices(voices);
         
-        // Select default voice (prefer English voices)
+        // Select default voice
         if (voices.length > 0) {
-          const defaultVoice = voices.find(voice => 
-            voice.language.startsWith('en')
-          ) || voices[0];
-          setSelectedVoice(defaultVoice.identifier);
-          console.log('TTS: Selected default voice:', defaultVoice.name, defaultVoice.language);
+          const defaultVoice = voices[0];
+          setSelectedVoice(defaultVoice.id);
+          console.log('TTS: Selected default voice:', defaultVoice.name);
         }
       } catch (error) {
         console.error('TTS: Error loading voices:', error);
@@ -33,10 +41,23 @@ export function useTextToSpeech() {
     loadVoices();
   }, []);
 
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.unloadAsync().catch(console.error);
+      }
+    };
+  }, []);
+
   const stop = useCallback(async () => {
     try {
       console.log('TTS: Stopping speech...');
-      await Speech.stop();
+      if (audioRef.current) {
+        await audioRef.current.stopAsync();
+        await audioRef.current.unloadAsync();
+        audioRef.current = null;
+      }
       setSpeechState('idle');
       console.log('TTS: Speech stopped successfully');
     } catch (error) {
@@ -60,53 +81,61 @@ export function useTextToSpeech() {
       // Small delay to ensure stop completes
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Check text length limit
-      if (text.length > Speech.maxSpeechInputLength) {
-        console.warn('TTS: Text too long for speech, truncating...', text.length, 'chars');
-        text = text.substring(0, Speech.maxSpeechInputLength);
-      }
-
       console.log('TTS: Setting state to speaking');
       setSpeechState('speaking');
 
-      const speechOptions = {
-        voice: selectedVoice || undefined,
-        rate: 1.0,
-        pitch: 1.0,
-        // Force volume to 1.0 on iOS to override silent mode
-        ...(Platform.OS === 'ios' && { volume: 1.0 }),
-        onStart: () => {
-          console.log('TTS: ✅ Speech started successfully');
-          setSpeechState('speaking');
-        },
-        onDone: () => {
-          console.log('TTS: ✅ Speech completed successfully');
-          setSpeechState('idle');
-        },
-        onStopped: () => {
-          console.log('TTS: ⏹️ Speech stopped');
-          setSpeechState('idle');
-        },
-        onError: (error: Error) => {
-          console.error('TTS: ❌ Speech error:', error);
-          setSpeechState('idle');
-        },
-      };
+      // Generate audio using Cartesia API
+      console.log('TTS: Generating audio with Cartesia API...');
+      const audioDataUri = await cartesiaService.generateSpeechDataUri(
+        text,
+        selectedVoice || undefined,
+        {
+          speed: 'normal',
+          language: 'en'
+        }
+      );
 
-      console.log('TTS: Initiating Speech.speak with options:', {
-        voice: speechOptions.voice,
-        rate: speechOptions.rate,
-        pitch: speechOptions.pitch,
-        volume: speechOptions.volume,
-        textLength: text.length
+      console.log('TTS: Audio generated, loading for playback...');
+      
+      // Create and play audio
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioDataUri },
+        {
+          shouldPlay: true,
+          volume: 1.0,
+        }
+      );
+
+      audioRef.current = sound;
+
+      // Set up playback status listener
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded) {
+          if (status.didJustFinish) {
+            console.log('TTS: ✅ Speech completed successfully');
+            setSpeechState('idle');
+            sound.unloadAsync();
+            audioRef.current = null;
+          } else if (status.isPlaying) {
+            console.log('TTS: ✅ Speech started successfully');
+            setSpeechState('speaking');
+          }
+        }
       });
 
-      Speech.speak(text, speechOptions);
+      console.log('TTS: Audio playback initiated successfully');
       
-      console.log('TTS: Speech.speak called successfully');
     } catch (error) {
       console.error('TTS: ❌ Error starting speech:', error);
       setSpeechState('idle');
+      if (audioRef.current) {
+        try {
+          await audioRef.current.unloadAsync();
+        } catch (unloadError) {
+          console.error('TTS: Error unloading audio after error:', unloadError);
+        }
+        audioRef.current = null;
+      }
     }
   }, [stop, selectedVoice]);
 
