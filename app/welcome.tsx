@@ -21,7 +21,7 @@ export default function WelcomeScreen() {
       Alert.alert('Terms Required', 'Please acknowledge the risks to continue.');
       return;
     }
-    router.push('/');
+    router.push('/video-call');
   };
 
   const handle911Call = () => {
