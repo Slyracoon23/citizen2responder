@@ -13,7 +13,6 @@ import {
   View
 } from 'react-native';
 import ChatInterface, { ChatInput } from './components/ChatInterface';
-import Header from './components/Header';
 import PreCareModal from './components/PreCareModal';
 import ReportModal from './components/ReportModal';
 import { LeftSideToggles, RightSideToggles } from './components/SideToggles';
@@ -21,7 +20,6 @@ import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
 import { useAnimations } from './hooks/useAnimations';
 import { useConversation } from './hooks/useConversation';
-import { useLocation } from './hooks/useLocation';
 import { usePermissions } from './hooks/usePermissions';
 import { useSpeechToText } from './hooks/useSpeechToText';
 import { useToggleFeature } from './hooks/useToggleFeature';
@@ -62,11 +60,8 @@ export default function VideoCallScreen() {
   const { hasCamera, hasAudio, requestCameraPermission, requestAudioPermission } = usePermissions();
   const {
     slideAnim,
-    rotateAnim,
     micPulseAnim,
     startSlideAnimation,
-    startRotateAnimation,
-    resetRotateAnimation,
   } = useAnimations();
   
   const {
@@ -82,11 +77,6 @@ export default function VideoCallScreen() {
     isSpeaking,
   } = useConversation();
 
-  const {
-    isLocationOn,
-    currentLocation,
-    isLocationLoading,
-  } = useLocation();
 
   const {
     isCameraOn,
@@ -120,14 +110,6 @@ export default function VideoCallScreen() {
     startSlideAnimation(isQuestionToggleOn ? 1 : 0);
   }, [isQuestionToggleOn]);
 
-  useEffect(() => {
-    if (isLocationLoading) {
-      const rotateAnimation = startRotateAnimation();
-      return () => rotateAnimation.stop();
-    } else {
-      resetRotateAnimation();
-    }
-  }, [isLocationLoading]);
 
   // Handlers
   const handleEndCall = () => {
@@ -447,15 +429,6 @@ export default function VideoCallScreen() {
               isImageInputEnabled={isImageInputEnabled}
             />
 
-            {/* Header Overlay */}
-            <View style={videoCallStyles.headerOverlay}>
-              <Header
-                isLocationOn={isLocationOn}
-                isLocationLoading={isLocationLoading}
-                currentLocation={currentLocation}
-                rotateAnim={rotateAnim}
-              />
-            </View>
 
             {/* Left Side Toggle Buttons */}
             <View style={videoCallStyles.leftSideTogglesOverlay}>

@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   leftSideContainer: {
     position: 'absolute',
     left: spacing.lg,
-    top: '25%',
+    top: '35%',
     zIndex: 1001,
     gap: spacing.lg,
   },
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   rightSideContainer: {
     position: 'absolute',
     right: spacing.lg,
-    top: '25%',
+    top: '35%',
     zIndex: 1001,
     gap: spacing.lg,
   },

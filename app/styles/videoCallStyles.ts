@@ -118,13 +118,13 @@ export const videoCallStyles = StyleSheet.create({
   },
   chatOverlayTop: {
     position: 'absolute',
-    top: 0,
+    top: 40, // Move closer to the very top
     left: 0,
     right: 0,
-    height: '40%', // Chat takes top 40% of screen
+    height: '30%', // Reduce vertical height
     zIndex: 1000,
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg, // More padding from top edge
+    paddingHorizontal: spacing.xl, // Keep horizontal padding to clear side buttons
   },
   chatInputAboveControls: {
     position: 'absolute',
