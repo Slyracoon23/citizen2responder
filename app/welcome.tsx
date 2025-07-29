@@ -46,13 +46,7 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>citizen2responder</Text>
-        </View>
-      </View>
-
+    <View style={styles.container}>
       <View style={styles.content}>
         {/* Background Hero Image */}
         <Image 
@@ -62,7 +56,7 @@ export default function WelcomeScreen() {
         
         {/* Overlay Content */}
         <View style={styles.overlay}>
-          <View style={styles.topSection}>
+          <View style={styles.bottomSection}>
             {/* Title and Description */}
             <Text style={styles.title}>
               citizen2responder
@@ -72,9 +66,6 @@ export default function WelcomeScreen() {
               AI-powered emergency response guidance{'\n'}
               to help you in critical situations
             </Text>
-          </View>
-
-          <View style={styles.bottomSection}>
             {/* Terms checkbox */}
             <TouchableOpacity 
               style={styles.checkboxContainer} 
@@ -106,39 +97,21 @@ export default function WelcomeScreen() {
           </View>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F1F1',
-  },
-  header: {
-    padding: 20,
-    alignItems: 'flex-start',
   },
   content: {
     flex: 1,
     position: 'relative',
   },
-  topSection: {
-    alignItems: 'center',
-    width: '100%',
-  },
   bottomSection: {
     alignItems: 'center',
     width: '100%',
-  },
-  logoContainer: {
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
   },
   title: {
     fontSize: 32,
@@ -237,9 +210,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     paddingHorizontal: 40,
-    paddingTop: 60,
     paddingBottom: 40,
   },
 });
