@@ -6,41 +6,23 @@ const { width, height } = Dimensions.get('window');
 export default function SplashScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Sequence: fade in + grow, then slide up
+    // Fade in first, then grow animation after delay
     Animated.sequence([
-      // First: Fade in and grow
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1.2,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]),
-      // Brief pause
-      Animated.delay(200),
-      // Then: Scale down slightly and slide up
-      Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: -50,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.delay(600),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 2000,
+        useNativeDriver: true,
+      }),
     ]).start();
-  }, [fadeAnim, scaleAnim, slideAnim]);
+  }, [fadeAnim, scaleAnim]);
 
   return (
     <View style={styles.container}>
@@ -50,8 +32,7 @@ export default function SplashScreen() {
           {
             opacity: fadeAnim,
             transform: [
-              { scale: scaleAnim },
-              { translateY: slideAnim }
+              { scale: scaleAnim }
             ],
           },
         ]}

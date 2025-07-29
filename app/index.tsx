@@ -20,7 +20,7 @@ export default function Index() {
         // Wait for fonts to load
         if (loaded) {
           // Keep splash visible for minimum duration
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
           // Hide native splash screen
           await SplashScreen.hideAsync();
@@ -31,7 +31,7 @@ export default function Index() {
           // Navigate to welcome screen after splash with more space/delay
           setTimeout(() => {
             router.replace('/welcome');
-          }, 500);
+          }, 2000);
         }
       } catch (e) {
         console.warn(e);
