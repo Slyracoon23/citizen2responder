@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import {
-  View,
+  Alert,
+  Linking,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Platform,
-  Linking,
-  Alert,
-  SafeAreaView
+  View
 } from 'react-native';
-import { Image } from 'react-native';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -48,31 +47,27 @@ export default function WelcomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.emergencyButton} onPress={handle911Call}>
-          <Text style={styles.emergencyButtonText}>EMERGENCY</Text>
-        </TouchableOpacity>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logoText}>citizen2responder</Text>
+        </View>
       </View>
 
       <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/images/logo-with-text.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+        <View style={styles.topSection}>
+
+          {/* Title and Description */}
+          <Text style={styles.title}>
+            citizen2responder
+          </Text>
+
+          <Text style={styles.description}>
+            AI-powered emergency response guidance{'\n'}
+            to help you in critical situations
+          </Text>
         </View>
 
-        <Text style={styles.disclaimerText}>
-          This app provides guidance only.{'\n'}
-          Use at your own risk.
-        </Text>
-
-        <Text style={styles.emergencyNotice}>
-          If you are having a true life threatening emergency,{'\n'}
-          you should call 911 immediately.
-        </Text>
-
-        <View style={styles.actions}>
+        <View style={styles.bottomSection}>
+          {/* Terms checkbox */}
           <TouchableOpacity 
             style={styles.checkboxContainer} 
             onPress={() => setTermsAccepted(!termsAccepted)}
@@ -85,15 +80,21 @@ export default function WelcomeScreen() {
             </Text>
           </TouchableOpacity>
 
+          {/* Get Started Button */}
           <TouchableOpacity 
             style={[styles.startButton, !termsAccepted && styles.startButtonDisabled]} 
             onPress={handleStart}
             disabled={!termsAccepted}
           >
             <Text style={[styles.startButtonText, !termsAccepted && styles.startButtonTextDisabled]}>
-              GET STARTED
+              I'm new here!
             </Text>
           </TouchableOpacity>
+
+          <Text style={[styles.disclaimerText, { textAlign: 'center' }]}>
+            If you are having a true life threatening emergency,{'\n'}
+            you should call 911 immediately.
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -107,49 +108,47 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    alignItems: 'flex-end',
-  },
-  emergencyButton: {
-    backgroundColor: '#D93636',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
-  },
-  emergencyButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
+    alignItems: 'flex-start',
   },
   content: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     paddingHorizontal: 40,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  topSection: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  bottomSection: {
+    alignItems: 'center',
+    width: '100%',
   },
   logoContainer: {
-    marginBottom: 30,
+    flex: 1,
+    alignItems: 'flex-start',
   },
-  logo: {
-    width: 280,
-    height: 140,
+  logoText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333333',
   },
-  disclaimerText: {
-    color: '#555',
-    fontSize: 16,
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#333333',
     textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 24,
+    marginBottom: 15,
+    lineHeight: 36,
   },
-  emergencyNotice: {
-    color: '#333',
-    fontSize: 14,
+  description: {
+    fontSize: 16,
+    color: '#666666',
     textAlign: 'center',
     marginBottom: 40,
-    lineHeight: 20,
-    fontStyle: 'italic',
-  },
-  actions: {
-    width: '100%',
+    lineHeight: 24,
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -161,30 +160,32 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderWidth: 2,
-    borderColor: '#333',
+    borderColor: '#DC2626',
     borderRadius: 4,
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#333',
-    borderColor: '#333',
+    backgroundColor: '#DC2626',
+    borderColor: '#DC2626',
   },
   checkmark: {
-    color: '#F2F1F1',
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: 'bold',
   },
   checkboxText: {
-    color: '#333',
+    color: '#333333',
     fontSize: 14,
+    fontWeight: '500',
   },
   startButton: {
-    backgroundColor: '#D93636',
+    backgroundColor: '#DC2626',
     paddingVertical: 18,
     borderRadius: 30,
     width: '100%',
+    marginBottom: 20,
   },
   startButtonDisabled: {
     backgroundColor: '#BDBDBD',
@@ -197,5 +198,12 @@ const styles = StyleSheet.create({
   },
   startButtonTextDisabled: {
     color: '#F2F1F1',
+  },
+  disclaimerText: {
+    color: '#999999',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+    fontStyle: 'italic',
   },
 });
