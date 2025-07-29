@@ -253,7 +253,7 @@ export default function VideoCallControls({
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.controlsContainer, { paddingBottom: insets.bottom + spacing.md }]}>
+    <View style={[styles.controlsContainer, { paddingBottom: insets.bottom + spacing.lg }]}>
       <View style={styles.controlsBackground}>
         <LinearGradient
           colors={colors.gradients.darkGlass}

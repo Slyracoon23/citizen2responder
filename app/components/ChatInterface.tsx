@@ -15,9 +15,13 @@ import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constant
 interface ChatInterfaceProps {
   isTranscriptionEnabled: boolean;
   conversationHistory: ConversationMessage[];
+  chatScrollViewRef: React.RefObject<ScrollView>;
+  isLoading: boolean;
+}
+
+interface ChatInputProps {
   textInput: string;
   setTextInput: (text: string) => void;
-  chatScrollViewRef: React.RefObject<ScrollView>;
   onSendMessage: () => void;
   isLoading: boolean;
 }
@@ -25,10 +29,7 @@ interface ChatInterfaceProps {
 export default function ChatInterface({
   isTranscriptionEnabled,
   conversationHistory,
-  textInput,
-  setTextInput,
   chatScrollViewRef,
-  onSendMessage,
   isLoading
 }: ChatInterfaceProps) {
   if (!isTranscriptionEnabled) return null;
@@ -84,34 +85,49 @@ export default function ChatInterface({
           </View>
         </View>
       )}
+      </LinearGradient>
+    </View>
+  );
+}
 
-      {/* Text Input Area */}
-      <View style={styles.textInputContainer}>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Type your message..."
-          placeholderTextColor="#888"
-          value={textInput}
-          onChangeText={setTextInput}
-          multiline
-          maxLength={500}
-          editable={!isLoading}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            (!textInput.trim() || isLoading) && styles.sendButtonDisabled
-          ]}
-          onPress={onSendMessage}
-          disabled={!textInput.trim() || isLoading}
-        >
-          {isLoading ? (
-            <MaterialIcons name="hourglass-empty" size={20} color="#fff" />
-          ) : (
-            <MaterialIcons name="send" size={20} color="#fff" />
-          )}
-        </TouchableOpacity>
-      </View>
+export function ChatInput({
+  textInput,
+  setTextInput,
+  onSendMessage,
+  isLoading
+}: ChatInputProps) {
+  return (
+    <View style={styles.chatInputOverlay}>
+      <LinearGradient
+        colors={colors.gradients.darkGlass}
+        style={styles.inputBackground}
+      >
+        <View style={styles.textInputContainer}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Type your message..."
+            placeholderTextColor={colors.text.tertiary}
+            value={textInput}
+            onChangeText={setTextInput}
+            multiline
+            maxLength={500}
+            editable={!isLoading}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!textInput.trim() || isLoading) && styles.sendButtonDisabled
+            ]}
+            onPress={onSendMessage}
+            disabled={!textInput.trim() || isLoading}
+          >
+            {isLoading ? (
+              <MaterialIcons name="hourglass-empty" size={20} color="#fff" />
+            ) : (
+              <MaterialIcons name="send" size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
     </View>
   );
@@ -124,10 +140,11 @@ const styles = StyleSheet.create({
   },
   chatBackground: {
     flex: 1,
-    backgroundColor: colors.glass.dark,
     borderRadius: borderRadius.large,
     padding: spacing.md,
     margin: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.glass.light,
   },
   chatScrollContainer: {
     flex: 1,
@@ -204,12 +221,7 @@ const styles = StyleSheet.create({
   textInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.glass.dark,
-    borderRadius: borderRadius.large,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
     gap: spacing.sm,
-    marginTop: spacing.sm,
   },
   textInput: {
     flex: 1,
@@ -230,5 +242,17 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: colors.text.quaternary,
+  },
+  
+  // Chat Input styles
+  chatInputOverlay: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  inputBackground: {
+    borderRadius: borderRadius.large,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.glass.light,
   },
 });

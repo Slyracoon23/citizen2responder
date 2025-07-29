@@ -129,20 +129,24 @@ interface RightControlsProps {
   isImageInputEnabled: boolean;
   isQuestionToggleOn: boolean;
   isTranscriptionEnabled: boolean;
+  isTextInputVisible: boolean;
   isApiLoading: boolean;
   onImageInputToggle: () => void;
   onQuestionToggle: () => void;
   onTranscriptionToggle: () => void;
+  onTextInputToggle: () => void;
 }
 
 const RightControls = ({
   isImageInputEnabled,
   isQuestionToggleOn,
   isTranscriptionEnabled,
+  isTextInputVisible,
   isApiLoading,
   onImageInputToggle,
   onQuestionToggle,
-  onTranscriptionToggle
+  onTranscriptionToggle,
+  onTextInputToggle
 }: RightControlsProps) => (
   <View style={styles.rightControls}>
     <TouchableOpacity
@@ -217,6 +221,28 @@ const RightControls = ({
         />
       </LinearGradient>
     </TouchableOpacity>
+    <TouchableOpacity
+      style={styles.modernToggle}
+      onPress={onTextInputToggle}
+      activeOpacity={0.8}
+    >
+      <LinearGradient
+        colors={isTextInputVisible 
+          ? colors.gradients.accent 
+          : colors.gradients.glass
+        }
+        style={[
+          styles.toggleGradient,
+          isTextInputVisible && styles.toggleActive
+        ]}
+      >
+        <MaterialIcons
+          name={isTextInputVisible ? "keyboard" : "keyboard-hide"}
+          size={22}
+          color={isTextInputVisible ? colors.text.primary : colors.controls.inactive}
+        />
+      </LinearGradient>
+    </TouchableOpacity>
   </View>
 );
 
@@ -224,6 +250,7 @@ interface HeaderProps {
   isImageInputEnabled: boolean;
   isQuestionToggleOn: boolean;
   isTranscriptionEnabled: boolean;
+  isTextInputVisible: boolean;
   isGenerateReportOn: boolean;
   isPreCareToggleOn: boolean;
   isApiLoading: boolean;
@@ -234,6 +261,7 @@ interface HeaderProps {
   onImageInputToggle: () => void;
   onQuestionToggle: () => void;
   onTranscriptionToggle: () => void;
+  onTextInputToggle: () => void;
   onGenerateReportToggle: () => void;
   onPreCareToggle: () => void;
 }
@@ -242,6 +270,7 @@ export default function Header({
   isImageInputEnabled,
   isQuestionToggleOn,
   isTranscriptionEnabled,
+  isTextInputVisible,
   isGenerateReportOn,
   isPreCareToggleOn,
   isApiLoading,
@@ -252,6 +281,7 @@ export default function Header({
   onImageInputToggle,
   onQuestionToggle,
   onTranscriptionToggle,
+  onTextInputToggle,
   onGenerateReportToggle,
   onPreCareToggle
 }: HeaderProps) {
@@ -278,10 +308,12 @@ export default function Header({
             isImageInputEnabled={isImageInputEnabled}
             isQuestionToggleOn={isQuestionToggleOn}
             isTranscriptionEnabled={isTranscriptionEnabled}
+            isTextInputVisible={isTextInputVisible}
             isApiLoading={isApiLoading}
             onImageInputToggle={onImageInputToggle}
             onQuestionToggle={onQuestionToggle}
             onTranscriptionToggle={onTranscriptionToggle}
+            onTextInputToggle={onTextInputToggle}
           />
         </LinearGradient>
       </View>

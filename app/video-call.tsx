@@ -15,7 +15,7 @@ import {
 import Header from './components/Header';
 import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
-import ChatInterface from './components/ChatInterface';
+import ChatInterface, { ChatInput } from './components/ChatInterface';
 import ReportModal from './components/ReportModal';
 import PreCareModal from './components/PreCareModal';
 import { useAnimations } from './hooks/useAnimations';
@@ -36,6 +36,7 @@ export default function VideoCallScreen() {
   const [showDefaultReport, setShowDefaultReport] = useState(false);
   const [isPreCareModalVisible, setIsPreCareModalVisible] = useState(false);
   const [currentPreCareData, setCurrentPreCareData] = useState<any>(null);
+  const [isTextInputVisible, setIsTextInputVisible] = useState(true);
 
   // Default report data to show when toggle is activated
   const defaultReportData = {
@@ -383,6 +384,10 @@ export default function VideoCallScreen() {
     setCurrentPreCareData(null);
   };
 
+  const toggleTextInput = () => {
+    setIsTextInputVisible(!isTextInputVisible);
+  };
+
   // Handle permission denied case
   if (hasCamera === false) {
     return (
@@ -426,6 +431,7 @@ export default function VideoCallScreen() {
             isImageInputEnabled={isImageInputEnabled}
             isQuestionToggleOn={isQuestionToggleOn}
             isTranscriptionEnabled={isTranscriptionEnabled}
+            isTextInputVisible={isTextInputVisible}
             isGenerateReportOn={isGenerateReportOn}
             isPreCareToggleOn={isPreCareToggleOn}
             isApiLoading={isApiLoading}
@@ -436,6 +442,7 @@ export default function VideoCallScreen() {
             onImageInputToggle={toggleImageInput}
             onQuestionToggle={toggleQuestion}
             onTranscriptionToggle={toggleTranscription}
+            onTextInputToggle={toggleTextInput}
             onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
             onPreCareToggle={() => togglePreCare(handleShowDefaultPreCare)}
           />
@@ -506,18 +513,27 @@ export default function VideoCallScreen() {
               isImageInputEnabled={isImageInputEnabled}
             />
 
-            {/* Chat Overlay at Top */}
+            {/* Chat History Overlay at Top */}
             <View style={videoCallStyles.chatOverlayTop}>
               <ChatInterface
                 isTranscriptionEnabled={isTranscriptionEnabled}
                 conversationHistory={conversationHistory}
-                textInput={textInput}
-                setTextInput={setTextInput}
                 chatScrollViewRef={chatScrollViewRef}
-                onSendMessage={handleSendMessage}
                 isLoading={isApiLoading}
               />
             </View>
+
+            {/* Chat Input Above Controls */}
+            {isTextInputVisible && (
+              <View style={videoCallStyles.chatInputAboveControls}>
+                <ChatInput
+                  textInput={textInput}
+                  setTextInput={setTextInput}
+                  onSendMessage={handleSendMessage}
+                  isLoading={isApiLoading}
+                />
+              </View>
+            )}
 
             {/* Control Buttons Overlay at Bottom */}
             <View style={videoCallStyles.controlsOverlayBottom}>
