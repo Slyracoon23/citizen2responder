@@ -3,6 +3,7 @@ import { CameraView } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -36,6 +37,15 @@ export default function VideoCallScreen() {
   const [isPreCareModalVisible, setIsPreCareModalVisible] = useState(false);
   const [currentPreCareData, setCurrentPreCareData] = useState<any>(null);
   const [isTextInputVisible, setIsTextInputVisible] = useState(false);
+
+  // AI Processing Banner Animation
+  const bannerOpacity = useRef(new Animated.Value(0)).current;
+  const bannerTranslateY = useRef(new Animated.Value(-50)).current;
+  const dotAnimations = useRef([
+    new Animated.Value(0.3),
+    new Animated.Value(0.3),
+    new Animated.Value(0.3)
+  ]).current;
 
   // Default report data to show when toggle is activated
   const defaultReportData = {
@@ -112,6 +122,73 @@ export default function VideoCallScreen() {
   useEffect(() => {
     startSlideAnimation(isQuestionToggleOn ? 1 : 0);
   }, [isQuestionToggleOn]);
+
+  // AI Processing Banner Animation
+  useEffect(() => {
+    if (isApiLoading) {
+      // Show banner with slide down animation
+      Animated.parallel([
+        Animated.timing(bannerOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bannerTranslateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Start pulsing dots animation
+      const createDotAnimation = (dot: Animated.Value, delay: number) => {
+        return Animated.loop(
+          Animated.sequence([
+            Animated.delay(delay),
+            Animated.timing(dot, {
+              toValue: 1,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+            Animated.timing(dot, {
+              toValue: 0.3,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ])
+        );
+      };
+
+      // Start staggered dot animations
+      const dotAnimationRefs = [
+        createDotAnimation(dotAnimations[0], 0).start(),
+        createDotAnimation(dotAnimations[1], 150).start(),
+        createDotAnimation(dotAnimations[2], 300).start(),
+      ];
+
+      return () => {
+        // Stop dot animations when component unmounts or loading stops
+        dotAnimationRefs.forEach(animation => animation && animation.stop && animation.stop());
+      };
+    } else {
+      // Hide banner with slide up animation
+      Animated.parallel([
+        Animated.timing(bannerOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bannerTranslateY, {
+          toValue: -50,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Reset dot opacities
+      dotAnimations.forEach(dot => dot.setValue(0.3));
+    }
+  }, [isApiLoading]);
 
   // Cleanup audio session when leaving the video call screen
   useEffect(() => {
@@ -389,6 +466,33 @@ export default function VideoCallScreen() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={videoCallStyles.container}>
           <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+
+          {/* AI Processing Banner */}
+          {isApiLoading && (
+            <Animated.View 
+              style={[
+                videoCallStyles.aiProcessingBanner,
+                {
+                  opacity: bannerOpacity,
+                  transform: [{ translateY: bannerTranslateY }],
+                }
+              ]}
+            >
+              <MaterialIcons name="psychology" size={16} color="white" />
+              <Text style={videoCallStyles.aiProcessingText}>AI is thinking</Text>
+              <View style={{ flexDirection: 'row', marginLeft: 4 }}>
+                {dotAnimations.map((dot, index) => (
+                  <Animated.View
+                    key={index}
+                    style={[
+                      videoCallStyles.aiProcessingDot,
+                      { opacity: dot }
+                    ]}
+                  />
+                ))}
+              </View>
+            </Animated.View>
+          )}
 
           {/* Full Screen Video - Now extends to top */}
           <View style={videoCallStyles.fullScreenVideoContainer}>

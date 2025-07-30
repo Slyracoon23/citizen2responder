@@ -98,6 +98,41 @@ export const videoCallStyles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
   },
 
+  // AI Processing Banner
+  aiProcessingBanner: {
+    position: 'absolute',
+    top: 40, // Below status bar
+    left: spacing.md,
+    right: spacing.md,
+    backgroundColor: 'rgba(0, 122, 255, 0.9)', // Semi-transparent blue
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.medium,
+    zIndex: 2000, // Above all other overlays
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiProcessingText: {
+    color: colors.text.primary,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.medium,
+    textAlign: 'center',
+    marginLeft: spacing.xs,
+  },
+  aiProcessingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.text.primary,
+    marginHorizontal: 2,
+  },
+
   // Full screen layout styles
   fullScreenVideoContainer: {
     flex: 1,
@@ -118,12 +153,12 @@ export const videoCallStyles = StyleSheet.create({
   },
   chatOverlayTop: {
     position: 'absolute',
-    top: 40, // Move closer to the very top
+    top: 0, // Align to very top of screen
     left: 0,
     right: 0,
     height: '30%', // Reduce vertical height
     zIndex: 1000,
-    paddingTop: spacing.lg, // More padding from top edge
+    paddingTop: 0, // Remove all top padding
     paddingHorizontal: spacing.xl, // Keep horizontal padding to clear side buttons
   },
   chatInputAboveControls: {
