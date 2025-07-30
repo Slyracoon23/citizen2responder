@@ -605,7 +605,6 @@ export default function VideoCallScreen() {
                   if (isGenerateReportOn) {
                     // Turn off report generation
                     toggleGenerateReport();
-                    addAiMessage("Report generation is now off.");
                   } else {
                     // Turn on report generation
                     toggleGenerateReport();

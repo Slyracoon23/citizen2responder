@@ -44,6 +44,27 @@ interface ReportModalProps {
 
 export default function ReportModal({ visible, report, onClose, onSendToEmergency, evidenceImageUri }: ReportModalProps) {
   if (!report) return null;
+  
+  // Ensure all required fields exist with safe defaults
+  const safeReport = {
+    report_id: report.report_id || 'N/A',
+    summary: report.summary || 'N/A',
+    details: {
+      caller_name: report.details?.caller_name || null,
+      phone_number: report.details?.phone_number || null,
+      incident_type: report.details?.incident_type || 'N/A',
+      description: report.details?.description || 'N/A',
+      location: {
+        address: report.details?.location?.address || 'N/A',
+        latitude: report.details?.location?.latitude || null,
+        longitude: report.details?.location?.longitude || null,
+      },
+      injuries_reported: Boolean(report.details?.injuries_reported),
+      number_of_people_involved: Number(report.details?.number_of_people_involved) || 0,
+      is_active_threat: Boolean(report.details?.is_active_threat),
+      timestamp: report.details?.timestamp || new Date().toISOString(),
+    }
+  };
 
   const formatTimestamp = (timestamp: string) => {
     try {
@@ -63,14 +84,14 @@ export default function ReportModal({ visible, report, onClose, onSendToEmergenc
       }
 
       const smsBody = `EMERGENCY REPORT
-ID: ${report.report_id}
-Type: ${report.details.incident_type}
-Location: ${report.details.location.address}
-Description: ${report.details.description}
-Injuries: ${report.details.injuries_reported ? 'YES' : 'NO'}
-People Involved: ${report.details.number_of_people_involved}
-Active Threat: ${report.details.is_active_threat ? 'YES' : 'NO'}
-Time: ${formatTimestamp(report.details.timestamp)}`;
+ID: ${safeReport.report_id}
+Type: ${safeReport.details.incident_type}
+Location: ${safeReport.details.location.address}
+Description: ${safeReport.details.description}
+Injuries: ${safeReport.details.injuries_reported ? 'YES' : 'NO'}
+People Involved: ${safeReport.details.number_of_people_involved}
+Active Threat: ${safeReport.details.is_active_threat ? 'YES' : 'NO'}
+Time: ${formatTimestamp(safeReport.details.timestamp)}`;
 
       const smsOptions: SMS.SMSOptions = {
         recipients: ['911'],
@@ -82,7 +103,7 @@ Time: ${formatTimestamp(report.details.timestamp)}`;
           {
             uri: evidenceImageUri,
             mimeType: 'image/jpeg',
-            filename: `evidence_${report.report_id}.jpg`,
+            filename: `evidence_${safeReport.report_id}.jpg`,
           }
         ];
       }
@@ -126,12 +147,12 @@ Time: ${formatTimestamp(report.details.timestamp)}`;
           >
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Report ID</Text>
-              <Text style={videoCallStyles.reportText}>{report.report_id || 'N/A'}</Text>
+              <Text style={videoCallStyles.reportText}>{safeReport.report_id}</Text>
             </View>
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Summary</Text>
-              <Text style={videoCallStyles.reportText}>{report.summary || 'N/A'}</Text>
+              <Text style={videoCallStyles.reportText}>{safeReport.summary}</Text>
             </View>
 
             <View style={videoCallStyles.reportImagePlaceholder}>
@@ -143,58 +164,58 @@ Time: ${formatTimestamp(report.details.timestamp)}`;
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Incident Type</Text>
-              <Text style={videoCallStyles.reportText}>{report.details?.incident_type || 'N/A'}</Text>
+              <Text style={videoCallStyles.reportText}>{safeReport.details.incident_type}</Text>
             </View>
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Location</Text>
-              <Text style={videoCallStyles.reportText}>{report.details?.location?.address || 'N/A'}</Text>
-              {report.details?.location?.latitude && report.details?.location?.longitude && 
-               report.details.location.latitude !== 0 && report.details.location.longitude !== 0 && (
+              <Text style={videoCallStyles.reportText}>{safeReport.details.location.address}</Text>
+              {safeReport.details.location.latitude && safeReport.details.location.longitude && 
+               safeReport.details.location.latitude !== 0 && safeReport.details.location.longitude !== 0 && (
                 <Text style={videoCallStyles.reportSubText}>
-                  GPS: {report.details.location.latitude.toFixed(6)}, {report.details.location.longitude.toFixed(6)}
+                  GPS: {safeReport.details.location.latitude.toFixed(6)}, {safeReport.details.location.longitude.toFixed(6)}
                 </Text>
               )}
             </View>
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Description</Text>
-              <Text style={videoCallStyles.reportText}>{report.details?.description || 'N/A'}</Text>
+              <Text style={videoCallStyles.reportText}>{safeReport.details.description}</Text>
             </View>
 
             <View style={videoCallStyles.reportRow}>
               <View style={videoCallStyles.reportHalfSection}>
                 <Text style={videoCallStyles.reportSectionTitle}>Injuries</Text>
-                <Text style={[videoCallStyles.reportText, report.details?.injuries_reported && videoCallStyles.reportWarning]}>
-                  {report.details?.injuries_reported ? 'YES' : 'NO'}
+                <Text style={[videoCallStyles.reportText, safeReport.details.injuries_reported && videoCallStyles.reportWarning]}>
+                  {safeReport.details.injuries_reported ? 'YES' : 'NO'}
                 </Text>
               </View>
               <View style={videoCallStyles.reportHalfSection}>
                 <Text style={videoCallStyles.reportSectionTitle}>People Involved</Text>
-                <Text style={videoCallStyles.reportText}>{String(report.details?.number_of_people_involved || 0)}</Text>
+                <Text style={videoCallStyles.reportText}>{String(safeReport.details.number_of_people_involved)}</Text>
               </View>
             </View>
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Active Threat</Text>
-              <Text style={[videoCallStyles.reportText, report.details?.is_active_threat && videoCallStyles.reportDanger]}>
-                {report.details?.is_active_threat ? 'YES' : 'NO'}
+              <Text style={[videoCallStyles.reportText, safeReport.details.is_active_threat && videoCallStyles.reportDanger]}>
+                {safeReport.details.is_active_threat ? 'YES' : 'NO'}
               </Text>
             </View>
 
-            {report.details?.caller_name && (
+            {safeReport.details.caller_name && (
               <View style={videoCallStyles.reportSection}>
                 <Text style={videoCallStyles.reportSectionTitle}>Caller</Text>
-                <Text style={videoCallStyles.reportText}>{report.details.caller_name}</Text>
-                {report.details?.phone_number && (
-                  <Text style={videoCallStyles.reportSubText}>{report.details.phone_number}</Text>
+                <Text style={videoCallStyles.reportText}>{safeReport.details.caller_name}</Text>
+                {safeReport.details.phone_number && (
+                  <Text style={videoCallStyles.reportSubText}>{safeReport.details.phone_number}</Text>
                 )}
               </View>
             )}
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Timestamp</Text>
-              <Text style={videoCallStyles.reportText}>{formatTimestamp(report.details?.timestamp || new Date().toISOString())}</Text>
+              <Text style={videoCallStyles.reportText}>{formatTimestamp(safeReport.details.timestamp)}</Text>
             </View>
           </ScrollView>
 
