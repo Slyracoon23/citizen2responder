@@ -89,6 +89,7 @@ export function useTextToSpeech() {
 
       Speech.speak(text, {
         voice: selectedVoice || undefined,
+        rate: 1.1, // Slightly faster speech rate (default is 1.0)
         onStart: () => {
           console.log('TTS: ✅ Speech started successfully');
         },
