@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../constants/theme';
+import { borderRadius, colors, fontSize, fontWeight, shadows, spacing } from '../constants/theme';
 
 export const videoCallStyles = StyleSheet.create({
   container: {
@@ -101,7 +101,7 @@ export const videoCallStyles = StyleSheet.create({
   // AI Processing Banner
   aiProcessingBanner: {
     position: 'absolute',
-    top: 40, // Below status bar
+    top: 0, // Further down from status bar
     left: spacing.md,
     right: spacing.md,
     backgroundColor: 'rgba(0, 122, 255, 0.9)', // Semi-transparent blue

@@ -66,7 +66,7 @@ class KokoroService {
         input: {
           text,
           voice: voiceId,
-          speed: 1
+          speed: 1.1
         }
       };
 
