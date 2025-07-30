@@ -1,7 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors, fontSize, fontWeight, spacing } from '../constants/theme';
 
 interface SideToggleButtonProps {
@@ -70,46 +70,99 @@ const SideToggleButton = ({
 );
 
 interface LeftSideTogglesProps {
-  isPreCareToggleOn: boolean;
+  isCareToggleOn: boolean;
   isGenerateReportOn: boolean;
-  onPreCareToggle: () => void;
-  onGenerateReportToggle: () => void;
+  onCareConfirm: () => void;
+  onGenerateReportConfirm: () => void;
   isQuestionToggleOn: boolean;
-  onQuestionToggle: () => void;
+  onAssessConfirm: () => void;
 }
 
 export const LeftSideToggles = ({
-  isPreCareToggleOn,
+  isCareToggleOn,
   isGenerateReportOn,
-  onPreCareToggle,
-  onGenerateReportToggle,
+  onCareConfirm,
+  onGenerateReportConfirm,
   isQuestionToggleOn,
-  onQuestionToggle
-}: LeftSideTogglesProps) => (
-  <View style={styles.leftSideContainer}>
-    <SideToggleButton
-      isOn={isQuestionToggleOn}
-      onPress={onQuestionToggle}
-      icon="quiz"
-      label="ASSESS"
-      gradientColors={colors.gradients.primary}
-    />
-    <SideToggleButton
-      isOn={isGenerateReportOn}
-      onPress={onGenerateReportToggle}
-      icon="assignment"
-      label="REPORT"
-      gradientColors={colors.gradients.error}
-    />
-    <SideToggleButton
-      isOn={isPreCareToggleOn}
-      onPress={onPreCareToggle}
-      icon="local-hospital"
-      label="PRE-CARE"
-      gradientColors={colors.gradients.secondary}
-    />
-  </View>
-);
+  onAssessConfirm
+}: LeftSideTogglesProps) => {
+  const handleReportToggle = () => {
+    Alert.alert(
+      "Generate Report",
+      "Would you like to generate an emergency report? The system will ask you a few questions to create a comprehensive report.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Generate Report",
+          onPress: onGenerateReportConfirm
+        }
+      ]
+    );
+  };
+
+  const handleCareToggle = () => {
+    Alert.alert(
+      "Care Instructions",
+      "Would you like to access care instructions? The system will provide emergency care guidance based on the situation.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Get Instructions",
+          onPress: onCareConfirm
+        }
+      ]
+    );
+  };
+
+  const handleAssessToggle = () => {
+    Alert.alert(
+      "Assessment Mode",
+      "Would you like to activate assessment mode? The system will guide you through questions to evaluate the emergency situation.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Start Assessment",
+          onPress: onAssessConfirm
+        }
+      ]
+    );
+  };
+
+  return (
+    <View style={styles.leftSideContainer}>
+      <SideToggleButton
+        isOn={isQuestionToggleOn}
+        onPress={handleAssessToggle}
+        icon="quiz"
+        label="ASSESS"
+        gradientColors={colors.gradients.primary}
+      />
+      <SideToggleButton
+        isOn={isGenerateReportOn}
+        onPress={handleReportToggle}
+        icon="assignment"
+        label="REPORT"
+        gradientColors={colors.gradients.error}
+      />
+      <SideToggleButton
+        isOn={isCareToggleOn}
+        onPress={handleCareToggle}
+        icon="local-hospital"
+        label="CARE"
+        gradientColors={colors.gradients.secondary}
+      />
+    </View>
+  );
+};
 
 interface RightSideTogglesProps {
   isImageInputEnabled: boolean;
@@ -119,10 +172,10 @@ interface RightSideTogglesProps {
   onImageInputToggle: () => void;
   onQuestionToggle: () => void;
   onTranscriptionToggle: () => void;
-  isPreCareToggleOn: boolean;
+  isCareToggleOn: boolean;
   isGenerateReportOn: boolean;
-  onPreCareToggle: () => void;
-  onGenerateReportToggle: () => void;
+  onCareConfirm: () => void;
+  onGenerateReportConfirm: () => void;
 }
 
 export const RightSideToggles = ({
@@ -133,10 +186,10 @@ export const RightSideToggles = ({
   onImageInputToggle,
   onQuestionToggle,
   onTranscriptionToggle,
-  isPreCareToggleOn,
+  isCareToggleOn,
   isGenerateReportOn,
-  onPreCareToggle,
-  onGenerateReportToggle
+  onCareConfirm,
+  onGenerateReportConfirm
 }: RightSideTogglesProps) => (
   <View style={styles.rightSideContainer}>
     {/* Right side is now empty - vision and captions always on */}

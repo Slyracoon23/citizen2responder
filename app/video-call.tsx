@@ -448,12 +448,12 @@ export default function VideoCallScreen() {
             {/* Left Side Toggle Buttons */}
             <View style={videoCallStyles.leftSideTogglesOverlay}>
               <LeftSideToggles
-                isPreCareToggleOn={isPreCareToggleOn}
+                isCareToggleOn={isPreCareToggleOn}
                 isGenerateReportOn={isGenerateReportOn}
-                onPreCareToggle={() => togglePreCare(handleShowDefaultPreCare)}
-                onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
+                onCareConfirm={handleShowDefaultPreCare}
+                onGenerateReportConfirm={handleShowDefaultReport}
                 isQuestionToggleOn={isQuestionToggleOn}
-                onQuestionToggle={toggleQuestion}
+                onAssessConfirm={toggleQuestion}
               />
             </View>
 
@@ -467,10 +467,10 @@ export default function VideoCallScreen() {
                 onImageInputToggle={toggleImageInput}
                 onQuestionToggle={toggleQuestion}
                 onTranscriptionToggle={toggleTranscription}
-                isPreCareToggleOn={isPreCareToggleOn}
+                isCareToggleOn={isPreCareToggleOn}
                 isGenerateReportOn={isGenerateReportOn}
-                onPreCareToggle={() => togglePreCare(handleShowDefaultPreCare)}
-                onGenerateReportToggle={() => toggleGenerateReport(handleShowDefaultReport)}
+                onCareConfirm={handleShowDefaultPreCare}
+                onGenerateReportConfirm={handleShowDefaultReport}
               />
             </View>
 
