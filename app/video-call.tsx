@@ -30,7 +30,6 @@ import { resetToDefaultPlayback } from './utils/audioSessionUtils';
 export default function VideoCallScreen() {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
-  const [currentQuestion, setCurrentQuestion] = useState("Does the person appear to have chest pain?");
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
   const [currentReport, setCurrentReport] = useState<any>(null);
   const [showDefaultReport, setShowDefaultReport] = useState(false);
@@ -210,7 +209,6 @@ export default function VideoCallScreen() {
           // Only add AI message content if no tool calls were made
           const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
           addAiMessage(aiContent);
-          detectAndActivateQuestion(aiContent);
           console.log('🔍 CONV DEBUG: Added AI response to STT message:', aiContent);
         }
 
@@ -315,7 +313,6 @@ export default function VideoCallScreen() {
         // Only add AI message content if no tool calls were made
         const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
         addAiMessage(aiContent);
-        detectAndActivateQuestion(aiContent);
         console.log('🔍 CONV DEBUG: Added AI response:', aiContent);
       }
 
@@ -327,35 +324,7 @@ export default function VideoCallScreen() {
     }
   };
 
-  const handleQuestionResponseWrapper = async (response: 'yes' | 'no' | 'dont-know') => {
-    const responseText = response === 'yes' ? 'Yes' : response === 'no' ? 'No' : "I can't tell";
-    
-    // Stop any ongoing speech before sending response
-    stopSpeech();
-    
-    addUserMessage(responseText);
-    setIsQuestionToggleOn(false);
-
-    try {
-      setIsApiLoading(true);
-      const data = await apiService.callOpenRouterAPI(conversationHistory, responseText);
-      // Handle tool calls if present
-      const toolCalls = data.choices?.[0]?.message?.tool_calls;
-      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
-        handleToolCalls(toolCalls);
-      } else {
-        // Only add AI message content if no tool calls were made
-        const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
-        addAiMessage(aiContent);
-        detectAndActivateQuestion(aiContent);
-      }
-    } catch (error) {
-      console.error('Error processing question response:', error);
-      addAiMessage('Error processing your response.');
-    } finally {
-      setIsApiLoading(false);
-    }
-  };
+  
 
   const handleCloseReport = () => {
     setIsReportModalVisible(false);
@@ -372,19 +341,7 @@ export default function VideoCallScreen() {
     setCurrentPreCareData(null);
   };
 
-  // Function to detect and extract questions from AI responses
-  const detectAndActivateQuestion = (aiContent: string) => {
-    // Look for questions ending with "?"
-    const sentences = aiContent.split(/[.!]/).map(s => s.trim());
-    const questionSentence = sentences.find(sentence => sentence.endsWith('?'));
-    
-    if (questionSentence) {
-      // Extract the question but don't activate the question UI (disabled for now)
-      // setCurrentQuestion(questionSentence);
-      // setIsQuestionToggleOn(true);
-      console.log('🔍 QUESTION DETECTED (UI DISABLED):', questionSentence);
-    }
-  };
+  
 
 
   // Handle permission denied case
@@ -434,8 +391,6 @@ export default function VideoCallScreen() {
               isTranscriptionEnabled={false} // Remove built-in overlays
               isQuestionToggleOn={isQuestionToggleOn}
               slideAnim={slideAnim}
-              currentQuestion={currentQuestion}
-              handleQuestionResponse={handleQuestionResponseWrapper}
               conversationHistory={[]} // Remove built-in overlays
               textInput=""
               setTextInput={() => {}}

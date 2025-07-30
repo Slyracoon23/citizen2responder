@@ -30,63 +30,12 @@ const AIStatusOverlay = ({ isTranscriptionEnabled, isLoading, isImageInputEnable
   );
 };
 
-interface QuestionPopoverProps {
-  isQuestionToggleOn: boolean;
-  slideAnim: Animated.Value;
-  currentQuestion: string;
-  handleQuestionResponse: (response: 'yes' | 'no' | 'dont-know') => void;
-}
 
-const QuestionPopover = ({ isQuestionToggleOn, slideAnim, currentQuestion, handleQuestionResponse }: QuestionPopoverProps) => {
-  if (!isQuestionToggleOn) return null;
-
-  return (
-    <Animated.View style={[
-      styles.questionOverlay,
-      {
-        transform: [{
-          translateY: slideAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [600, 0],
-          })
-        }]
-      }
-    ]}>
-      <View style={styles.questionPopover}>
-        <Text style={styles.questionText}>{currentQuestion}</Text>
-        <View style={styles.responseButtons}>
-          <View style={styles.topButtonRow}>
-            <TouchableOpacity
-              style={styles.responseButton}
-              onPress={() => handleQuestionResponse('no')}
-            >
-              <Text style={styles.responseButtonText}>No</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.yesButton}
-              onPress={() => handleQuestionResponse('yes')}
-            >
-              <Text style={styles.responseButtonText}>Yes</Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            style={styles.cantTellButton}
-            onPress={() => handleQuestionResponse('dont-know')}
-          >
-            <Text style={styles.responseButtonText}>Can't Tell</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Animated.View>
-  );
-};
 
 interface OverlayManagerProps {
   isTranscriptionEnabled: boolean;
   isQuestionToggleOn: boolean;
   slideAnim: Animated.Value;
-  currentQuestion: string;
-  handleQuestionResponse: (response: 'yes' | 'no' | 'dont-know') => void;
   
   // Chat interface props
   conversationHistory: ConversationMessage[];
@@ -102,8 +51,6 @@ export default function OverlayManager({
   isTranscriptionEnabled,
   isQuestionToggleOn,
   slideAnim,
-  currentQuestion,
-  handleQuestionResponse,
   conversationHistory,
   textInput,
   setTextInput,
@@ -128,12 +75,7 @@ export default function OverlayManager({
         onSendMessage={onSendMessage}
         isLoading={isApiLoading}
       />
-      <QuestionPopover
-        isQuestionToggleOn={isQuestionToggleOn}
-        slideAnim={slideAnim}
-        currentQuestion={currentQuestion}
-        handleQuestionResponse={handleQuestionResponse}
-      />
+      
     </>
   );
 }
@@ -171,73 +113,5 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     fontWeight: '500',
   },
-  questionOverlay: {
-    position: 'absolute',
-    bottom: '20%',
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.0)',
-    padding: 20,
-    borderRadius: 20,
-    zIndex: 1003,
-  },
-  questionPopover: {
-    backgroundColor: '#1C1C1E',
-    borderRadius: 15,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  questionText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  responseButtons: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    width: '100%',
-    gap: 12,
-  },
-  topButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    gap: 15,
-  },
-  responseButton: {
-    backgroundColor: '#FF3B30',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    flex: 1,
-    alignItems: 'center',
-  },
-  yesButton: {
-    backgroundColor: '#34C759',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    flex: 1,
-    alignItems: 'center',
-  },
-  cantTellButton: {
-    backgroundColor: '#6C6C70',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    width: '100%',
-    alignItems: 'center',
-  },
-  responseButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  
 });

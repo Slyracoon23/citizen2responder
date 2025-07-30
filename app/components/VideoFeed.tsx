@@ -16,8 +16,6 @@ interface VideoFeedProps {
   isTranscriptionEnabled: boolean;
   isQuestionToggleOn: boolean;
   slideAnim: any;
-  currentQuestion: string;
-  handleQuestionResponse: (response: 'yes' | 'no' | 'dont-know') => void;
   
   // Chat interface props
   conversationHistory: ConversationMessage[];
@@ -36,8 +34,6 @@ export default function VideoFeed({
   isTranscriptionEnabled,
   isQuestionToggleOn,
   slideAnim,
-  currentQuestion,
-  handleQuestionResponse,
   conversationHistory,
   textInput,
   setTextInput,
@@ -73,8 +69,6 @@ export default function VideoFeed({
         isTranscriptionEnabled={isTranscriptionEnabled}
         isQuestionToggleOn={isQuestionToggleOn}
         slideAnim={slideAnim}
-        currentQuestion={currentQuestion}
-        handleQuestionResponse={handleQuestionResponse}
         conversationHistory={conversationHistory}
         textInput={textInput}
         setTextInput={setTextInput}
