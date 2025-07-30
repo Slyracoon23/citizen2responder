@@ -33,7 +33,7 @@ export function useConversation() {
     return message.id;
   }, [scrollToBottom, stopSpeech]);
 
-  const addAiMessage = useCallback((content: string, enableSpeech: boolean = true) => {
+  const addAiMessage = useCallback((content: string, enableSpeech: boolean = true, onSpeechComplete?: () => void) => {
     const message: ConversationMessage = {
       id: Date.now().toString(),
       type: 'ai',
@@ -48,10 +48,15 @@ export function useConversation() {
       console.log('🔍 CONV DEBUG: Attempting to speak AI message');
       // Add a small delay to ensure UI updates before speech starts
       setTimeout(() => {
-        speak(content.trim());
+        speak(content.trim(), onSpeechComplete);
       }, 200);
     } else {
       console.log('🔍 CONV DEBUG: Speech disabled or empty content, skipping TTS');
+      // If speech is disabled but callback is provided, call it immediately
+      if (onSpeechComplete) {
+        console.log('🔍 CONV DEBUG: Speech disabled but callback provided, calling immediately');
+        setTimeout(onSpeechComplete, 100);
+      }
     }
     
     scrollToBottom();

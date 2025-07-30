@@ -549,7 +549,15 @@ export default function VideoCallScreen() {
                   } else {
                     // Turn on assess mode
                     setIsQuestionToggleOn(true);
-                    addAiMessage("I'm here to help you assess the situation. I'll ask you follow-up questions to better understand what's happening and provide appropriate guidance. Sounds good?");
+                    addAiMessage(
+                      "I'm here to help you assess the situation. I'll ask you follow-up questions to better understand what's happening and provide appropriate guidance. Sounds good?",
+                      true, // enableSpeech
+                      () => {
+                        // Auto-add first assessment question after initial message is spoken
+                        console.log('🔍 ASSESS DEBUG: Initial message spoken, adding first question');
+                        addAiMessage("What is happening right now? Is anyone injured or in immediate danger?");
+                      }
+                    );
                   }
                 }}
               />

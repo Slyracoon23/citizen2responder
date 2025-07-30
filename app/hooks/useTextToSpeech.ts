@@ -61,7 +61,7 @@ export function useTextToSpeech() {
     }
   }, []);
 
-  const speak = useCallback(async (text: string) => {
+  const speak = useCallback(async (text: string, onComplete?: () => void) => {
     if (!text.trim()) {
       console.log('TTS: Empty text provided, skipping speech');
       return;
@@ -114,6 +114,11 @@ export function useTextToSpeech() {
             setSpeechState('idle');
             sound.unloadAsync();
             audioRef.current = null;
+            // Call the completion callback if provided
+            if (onComplete) {
+              console.log('TTS: Calling onComplete callback');
+              onComplete();
+            }
           } else if (status.isPlaying) {
             console.log('TTS: ✅ Speech started successfully');
             setSpeechState('speaking');
