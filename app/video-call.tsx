@@ -578,7 +578,7 @@ export default function VideoCallScreen() {
                   } else {
                     // Turn on report generation
                     toggleGenerateReport();
-                    addAiMessage("I will now generate a report. I will ask you for more information if needed.");
+                    addAiMessage("I will now generate a report.");
                   }
                 }}
                 onAssessConfirm={() => {
