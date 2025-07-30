@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Keyboard,
-  KeyboardAvoidingView,
+  KeyboardEvent,
   Platform,
   StatusBar,
   Text,
@@ -36,6 +36,9 @@ export default function VideoCallScreen() {
   const [isPreCareModalVisible, setIsPreCareModalVisible] = useState(false);
   const [currentPreCareData, setCurrentPreCareData] = useState<any>(null);
   const [isTextInputVisible, setIsTextInputVisible] = useState(false);
+
+  // Keyboard handling
+  const keyboardOffset = useRef(new Animated.Value(0)).current;
 
   // AI Processing Banner Animation
   const bannerOpacity = useRef(new Animated.Value(0)).current;
@@ -188,6 +191,39 @@ export default function VideoCallScreen() {
       dotAnimations.forEach(dot => dot.setValue(0.3));
     }
   }, [isApiLoading]);
+
+  // Keyboard event listeners
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event: KeyboardEvent) => {
+        if (isTextInputVisible) {
+          const keyboardHeight = event.endCoordinates.height;
+          Animated.timing(keyboardOffset, {
+            toValue: keyboardHeight - 100, // Subtract some padding
+            duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
+            useNativeDriver: false,
+          }).start();
+        }
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      (event: KeyboardEvent) => {
+        Animated.timing(keyboardOffset, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
+          useNativeDriver: false,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, [isTextInputVisible, keyboardOffset]);
 
   // Cleanup audio session when leaving the video call screen
   useEffect(() => {
@@ -457,11 +493,7 @@ export default function VideoCallScreen() {
   }
 
   return (
-    <KeyboardAvoidingView 
-      style={videoCallStyles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
+    <View style={videoCallStyles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={videoCallStyles.container}>
           <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -527,14 +559,25 @@ export default function VideoCallScreen() {
 
             {/* Chat Input Above Controls */}
             {isTextInputVisible && (
-              <View style={videoCallStyles.chatInputAboveControls}>
+              <Animated.View 
+                style={[
+                  videoCallStyles.chatInputAboveControls,
+                  {
+                    transform: [{ translateY: keyboardOffset.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -1],
+                      extrapolate: 'clamp'
+                    }) }]
+                  }
+                ]}
+              >
                 <ChatInput
                   textInput={textInput}
                   setTextInput={setTextInput}
                   onSendMessage={handleSendMessage}
                   isLoading={isApiLoading}
                 />
-              </View>
+              </Animated.View>
             )}
 
             {/* Control Buttons Overlay at Bottom */}
@@ -616,6 +659,6 @@ export default function VideoCallScreen() {
           />
         </View>
       </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+    </View>
   );
 }

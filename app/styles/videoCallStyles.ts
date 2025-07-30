@@ -163,7 +163,7 @@ export const videoCallStyles = StyleSheet.create({
   },
   chatInputAboveControls: {
     position: 'absolute',
-    bottom: 220, // Position much higher above the controls
+    bottom: 300, // Position much higher above the controls
     left: 0,
     right: 0,
     zIndex: 1002,
