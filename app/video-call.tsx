@@ -338,6 +338,36 @@ export default function VideoCallScreen() {
     }
   };
 
+
+    const handleForcedCareGeneration = async () => {
+    try {
+      console.log('🔧 FORCED CARE DEBUG: Starting forced Care generation');
+      setIsApiLoading(true);
+      
+      const data = await apiService.callOpenRouterAPIWithForcedTool(
+        conversationHistory, 
+        'show_precare_instructions',
+        'Generate an Care report based on our conversation, you must output at least 2-3 care instructions'
+      );
+      
+      // Handle tool calls if present
+      const toolCalls = data.choices?.[0]?.message?.tool_calls;
+      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+        console.log('🔧 FORCED CARE DEBUG: Processing forced tool calls with bypass');
+        handleToolCalls(toolCalls, true); // bypass toggle check for forced calls
+      } else {
+        console.log('🔧 FORCED CARE DEBUG: No tool calls returned from forced API call');
+        addAiMessage('Sorry, I was unable to generate a care at this time.');
+      }
+      
+    } catch (error) {
+      console.error('🔧 FORCED CARE ERROR: Failed to generate forced care:', error);
+      addAiMessage('Sorry, I encountered an error generating the care.');
+    } finally {
+      setIsApiLoading(false);
+    }
+  };
+
   // Helper to handle OpenRouter tool calls
   const handleToolCalls = (toolCalls: any[], bypassToggleCheck: boolean = false) => {
     console.log('🔧 TOOL CALL HANDLER DEBUG: Processing tool calls:', JSON.stringify(toolCalls, null, 2));
@@ -459,6 +489,7 @@ export default function VideoCallScreen() {
   const handleClosePreCare = () => {
     setIsPreCareModalVisible(false);
     setCurrentPreCareData(null);
+    togglePreCare() // Turn off generate precare when care is sent
   };
 
   
@@ -596,11 +627,16 @@ export default function VideoCallScreen() {
                   if (isPreCareToggleOn) {
                     // Turn off care instructions
                     togglePreCare();
-                    addAiMessage("Care instructions are now off.");
                   } else {
                     // Turn on care instructions
                     togglePreCare();
-                    addAiMessage("I will now show care instructions. I will ask you for more information if needed.");
+                    addAiMessage("I will now show care instructions.",
+                      true,
+                    () => {
+                      // Auto-generate report after message is spoken
+                      console.log('🔧 REPORT DEBUG: Speech completed, triggering forced report generation');
+                      handleForcedCareGeneration();
+                    });
                   }
                 }}
                 onGenerateReportConfirm={() => {
