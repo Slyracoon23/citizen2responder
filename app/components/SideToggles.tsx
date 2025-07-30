@@ -87,20 +87,24 @@ export const LeftSideToggles = ({
   onAssessConfirm
 }: LeftSideTogglesProps) => {
   const handleReportToggle = () => {
-    Alert.alert(
-      "Generate Report",
-      "Would you like to generate an emergency report? The system will ask you a few questions to create a comprehensive report.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Generate Report",
-          onPress: onGenerateReportConfirm
-        }
-      ]
-    );
+    if (isGenerateReportOn) {
+      onGenerateReportConfirm();
+    } else {
+      Alert.alert(
+        "Generate Report",
+        "Would you like to generate an emergency report? The system will ask you a few questions to create a comprehensive report.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Generate Report",
+            onPress: onGenerateReportConfirm
+          }
+        ]
+      );
+    }
   };
 
   const handleCareToggle = () => {

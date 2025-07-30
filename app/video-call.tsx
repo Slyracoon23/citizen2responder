@@ -407,7 +407,17 @@ export default function VideoCallScreen() {
                 isCareToggleOn={isPreCareToggleOn}
                 isGenerateReportOn={isGenerateReportOn}
                 onCareConfirm={handleShowDefaultPreCare}
-                onGenerateReportConfirm={handleShowDefaultReport}
+                onGenerateReportConfirm={() => {
+                  if (isGenerateReportOn) {
+                    // Turn off report generation
+                    toggleGenerateReport();
+                    addAiMessage("Report generation is now off.");
+                  } else {
+                    // Turn on report generation
+                    toggleGenerateReport();
+                    addAiMessage("I will now generate a report. I will ask you for more information if needed.");
+                  }
+                }}
                 isQuestionToggleOn={isQuestionToggleOn}
                 onAssessConfirm={() => {
                   if (isQuestionToggleOn) {
@@ -436,7 +446,17 @@ export default function VideoCallScreen() {
                 isCareToggleOn={isPreCareToggleOn}
                 isGenerateReportOn={isGenerateReportOn}
                 onCareConfirm={handleShowDefaultPreCare}
-                onGenerateReportConfirm={handleShowDefaultReport}
+                onGenerateReportConfirm={() => {
+                  if (isGenerateReportOn) {
+                    // Turn off report generation
+                    toggleGenerateReport();
+                    addAiMessage("Report generation is now off.");
+                  } else {
+                    // Turn on report generation
+                    toggleGenerateReport();
+                    addAiMessage("I will now generate a report. I will ask you for more information if needed.");
+                  }
+                }}
               />
             </View>
 
