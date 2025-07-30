@@ -25,6 +25,7 @@ import { useSpeechToText } from './hooks/useSpeechToText';
 import { useToggleFeature } from './hooks/useToggleFeature';
 import apiService from './services/apiService';
 import { videoCallStyles } from './styles/videoCallStyles';
+import { resetToDefaultPlayback } from './utils/audioSessionUtils';
 
 export default function VideoCallScreen() {
   const router = useRouter();
@@ -105,12 +106,23 @@ export default function VideoCallScreen() {
     startRecording,
     stopRecording,
     clearError: clearSttError,
+    resetAudioSession,
   } = useSpeechToText();
 
   // Animation effects
   useEffect(() => {
     startSlideAnimation(isQuestionToggleOn ? 1 : 0);
   }, [isQuestionToggleOn]);
+
+  // Cleanup audio session when leaving the video call screen
+  useEffect(() => {
+    return () => {
+      // Reset audio session to playback mode when component unmounts
+      resetToDefaultPlayback().catch((error) => {
+        console.error('Failed to reset audio session on component unmount:', error);
+      });
+    };
+  }, []);
 
 
   // Handlers
@@ -167,6 +179,9 @@ export default function VideoCallScreen() {
       
       // Add the transcribed message to the chat
       addUserMessage(transcript);
+      
+      // Ensure audio session is reset after successful STT
+      await resetAudioSession();
       
       try {
         setIsApiLoading(true);

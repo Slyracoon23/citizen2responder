@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Audio } from 'expo-av';
 import cartesiaService from '../services/cartesiaService';
+import { configureForTextToSpeech } from '../utils/audioSessionUtils';
 
 type SpeechState = 'idle' | 'speaking';
 
@@ -14,13 +15,8 @@ export function useTextToSpeech() {
   useEffect(() => {
     const loadVoices = async () => {
       try {
-        // Set audio mode for proper playback
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-          shouldDuckAndroid: true,
-          staysActiveInBackground: false,
-        });
+        // Set audio mode for proper playback with maximum volume
+        await configureForTextToSpeech();
 
         const voices = cartesiaService.getAvailableVoices();
         console.log('TTS: Available Cartesia voices:', voices.length);
@@ -79,6 +75,9 @@ export function useTextToSpeech() {
       
       // Small delay to ensure stop completes
       await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Always configure audio session for optimal playback before speaking
+      await configureForTextToSpeech();
       
       console.log('TTS: Setting state to speaking');
       setSpeechState('speaking');

@@ -4,6 +4,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import deepgramService from '../services/deepgramService';
 import { STT_CONFIG } from '../constants/sttConstants';
+import { setRecordingMode, resetToDefaultPlayback } from '../utils/audioSessionUtils';
 
 export type RecordingState = 'idle' | 'recording' | 'processing' | 'error';
 
@@ -15,6 +16,7 @@ interface UseSpeechToTextReturn {
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<string | null>;
   clearError: () => void;
+  resetAudioSession: () => Promise<void>;
 }
 
 const RECORDING_OPTIONS: Audio.RecordingOptions = {
@@ -72,12 +74,7 @@ export function useSpeechToText(): UseSpeechToTextReturn {
       }
 
       // Configure audio mode for recording
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-      });
+      await setRecordingMode();
 
       // Create and start recording
       const { recording } = await Audio.Recording.createAsync(RECORDING_OPTIONS);
@@ -104,6 +101,9 @@ export function useSpeechToText(): UseSpeechToTextReturn {
         }
         recordingRef.current = null;
       }
+      
+      // Reset audio session on start recording error
+      await resetToDefaultPlayback();
     }
   }, []);
 
@@ -154,6 +154,9 @@ export function useSpeechToText(): UseSpeechToTextReturn {
       // Success haptic feedback
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+      // Reset audio session to playback mode for optimal TTS volume
+      await resetToDefaultPlayback();
+      
       setRecordingState('idle');
       console.log('🎤 STT: Transcription completed:', transcript);
       
@@ -178,7 +181,19 @@ export function useSpeechToText(): UseSpeechToTextReturn {
         recordingRef.current = null;
       }
       
+      // Reset audio session even on error to prevent stuck recording mode
+      await resetToDefaultPlayback();
+      
       return null;
+    }
+  }, []);
+
+  const resetAudioSession = useCallback(async () => {
+    try {
+      await resetToDefaultPlayback();
+      console.log('🎤 STT: Audio session manually reset to playback mode');
+    } catch (error) {
+      console.error('🎤 STT: Failed to reset audio session:', error);
     }
   }, []);
 
@@ -190,5 +205,6 @@ export function useSpeechToText(): UseSpeechToTextReturn {
     startRecording,
     stopRecording,
     clearError,
+    resetAudioSession,
   };
 }
