@@ -447,11 +447,13 @@ export default function VideoCallScreen() {
   const handleCloseReport = () => {
     setIsReportModalVisible(false);
     setCurrentReport(null);
+    toggleGenerateReport(); // Turn off generate report when modal is closed
   };
 
   const handleSendToEmergency = () => {
     setIsReportModalVisible(false);
     setCurrentReport(null);
+    toggleGenerateReport(); // Turn off generate report when report is sent
   };
 
   const handleClosePreCare = () => {
