@@ -174,6 +174,47 @@ export const LeftSideToggles = ({
   );
 };
 
+interface RightSideTogglesProps {
+  isImageInputEnabled: boolean;
+  onImageInputToggle: () => void;
+}
+
+export const RightSideToggles = ({
+  isImageInputEnabled,
+  onImageInputToggle
+}: RightSideTogglesProps) => {
+  return (
+    <View style={styles.rightSideContainer}>
+      <TouchableOpacity
+        style={styles.smallToggleButton}
+        onPress={onImageInputToggle}
+        activeOpacity={0.8}
+      >
+        <View style={styles.smallButtonContainer}>
+          <LinearGradient
+            colors={isImageInputEnabled ? colors.gradients.accent : colors.gradients.gray}
+            style={[
+              styles.smallButtonGradient,
+              isImageInputEnabled && styles.smallButtonActive
+            ]}
+          >
+            <MaterialIcons
+              name={isImageInputEnabled ? "visibility" : "visibility-off"}
+              size={16}
+              color={isImageInputEnabled ? colors.text.primary : colors.controls.inactive}
+            />
+          </LinearGradient>
+        </View>
+        <Text style={[
+          styles.smallButtonLabel,
+          isImageInputEnabled && styles.smallActiveButtonLabel
+        ]}>
+          VISION
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 
 
@@ -188,6 +229,14 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   
+  // Right side container  
+  rightSideContainer: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: 60, // Top right position
+    zIndex: 1001,
+    gap: spacing.lg,
+  },
   
   
   // Individual toggle button
@@ -238,5 +287,55 @@ const styles = StyleSheet.create({
   activeButtonLabel: {
     color: colors.text.primary,
     fontWeight: fontWeight.bold,
+  },
+
+  // Small toggle button styles (for right side)
+  smallToggleButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 45,
+  },
+  
+  smallButtonContainer: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+    borderRadius: 20,
+  },
+  
+  smallButtonGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.glass.light,
+  },
+  
+  smallButtonActive: {
+    borderColor: colors.glass.strong,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  
+  smallButtonLabel: {
+    color: colors.text.primary,
+    fontSize: fontSize.xs - 1,
+    fontWeight: fontWeight.medium,
+    marginTop: spacing.xs - 2,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  
+  smallActiveButtonLabel: {
+    color: colors.text.primary,
+    fontWeight: fontWeight.semibold,
   },
 });

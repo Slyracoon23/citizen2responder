@@ -16,6 +16,7 @@ import {
 import ChatInterface, { ChatInput } from './components/ChatInterface';
 import PreCareModal from './components/PreCareModal';
 import ReportModal from './components/ReportModal';
+import { RightSideToggles } from './components/SideToggles';
 import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
 import { useAnimations } from './hooks/useAnimations';
@@ -522,6 +523,12 @@ export default function VideoCallScreen() {
                 isLoading={isApiLoading}
               />
             </View>
+
+            {/* Right Side Toggle - Vision */}
+            <RightSideToggles
+              isImageInputEnabled={isImageInputEnabled}
+              onImageInputToggle={toggleImageInput}
+            />
 
             {/* Chat Input Above Controls */}
             {isTextInputVisible && (
