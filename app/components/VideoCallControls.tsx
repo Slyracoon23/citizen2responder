@@ -38,8 +38,8 @@ const ToggleButton = ({
         colors={isEndButton 
           ? colors.gradients.error 
           : isOn 
-            ? ['#FFFFFF', '#F0F0F0']
-            : colors.gradients.darkGlass
+            ? colors.gradients.gray
+            : colors.gradients.gray
         }
         style={[
           styles.modernButton,
@@ -209,7 +209,7 @@ const SttButton = ({
               ? colors.gradients.error
               : recordingState === 'processing'
                 ? colors.gradients.warning
-                : colors.gradients.glass
+                : colors.gradients.gray
             }
             style={styles.sttModernButton}
           >
