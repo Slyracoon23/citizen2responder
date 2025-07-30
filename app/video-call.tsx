@@ -16,7 +16,6 @@ import {
 import ChatInterface, { ChatInput } from './components/ChatInterface';
 import PreCareModal from './components/PreCareModal';
 import ReportModal from './components/ReportModal';
-import { LeftSideToggles } from './components/SideToggles';
 import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
 import { useAnimations } from './hooks/useAnimations';
@@ -513,55 +512,6 @@ export default function VideoCallScreen() {
             />
 
 
-            {/* Left Side Toggle Buttons */}
-            <View style={videoCallStyles.leftSideTogglesOverlay}>
-              <LeftSideToggles
-                isCareToggleOn={isPreCareToggleOn}
-                isGenerateReportOn={isGenerateReportOn}
-                onCareConfirm={() => {
-                  if (isPreCareToggleOn) {
-                    // Turn off care instructions
-                    togglePreCare();
-                    addAiMessage("Care instructions are now off.");
-                  } else {
-                    // Turn on care instructions
-                    togglePreCare();
-                    addAiMessage("I will now show care instructions. I will ask you for more information if needed.");
-                  }
-                }}
-                onGenerateReportConfirm={() => {
-                  if (isGenerateReportOn) {
-                    // Turn off report generation
-                    toggleGenerateReport();
-                    addAiMessage("Report generation is now off.");
-                  } else {
-                    // Turn on report generation
-                    toggleGenerateReport();
-                    addAiMessage("I will now generate a report. I will ask you for more information if needed.");
-                  }
-                }}
-                isQuestionToggleOn={isQuestionToggleOn}
-                onAssessConfirm={() => {
-                  if (isQuestionToggleOn) {
-                    // Turn off assess mode
-                    setIsQuestionToggleOn(false);
-                    addAiMessage("Assessment mode turned off.");
-                  } else {
-                    // Turn on assess mode
-                    setIsQuestionToggleOn(true);
-                    addAiMessage(
-                      "I'm here to help you assess the situation. I'll ask you follow-up questions to better understand what's happening and provide appropriate guidance. Sounds good?",
-                      true, // enableSpeech
-                      () => {
-                        // Auto-add first assessment question after initial message is spoken
-                        console.log('🔍 ASSESS DEBUG: Initial message spoken, adding first question');
-                        addAiMessage("What is happening right now? Is anyone injured or in immediate danger?");
-                      }
-                    );
-                  }
-                }}
-              />
-            </View>
 
             
 
@@ -597,6 +547,50 @@ export default function VideoCallScreen() {
                 onSttPressOut={handleSttPressOut}
                 onEndCall={handleEndCall}
                 micPulseAnim={micPulseAnim}
+                isCareToggleOn={isPreCareToggleOn}
+                isGenerateReportOn={isGenerateReportOn}
+                isQuestionToggleOn={isQuestionToggleOn}
+                onCareConfirm={() => {
+                  if (isPreCareToggleOn) {
+                    // Turn off care instructions
+                    togglePreCare();
+                    addAiMessage("Care instructions are now off.");
+                  } else {
+                    // Turn on care instructions
+                    togglePreCare();
+                    addAiMessage("I will now show care instructions. I will ask you for more information if needed.");
+                  }
+                }}
+                onGenerateReportConfirm={() => {
+                  if (isGenerateReportOn) {
+                    // Turn off report generation
+                    toggleGenerateReport();
+                    addAiMessage("Report generation is now off.");
+                  } else {
+                    // Turn on report generation
+                    toggleGenerateReport();
+                    addAiMessage("I will now generate a report. I will ask you for more information if needed.");
+                  }
+                }}
+                onAssessConfirm={() => {
+                  if (isQuestionToggleOn) {
+                    // Turn off assess mode
+                    setIsQuestionToggleOn(false);
+                    addAiMessage("Assessment mode turned off.");
+                  } else {
+                    // Turn on assess mode
+                    setIsQuestionToggleOn(true);
+                    addAiMessage(
+                      "I'm here to help you assess the situation. I'll ask you follow-up questions to better understand what's happening and provide appropriate guidance. Sounds good?",
+                      true, // enableSpeech
+                      () => {
+                        // Auto-add first assessment question after initial message is spoken
+                        console.log('🔍 ASSESS DEBUG: Initial message spoken, adding first question');
+                        addAiMessage("What is happening right now? Is anyone injured or in immediate danger?");
+                      }
+                    );
+                  }
+                }}
               />
             </View>
           </View>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -84,6 +84,49 @@ const ToggleButton = ({
       styles.buttonLabel,
       isEndButton && styles.endButtonLabel,
       isOn && !isEndButton && styles.activeButtonLabel
+    ]}>
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
+// Compact toggle button for control panel
+interface CompactToggleButtonProps {
+  isOn: boolean;
+  onPress: () => void;
+  icon: keyof typeof MaterialIcons.glyphMap;
+  label: string;
+  gradientColors: string[];
+}
+
+const CompactToggleButton = ({
+  isOn,
+  onPress,
+  icon,
+  label,
+  gradientColors
+}: CompactToggleButtonProps) => (
+  <TouchableOpacity
+    style={styles.compactToggleButton}
+    onPress={onPress}
+    activeOpacity={0.8}
+  >
+    <LinearGradient
+      colors={isOn ? gradientColors : colors.gradients.gray}
+      style={[
+        styles.compactButtonGradient,
+        isOn && styles.compactButtonActive
+      ]}
+    >
+      <MaterialIcons
+        name={icon}
+        size={18}
+        color={isOn ? colors.text.primary : colors.controls.inactive}
+      />
+    </LinearGradient>
+    <Text style={[
+      styles.compactButtonLabel,
+      isOn && styles.compactActiveButtonLabel
     ]}>
       {label}
     </Text>
@@ -239,6 +282,13 @@ interface VideoCallControlsProps {
   onSttPressOut: () => void;
   onEndCall: () => void;
   micPulseAnim?: Animated.Value;
+  // Toggle props
+  isCareToggleOn: boolean;
+  isGenerateReportOn: boolean;
+  isQuestionToggleOn: boolean;
+  onCareConfirm: () => void;
+  onGenerateReportConfirm: () => void;
+  onAssessConfirm: () => void;
 }
 
 export default function VideoCallControls({
@@ -248,9 +298,76 @@ export default function VideoCallControls({
   onSttPressIn,
   onSttPressOut,
   onEndCall,
-  micPulseAnim
+  micPulseAnim,
+  isCareToggleOn,
+  isGenerateReportOn,
+  isQuestionToggleOn,
+  onCareConfirm,
+  onGenerateReportConfirm,
+  onAssessConfirm
 }: VideoCallControlsProps) {
   const insets = useSafeAreaInsets();
+
+  const handleReportToggle = () => {
+    if (isGenerateReportOn) {
+      onGenerateReportConfirm();
+    } else {
+      Alert.alert(
+        "Generate Report",
+        "Would you like to generate an emergency report? The system will ask you a few questions to create a comprehensive report.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Generate Report",
+            onPress: onGenerateReportConfirm
+          }
+        ]
+      );
+    }
+  };
+
+  const handleCareToggle = () => {
+    Alert.alert(
+      "Care Instructions",
+      "Would you like to access care instructions? The system will provide emergency care guidance based on the situation.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Get Instructions",
+          onPress: onCareConfirm
+        }
+      ]
+    );
+  };
+
+  const handleAssessToggle = () => {
+    if (isQuestionToggleOn) {
+      // If already on, turn it off
+      onAssessConfirm(); // This will be used to toggle off
+    } else {
+      // If off, show confirmation to turn on
+      Alert.alert(
+        "Assessment Mode",
+        "Would you like to activate assessment mode? The system will guide you through questions to evaluate the emergency situation.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Start Assessment",
+            onPress: onAssessConfirm
+          }
+        ]
+      );
+    }
+  };
 
   return (
     <View style={[styles.controlsContainer, { paddingBottom: insets.bottom + spacing.lg }]}>
@@ -259,6 +376,32 @@ export default function VideoCallControls({
           colors={colors.gradients.darkGlass}
           style={styles.controlsGradient}
         >
+          {/* Toggle buttons row at the top */}
+          <View style={styles.togglesRow}>
+            <CompactToggleButton
+              isOn={isQuestionToggleOn}
+              onPress={handleAssessToggle}
+              icon="quiz"
+              label="ASSESS"
+              gradientColors={colors.gradients.primary}
+            />
+            <CompactToggleButton
+              isOn={isGenerateReportOn}
+              onPress={handleReportToggle}
+              icon="assignment"
+              label="REPORT"
+              gradientColors={colors.gradients.error}
+            />
+            <CompactToggleButton
+              isOn={isCareToggleOn}
+              onPress={handleCareToggle}
+              icon="local-hospital"
+              label="CARE"
+              gradientColors={colors.gradients.secondary}
+            />
+          </View>
+
+          {/* Main controls row at the bottom */}
           <View style={styles.controlsContent}>
             <ToggleButton
               isOn={isKeyboardOn}
@@ -309,6 +452,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
     borderRadius: spacing.button.large.radius,
+  },
+  togglesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    paddingBottom: spacing.md,
+    marginBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   controlsContent: {
     flexDirection: 'row',
@@ -414,6 +566,43 @@ const styles = StyleSheet.create({
   },
   sttProcessingLabel: {
     color: colors.warning,
+    fontWeight: fontWeight.semibold,
+  },
+
+  // Compact toggle button styles
+  compactToggleButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 65,
+  },
+  compactButtonGradient: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.glass.light,
+  },
+  compactButtonActive: {
+    borderColor: colors.glass.strong,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  compactButtonLabel: {
+    color: colors.text.primary,
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.medium,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  compactActiveButtonLabel: {
+    color: colors.text.primary,
     fontWeight: fontWeight.semibold,
   },
 });
