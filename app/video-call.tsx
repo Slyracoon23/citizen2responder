@@ -379,10 +379,10 @@ export default function VideoCallScreen() {
     const questionSentence = sentences.find(sentence => sentence.endsWith('?'));
     
     if (questionSentence) {
-      // Extract the question and activate the question UI
-      setCurrentQuestion(questionSentence);
-      setIsQuestionToggleOn(true);
-      console.log('🔍 QUESTION DETECTED:', questionSentence);
+      // Extract the question but don't activate the question UI (disabled for now)
+      // setCurrentQuestion(questionSentence);
+      // setIsQuestionToggleOn(true);
+      console.log('🔍 QUESTION DETECTED (UI DISABLED):', questionSentence);
     }
   };
 
@@ -455,9 +455,15 @@ export default function VideoCallScreen() {
                 onGenerateReportConfirm={handleShowDefaultReport}
                 isQuestionToggleOn={isQuestionToggleOn}
                 onAssessConfirm={() => {
-                  addAiMessage("I'm here to help you assess the situation. I'll ask you follow-up questions to better understand what's happening and provide appropriate guidance.");
-                  setCurrentQuestion("Do you understand? I'm ready to help assess the emergency situation.");
-                  setIsQuestionToggleOn(true);
+                  if (isQuestionToggleOn) {
+                    // Turn off assess mode
+                    setIsQuestionToggleOn(false);
+                    addAiMessage("Assessment mode turned off.");
+                  } else {
+                    // Turn on assess mode
+                    setIsQuestionToggleOn(true);
+                    addAiMessage("I'm here to help you assess the situation. I'll ask you follow-up questions to better understand what's happening and provide appropriate guidance. Sounds good?");
+                  }
                 }}
               />
             </View>

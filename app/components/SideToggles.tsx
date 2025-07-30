@@ -121,20 +121,26 @@ export const LeftSideToggles = ({
   };
 
   const handleAssessToggle = () => {
-    Alert.alert(
-      "Assessment Mode",
-      "Would you like to activate assessment mode? The system will guide you through questions to evaluate the emergency situation.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Start Assessment",
-          onPress: onAssessConfirm
-        }
-      ]
-    );
+    if (isQuestionToggleOn) {
+      // If already on, turn it off
+      onAssessConfirm(); // This will be used to toggle off
+    } else {
+      // If off, show confirmation to turn on
+      Alert.alert(
+        "Assessment Mode",
+        "Would you like to activate assessment mode? The system will guide you through questions to evaluate the emergency situation.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Start Assessment",
+            onPress: onAssessConfirm
+          }
+        ]
+      );
+    }
   };
 
   return (
