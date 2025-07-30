@@ -100,6 +100,16 @@ export default function WelcomeScreen() {
               </Text>
             </TouchableOpacity>
 
+            {/* Text-to-Speech Test Button */}
+            <TouchableOpacity 
+              style={styles.testButton} 
+              onPress={() => router.push('/text-to-speech')}
+            >
+              <Text style={styles.testButtonText}>
+                🔊 Test Text-to-Speech
+              </Text>
+            </TouchableOpacity>
+
             <Text style={[styles.disclaimerText, { textAlign: 'center' }]}>
               If you are having a true life threatening emergency,{'\n'}
               you should call 911 immediately.
@@ -236,5 +246,23 @@ const styles = StyleSheet.create({
   },
   titleRed: {
     color: '#DC2626',
+  },
+  testButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  testButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });
