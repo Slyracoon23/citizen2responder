@@ -101,7 +101,7 @@ export const videoCallStyles = StyleSheet.create({
   // AI Processing Banner
   aiProcessingBanner: {
     position: 'absolute',
-    top: 0, // Further down from status bar
+    top: 60, // Further down from status bar
     left: spacing.md,
     right: spacing.md,
     backgroundColor: 'rgba(0, 122, 255, 0.9)', // Semi-transparent blue
