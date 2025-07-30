@@ -92,7 +92,7 @@ export const LeftSideToggles = ({
       onPress={onQuestionToggle}
       icon="quiz"
       label="ASSESS"
-      gradientColors={colors.gradients.error}
+      gradientColors={colors.gradients.primary}
     />
     <SideToggleButton
       isOn={isGenerateReportOn}
