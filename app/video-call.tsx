@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Keyboard,
-  KeyboardEvent,
+  KeyboardAvoidingView,
   Platform,
   StatusBar,
   Text,
@@ -37,8 +37,6 @@ export default function VideoCallScreen() {
   const [currentPreCareData, setCurrentPreCareData] = useState<any>(null);
   const [isTextInputVisible, setIsTextInputVisible] = useState(false);
 
-  // Keyboard handling
-  const keyboardOffset = useRef(new Animated.Value(0)).current;
 
   // AI Processing Banner Animation
   const bannerOpacity = useRef(new Animated.Value(0)).current;
@@ -192,38 +190,6 @@ export default function VideoCallScreen() {
     }
   }, [isApiLoading]);
 
-  // Keyboard event listeners
-  useEffect(() => {
-    const keyboardWillShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (event: KeyboardEvent) => {
-        if (isTextInputVisible) {
-          const keyboardHeight = event.endCoordinates.height;
-          Animated.timing(keyboardOffset, {
-            toValue: keyboardHeight - 100, // Subtract some padding
-            duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
-            useNativeDriver: false,
-          }).start();
-        }
-      }
-    );
-
-    const keyboardWillHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      (event: KeyboardEvent) => {
-        Animated.timing(keyboardOffset, {
-          toValue: 0,
-          duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
-          useNativeDriver: false,
-        }).start();
-      }
-    );
-
-    return () => {
-      keyboardWillShowListener.remove();
-      keyboardWillHideListener.remove();
-    };
-  }, [isTextInputVisible, keyboardOffset]);
 
   // Cleanup audio session when leaving the video call screen
   useEffect(() => {
@@ -559,17 +525,10 @@ export default function VideoCallScreen() {
 
             {/* Chat Input Above Controls */}
             {isTextInputVisible && (
-              <Animated.View 
-                style={[
-                  videoCallStyles.chatInputAboveControls,
-                  {
-                    transform: [{ translateY: keyboardOffset.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, -1],
-                      extrapolate: 'clamp'
-                    }) }]
-                  }
-                ]}
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                style={videoCallStyles.chatInputAboveControls}
               >
                 <ChatInput
                   textInput={textInput}
@@ -577,7 +536,7 @@ export default function VideoCallScreen() {
                   onSendMessage={handleSendMessage}
                   isLoading={isApiLoading}
                 />
-              </Animated.View>
+              </KeyboardAvoidingView>
             )}
 
             {/* Control Buttons Overlay at Bottom */}
