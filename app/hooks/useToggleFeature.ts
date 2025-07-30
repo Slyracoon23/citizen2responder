@@ -8,7 +8,7 @@ export function useToggleFeature() {
   const [isVoiceOn, setIsVoiceOn] = useState(false);
   const [isTranscriptionEnabled, setIsTranscriptionEnabled] = useState(true);
   const [isQuestionToggleOn, setIsQuestionToggleOn] = useState(false);
-  const [isImageInputEnabled, setIsImageInputEnabled] = useState(false);
+  const [isImageInputEnabled, setIsImageInputEnabled] = useState(true);
   const [isGenerateReportOn, setIsGenerateReportOn] = useState(false);
   const [isPreCareToggleOn, setIsPreCareToggleOn] = useState(false);
   const [isKeyboardOn, setIsKeyboardOn] = useState(false);

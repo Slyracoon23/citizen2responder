@@ -188,7 +188,11 @@ export default function VideoCallScreen() {
 
         if (isImageInputEnabled && cameraRef.current) {
           // Capture a single frame if vision is enabled
-          const photo = await cameraRef.current.takePictureAsync({ base64: true });
+          const photo = await cameraRef.current.takePictureAsync({ 
+            base64: true,
+            skipProcessing: true,
+            shutterSound: false
+          });
           if (photo && photo.base64) {
             console.log(`🔍 CONV DEBUG: Sending STT message with 1 image frame.`);
             data = await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], transcript);
@@ -292,7 +296,11 @@ export default function VideoCallScreen() {
 
       if (isImageInputEnabled && cameraRef.current) {
         // Capture a single frame if vision is enabled
-        const photo = await cameraRef.current.takePictureAsync({ base64: true });
+        const photo = await cameraRef.current.takePictureAsync({ 
+          base64: true,
+          skipProcessing: true,
+          shutterSound: false
+        });
         if (photo && photo.base64) {
           console.log(`🔍 CONV DEBUG: Sending message with 1 image frame.`);
           data = await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], message);
