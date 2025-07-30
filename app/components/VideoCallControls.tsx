@@ -232,9 +232,9 @@ const SttButton = ({
 };
 
 interface VideoCallControlsProps {
-  isCameraOn: boolean;
+  isKeyboardOn: boolean;
   recordingState: RecordingState;
-  onCameraPress: () => void;
+  onKeyboardPress: () => void;
   onSttPressIn: () => void;
   onSttPressOut: () => void;
   onEndCall: () => void;
@@ -242,9 +242,9 @@ interface VideoCallControlsProps {
 }
 
 export default function VideoCallControls({
-  isCameraOn,
+  isKeyboardOn,
   recordingState,
-  onCameraPress,
+  onKeyboardPress,
   onSttPressIn,
   onSttPressOut,
   onEndCall,
@@ -261,11 +261,11 @@ export default function VideoCallControls({
         >
           <View style={styles.controlsContent}>
             <ToggleButton
-              isOn={isCameraOn}
-              onPress={onCameraPress}
-              iconOn="videocam"
-              iconOff="videocam-off"
-              label="Video"
+              isOn={isKeyboardOn}
+              onPress={onKeyboardPress}
+              iconOn="keyboard"
+              iconOff="keyboard"
+              label="Keyboard"
             />
             <SttButton
               recordingState={recordingState}

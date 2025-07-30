@@ -86,6 +86,7 @@ export default function VideoCallScreen() {
     isImageInputEnabled,
     isGenerateReportOn,
     isPreCareToggleOn,
+    isKeyboardOn,
     setIsQuestionToggleOn,
     setIsPreCareToggleOn,
     handleCameraToggle,
@@ -95,6 +96,7 @@ export default function VideoCallScreen() {
     toggleImageInput,
     toggleGenerateReport,
     togglePreCare,
+    toggleKeyboard,
   } = useToggleFeature();
 
   const {
@@ -116,12 +118,13 @@ export default function VideoCallScreen() {
     router.back();
   };
 
-  const handleCamera = () => {
-    handleCameraToggle(hasCamera, requestCameraPermission);
-  };
-
   const handleVoice = () => {
     handleVoiceToggle(hasAudio, requestAudioPermission);
+  };
+
+  const handleKeyboard = () => {
+    toggleKeyboard();
+    setIsTextInputVisible(!isTextInputVisible);
   };
 
   const handleShowDefaultReport = () => {
@@ -481,9 +484,9 @@ export default function VideoCallScreen() {
             {/* Control Buttons Overlay at Bottom */}
             <View style={videoCallStyles.controlsOverlayBottom}>
               <VideoCallControls
-                isCameraOn={isCameraOn}
+                isKeyboardOn={isKeyboardOn}
                 recordingState={recordingState}
-                onCameraPress={handleCamera}
+                onKeyboardPress={handleKeyboard}
                 onSttPressIn={handleSttPressIn}
                 onSttPressOut={handleSttPressOut}
                 onEndCall={handleEndCall}

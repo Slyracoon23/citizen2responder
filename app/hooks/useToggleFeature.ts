@@ -11,6 +11,7 @@ export function useToggleFeature() {
   const [isImageInputEnabled, setIsImageInputEnabled] = useState(false);
   const [isGenerateReportOn, setIsGenerateReportOn] = useState(false);
   const [isPreCareToggleOn, setIsPreCareToggleOn] = useState(false);
+  const [isKeyboardOn, setIsKeyboardOn] = useState(false);
 
   const handleCameraToggle = async (
     hasPermission: boolean | null,
@@ -101,6 +102,10 @@ export function useToggleFeature() {
     }
   };
 
+  const toggleKeyboard = () => {
+    setIsKeyboardOn(!isKeyboardOn);
+  };
+
   return {
     isCameraOn,
     isVoiceOn,
@@ -109,6 +114,7 @@ export function useToggleFeature() {
     isImageInputEnabled,
     isGenerateReportOn,
     isPreCareToggleOn,
+    isKeyboardOn,
     setIsQuestionToggleOn,
     setIsPreCareToggleOn,
     handleCameraToggle,
@@ -118,5 +124,6 @@ export function useToggleFeature() {
     toggleImageInput,
     toggleGenerateReport,
     togglePreCare,
+    toggleKeyboard,
   };
 }
