@@ -152,15 +152,7 @@ export const videoCallStyles = StyleSheet.create({
     justifyContent: 'center',
     paddingLeft: spacing.lg,
   },
-  rightSideTogglesOverlay: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    zIndex: 1001,
-    justifyContent: 'center',
-    paddingRight: spacing.lg,
-  },
+  
 
   // Report Modal Styles
   reportModalOverlay: {

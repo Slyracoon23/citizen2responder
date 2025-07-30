@@ -174,37 +174,9 @@ export const LeftSideToggles = ({
   );
 };
 
-interface RightSideTogglesProps {
-  isImageInputEnabled: boolean;
-  isQuestionToggleOn: boolean;
-  isTranscriptionEnabled: boolean;
-  isApiLoading: boolean;
-  onImageInputToggle: () => void;
-  onQuestionToggle: () => void;
-  onTranscriptionToggle: () => void;
-  isCareToggleOn: boolean;
-  isGenerateReportOn: boolean;
-  onCareConfirm: () => void;
-  onGenerateReportConfirm: () => void;
-}
 
-export const RightSideToggles = ({
-  isImageInputEnabled,
-  isQuestionToggleOn,
-  isTranscriptionEnabled,
-  isApiLoading,
-  onImageInputToggle,
-  onQuestionToggle,
-  onTranscriptionToggle,
-  isCareToggleOn,
-  isGenerateReportOn,
-  onCareConfirm,
-  onGenerateReportConfirm
-}: RightSideTogglesProps) => (
-  <View style={styles.rightSideContainer}>
-    {/* Right side is now empty - vision and captions always on */}
-  </View>
-);
+
+
 
 const styles = StyleSheet.create({
   // Left side container
@@ -216,14 +188,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   
-  // Right side container
-  rightSideContainer: {
-    position: 'absolute',
-    right: spacing.lg,
-    top: '40%',
-    zIndex: 1001,
-    gap: spacing.lg,
-  },
+  
   
   // Individual toggle button
   sideToggleButton: {

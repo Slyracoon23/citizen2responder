@@ -15,7 +15,7 @@ import {
 import ChatInterface, { ChatInput } from './components/ChatInterface';
 import PreCareModal from './components/PreCareModal';
 import ReportModal from './components/ReportModal';
-import { LeftSideToggles, RightSideToggles } from './components/SideToggles';
+import { LeftSideToggles } from './components/SideToggles';
 import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
 import { useAnimations } from './hooks/useAnimations';
@@ -406,7 +406,17 @@ export default function VideoCallScreen() {
               <LeftSideToggles
                 isCareToggleOn={isPreCareToggleOn}
                 isGenerateReportOn={isGenerateReportOn}
-                onCareConfirm={handleShowDefaultPreCare}
+                onCareConfirm={() => {
+                  if (isPreCareToggleOn) {
+                    // Turn off care instructions
+                    togglePreCare();
+                    addAiMessage("Care instructions are now off.");
+                  } else {
+                    // Turn on care instructions
+                    togglePreCare();
+                    addAiMessage("I will now show care instructions. I will ask you for more information if needed.");
+                  }
+                }}
                 onGenerateReportConfirm={() => {
                   if (isGenerateReportOn) {
                     // Turn off report generation
@@ -433,32 +443,7 @@ export default function VideoCallScreen() {
               />
             </View>
 
-            {/* Right Side Toggle Buttons */}
-            <View style={videoCallStyles.rightSideTogglesOverlay}>
-              <RightSideToggles
-                isImageInputEnabled={isImageInputEnabled}
-                isQuestionToggleOn={isQuestionToggleOn}
-                isTranscriptionEnabled={isTranscriptionEnabled}
-                isApiLoading={isApiLoading}
-                onImageInputToggle={toggleImageInput}
-                onQuestionToggle={toggleQuestion}
-                onTranscriptionToggle={toggleTranscription}
-                isCareToggleOn={isPreCareToggleOn}
-                isGenerateReportOn={isGenerateReportOn}
-                onCareConfirm={handleShowDefaultPreCare}
-                onGenerateReportConfirm={() => {
-                  if (isGenerateReportOn) {
-                    // Turn off report generation
-                    toggleGenerateReport();
-                    addAiMessage("Report generation is now off.");
-                  } else {
-                    // Turn on report generation
-                    toggleGenerateReport();
-                    addAiMessage("I will now generate a report. I will ask you for more information if needed.");
-                  }
-                }}
-              />
-            </View>
+            
 
             {/* Chat History Overlay at Top */}
             <View style={videoCallStyles.chatOverlayTop}>
