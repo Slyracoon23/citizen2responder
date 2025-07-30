@@ -453,7 +453,11 @@ export default function VideoCallScreen() {
                 onCareConfirm={handleShowDefaultPreCare}
                 onGenerateReportConfirm={handleShowDefaultReport}
                 isQuestionToggleOn={isQuestionToggleOn}
-                onAssessConfirm={toggleQuestion}
+                onAssessConfirm={() => {
+                  addAiMessage("I'm here to help you assess the situation. I'll ask you follow-up questions to better understand what's happening and provide appropriate guidance.");
+                  setCurrentQuestion("Do you understand? I'm ready to help assess the emergency situation.");
+                  setIsQuestionToggleOn(true);
+                }}
               />
             </View>
 
