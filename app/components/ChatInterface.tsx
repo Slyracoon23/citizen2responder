@@ -138,10 +138,10 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: colors.text.secondary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.xxxl,
     fontWeight: fontWeight.normal,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 30,
   },
   messageContainer: {
     marginVertical: 2,

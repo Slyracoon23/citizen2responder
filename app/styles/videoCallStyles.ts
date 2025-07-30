@@ -131,7 +131,7 @@ export const videoCallStyles = StyleSheet.create({
     bottom: 220, // Position much higher above the controls
     left: 0,
     right: 0,
-    zIndex: 999,
+    zIndex: 1002,
   },
   controlsOverlayBottom: {
     position: 'absolute',
