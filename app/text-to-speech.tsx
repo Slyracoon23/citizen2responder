@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   StyleSheet, 
   TouchableOpacity, 
@@ -9,76 +9,36 @@ import {
   Platform,
   Text
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
-
-interface Voice {
-  identifier: string;
-  name: string;
-  language: string;
-  quality: string;
-}
-
-type SpeechState = 'idle' | 'speaking' | 'paused';
+import { useTextToSpeech } from './hooks/useTextToSpeech';
 
 export default function TextToSpeechScreen() {
   const router = useRouter();
   const [text, setText] = useState('Hello! This is a test of the text-to-speech functionality.');
-  const [speechState, setSpeechState] = useState<SpeechState>('idle');
-  const [voices, setVoices] = useState<Voice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<string>('');
+  const {
+    speak,
+    stop,
+    isSpeaking,
+    speechState,
+    availableVoices,
+    selectedVoice,
+    setSelectedVoice,
+  } = useTextToSpeech();
+
   const [speechRate, setSpeechRate] = useState(1.0);
   const [speechPitch, setSpeechPitch] = useState(1.0);
 
-  useEffect(() => {
-    loadVoices();
-  }, []);
-
-  const loadVoices = async () => {
-    try {
-      const availableVoices = await Speech.getAvailableVoicesAsync();
-      setVoices(availableVoices);
-      if (availableVoices.length > 0) {
-        const defaultVoice = availableVoices.find(voice => 
-          voice.language.startsWith('en')
-        ) || availableVoices[0];
-        setSelectedVoice(defaultVoice.identifier);
-      }
-    } catch (error) {
-      console.error('Error loading voices:', error);
-    }
-  };
-
-  const handleSpeak = async () => {
+  const handleSpeak = () => {
     if (!text.trim()) {
       Alert.alert('Error', 'Please enter some text to speak');
       return;
     }
-
-    try {
-      setSpeechState('speaking');
-      
-      Speech.speak(text, {
-        voice: selectedVoice || undefined,
-        rate: speechRate,
-        pitch: speechPitch,
-        onDone: () => setSpeechState('idle'),
-        onStopped: () => setSpeechState('idle'),
-        onError: () => setSpeechState('idle'),
-      });
-    } catch (error) {
-      console.error('Speech error:', error);
-      setSpeechState('idle');
-    }
+    speak(text);
   };
 
-  const handleStop = async () => {
-    try {
-      await Speech.stop();
-      setSpeechState('idle');
-    } catch (error) {
-      console.error('Error stopping speech:', error);
-    }
+  const handleStop = () => {
+    stop();
   };
 
   const adjustRate = (delta: number) => {
@@ -90,11 +50,11 @@ export default function TextToSpeechScreen() {
   };
 
   const getStatusColor = () => {
-    return speechState === 'speaking' ? '#34C759' : '#8E8E93';
+    return isSpeaking ? '#34C759' : '#8E8E93';
   };
 
   const getStatusText = () => {
-    return speechState === 'speaking' ? 'Speaking...' : 'Ready';
+    return isSpeaking ? 'Speaking...' : 'Ready';
   };
 
   return (
@@ -136,17 +96,17 @@ export default function TextToSpeechScreen() {
           <Text style={styles.sectionTitle}>Controls:</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[styles.button, speechState === 'speaking' ? styles.disabledButton : styles.primaryButton]}
+              style={[styles.button, isSpeaking ? styles.disabledButton : styles.primaryButton]}
               onPress={handleSpeak}
-              disabled={speechState === 'speaking'}
+              disabled={isSpeaking}
             >
               <Text style={styles.buttonText}>▶️ Speak</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, speechState === 'idle' ? styles.disabledButton : styles.stopButton]}
+              style={[styles.button, !isSpeaking ? styles.disabledButton : styles.stopButton]}
               onPress={handleStop}
-              disabled={speechState === 'idle'}
+              disabled={!isSpeaking}
             >
               <Text style={styles.buttonText}>⏹️ Stop</Text>
             </TouchableOpacity>
@@ -156,6 +116,20 @@ export default function TextToSpeechScreen() {
         {/* Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings:</Text>
+
+          {/* Voice Selection */}
+          <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>Voice:</Text>
+            <Picker
+              selectedValue={selectedVoice}
+              style={styles.picker}
+              onValueChange={(itemValue) => setSelectedVoice(itemValue)}
+            >
+              {availableVoices.map((voice) => (
+                <Picker.Item key={voice.identifier} label={voice.name} value={voice.identifier} />
+              ))}
+            </Picker>
+          </View>
           
           {/* Speed */}
           <View style={styles.settingRow}>
@@ -187,7 +161,7 @@ export default function TextToSpeechScreen() {
         {/* Info */}
         <View style={styles.section}>
           <Text style={styles.infoText}>
-            Available voices: {voices.length}{'\n'}
+            Available voices: {availableVoices.length}{ '\n'}
             Platform: {Platform.OS}
           </Text>
         </View>
@@ -326,5 +300,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: '#666',
+  },
+  picker: {
+    flex: 1,
   },
 });

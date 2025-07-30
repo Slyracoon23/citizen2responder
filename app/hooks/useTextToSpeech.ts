@@ -16,16 +16,31 @@ export function useTextToSpeech() {
         // Set audio mode for proper playback
         await configureForTextToSpeech();
 
-        const voices = await Speech.getAvailableVoicesAsync();
-        console.log('TTS: Available Expo voices:', voices.length);
-        setAvailableVoices(voices);
+        const allVoices = await Speech.getAvailableVoicesAsync();
+        const englishVoices = allVoices.filter(v => v.language.startsWith('en'));
+        console.log('TTS: Available Expo voices:', allVoices.length);
+        console.log('TTS: Available English voices:', englishVoices.length);
+        setAvailableVoices(englishVoices);
         
-        // Select default English voice
-        if (voices.length > 0) {
-          const defaultVoice = voices.find(voice => voice.language.startsWith('en')) || voices[0];
-          if (defaultVoice) {
-            setSelectedVoice(defaultVoice.identifier);
-            console.log('TTS: Selected default voice:', defaultVoice.name);
+        // Select a good voice from English voices
+        if (englishVoices.length > 0) {
+          // Prefer an enhanced quality English voice
+          const enhancedVoice = englishVoices.find(
+            (v) => v.quality === Speech.VoiceQuality.Enhanced
+          );
+
+          // If no enhanced voice, find any English voice
+          const defaultVoice = englishVoices.find((v) => v.language.startsWith('en'));
+
+          // Prefer "Tessa" voice if available
+          const tessaVoice = englishVoices.find((v) => v.name === 'Tessa');
+
+          // Use Tessa if available, otherwise enhanced, otherwise default, otherwise the first English voice
+          const selected = tessaVoice || enhancedVoice || defaultVoice || englishVoices[0];
+
+          if (selected) {
+            setSelectedVoice(selected.identifier);
+            console.log(`TTS: Selected voice: ${selected.name} (Quality: ${selected.quality}, Language: ${selected.language})`);
           }
         }
       } catch (error) {
