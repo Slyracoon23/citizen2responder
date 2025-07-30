@@ -101,14 +101,14 @@ export default function WelcomeScreen() {
             </TouchableOpacity>
 
             {/* Text-to-Speech Test Button */}
-            <TouchableOpacity 
+            {/* <TouchableOpacity 
               style={styles.testButton} 
               onPress={() => router.push('/text-to-speech')}
             >
               <Text style={styles.testButtonText}>
                 🔊 Test Text-to-Speech
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             <Text style={[styles.disclaimerText, { textAlign: 'center' }]}>
               If you are having a true life threatening emergency,{'\n'}
