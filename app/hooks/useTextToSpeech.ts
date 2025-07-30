@@ -1,47 +1,32 @@
-import { useState, useCallback, useEffect } from 'react';
-import * as Speech from 'expo-speech';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Audio } from 'expo-av';
+import cartesiaService from '../services/cartesiaService';
 import { configureForTextToSpeech } from '../utils/audioSessionUtils';
 
 type SpeechState = 'idle' | 'speaking';
 
 export function useTextToSpeech() {
   const [speechState, setSpeechState] = useState<SpeechState>('idle');
-  const [availableVoices, setAvailableVoices] = useState<Speech.Voice[]>([]);
+  const [availableVoices, setAvailableVoices] = useState<any[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>('');
+  const audioRef = useRef<Audio.Sound | null>(null);
 
   // Load available voices on component mount
   useEffect(() => {
     const loadVoices = async () => {
       try {
-        // Set audio mode for proper playback
+        // Set audio mode for proper playback with maximum volume
         await configureForTextToSpeech();
 
-        const allVoices = await Speech.getAvailableVoicesAsync();
-        const englishVoices = allVoices.filter(v => v.language.startsWith('en'));
-        console.log('TTS: Available Expo voices:', allVoices.length);
-        console.log('TTS: Available English voices:', englishVoices.length);
-        setAvailableVoices(englishVoices);
+        const voices = cartesiaService.getAvailableVoices();
+        console.log('TTS: Available Cartesia voices:', voices.length);
+        setAvailableVoices(voices);
         
-        // Select a good voice from English voices
-        if (englishVoices.length > 0) {
-          // Prefer an enhanced quality English voice
-          const enhancedVoice = englishVoices.find(
-            (v) => v.quality === Speech.VoiceQuality.Enhanced
-          );
-
-          // If no enhanced voice, find any English voice
-          const defaultVoice = englishVoices.find((v) => v.language.startsWith('en'));
-
-          // Prefer "Tessa" voice if available
-          const tessaVoice = englishVoices.find((v) => v.name === 'Tessa');
-
-          // Use Tessa if available, otherwise enhanced, otherwise default, otherwise the first English voice
-          const selected = tessaVoice || enhancedVoice || defaultVoice || englishVoices[0];
-
-          if (selected) {
-            setSelectedVoice(selected.identifier);
-            console.log(`TTS: Selected voice: ${selected.name} (Quality: ${selected.quality}, Language: ${selected.language})`);
-          }
+        // Select default voice
+        if (voices.length > 0) {
+          const defaultVoice = voices[0];
+          setSelectedVoice(defaultVoice.id);
+          console.log('TTS: Selected default voice:', defaultVoice.name);
         }
       } catch (error) {
         console.error('TTS: Error loading voices:', error);
@@ -51,22 +36,28 @@ export function useTextToSpeech() {
     loadVoices();
   }, []);
 
-  // Cleanup: stop speech on unmount
+  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      Speech.stop();
+      if (audioRef.current) {
+        audioRef.current.unloadAsync().catch(console.error);
+      }
     };
   }, []);
 
   const stop = useCallback(async () => {
     try {
       console.log('TTS: Stopping speech...');
-      await Speech.stop();
-      // The onStopped callback will set the state to idle.
-      console.log('TTS: Speech stop requested');
+      if (audioRef.current) {
+        await audioRef.current.stopAsync();
+        await audioRef.current.unloadAsync();
+        audioRef.current = null;
+      }
+      setSpeechState('idle');
+      console.log('TTS: Speech stopped successfully');
     } catch (error) {
       console.error('TTS: Error stopping speech:', error);
-      setSpeechState('idle'); // Force idle state on error
+      setSpeechState('idle');
     }
   }, []);
 
@@ -79,39 +70,72 @@ export function useTextToSpeech() {
     try {
       console.log('TTS: Starting speech for text:', text.substring(0, 50) + '...');
       
-      // Stop any existing speech first. This is important for re-speaking.
-      await Speech.stop();
+      // Stop any existing speech first
+      await stop();
       
-      // Configure audio session for optimal playback before speaking
+      // Small delay to ensure stop completes
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Always configure audio session for optimal playback before speaking
       await configureForTextToSpeech();
       
+      console.log('TTS: Setting state to speaking');
       setSpeechState('speaking');
 
-      Speech.speak(text, {
-        voice: selectedVoice || undefined,
-        rate: 1.1, // Slightly faster speech rate (default is 1.0)
-        onStart: () => {
-          console.log('TTS: ✅ Speech started successfully');
-        },
-        onDone: () => {
-          console.log('TTS: ✅ Speech completed successfully');
-          setSpeechState('idle');
-        },
-        onStopped: () => {
-          console.log('TTS: Speech stopped');
-          setSpeechState('idle');
-        },
-        onError: (error) => {
-          console.error('TTS: ❌ Error during speech:', error);
-          setSpeechState('idle');
-        },
+      // Generate audio using Cartesia API
+      console.log('TTS: Generating audio with Cartesia API...');
+      const audioDataUri = await cartesiaService.generateSpeechDataUri(
+        text,
+        selectedVoice || undefined,
+        {
+          speed: 'normal',
+          language: 'en'
+        }
+      );
+
+      console.log('TTS: Audio generated, loading for playback...');
+      
+      // Create and play audio
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioDataUri },
+        {
+          shouldPlay: true,
+          volume: 1.0,
+        }
+      );
+
+      audioRef.current = sound;
+
+      // Set up playback status listener
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded) {
+          if (status.didJustFinish) {
+            console.log('TTS: ✅ Speech completed successfully');
+            setSpeechState('idle');
+            sound.unloadAsync();
+            audioRef.current = null;
+          } else if (status.isPlaying) {
+            console.log('TTS: ✅ Speech started successfully');
+            setSpeechState('speaking');
+          }
+        }
       });
+
+      console.log('TTS: Audio playback initiated successfully');
       
     } catch (error) {
       console.error('TTS: ❌ Error starting speech:', error);
       setSpeechState('idle');
+      if (audioRef.current) {
+        try {
+          await audioRef.current.unloadAsync();
+        } catch (unloadError) {
+          console.error('TTS: Error unloading audio after error:', unloadError);
+        }
+        audioRef.current = null;
+      }
     }
-  }, [selectedVoice]);
+  }, [stop, selectedVoice]);
 
   const isSpeaking = speechState === 'speaking';
 
@@ -122,6 +146,5 @@ export function useTextToSpeech() {
     speechState,
     availableVoices,
     selectedVoice,
-    setSelectedVoice,
   };
 }
