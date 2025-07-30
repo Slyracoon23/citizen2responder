@@ -71,6 +71,11 @@ class KokoroService {
       };
 
       // Start the prediction
+// ⚠️ IMPORTANT: Replicate's API does not support CORS, which means this request
+// will be blocked by the browser if made directly from the frontend (e.g., in Simulato).
+// To work around this, you must route this request through a backend server (e.g., Node.js)
+// or a secure proxy (like one exposed via Ngrok or Tailscale) to avoid CORS issues
+// and keep the API key safe.
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
