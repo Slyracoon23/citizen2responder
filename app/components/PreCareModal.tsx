@@ -27,29 +27,11 @@ export default function PreCareModal({ visible, preCareData, onClose }: PreCareM
   if (!preCareData) return null;
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return colors.error;
-      case 'medium':
-        return colors.warning;
-      case 'low':
-        return colors.success;
-      default:
-        return colors.success;
-    }
+    return colors.success;
   };
 
   const getPriorityGradient = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return colors.gradients.error;
-      case 'medium':
-        return colors.gradients.warning;
-      case 'low':
-        return colors.gradients.secondary;
-      default:
-        return colors.gradients.secondary;
-    }
+    return colors.gradients.secondary;
   };
 
   const getPriorityText = (priority: string) => {
