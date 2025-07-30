@@ -151,6 +151,128 @@ class ApiService {
     }
   }
 
+  async callOpenRouterAPIWithForcedTool(conversationHistory: ConversationMessage[], toolName: string, promptMessage: string = 'Generate based on our conversation'): Promise<any> {
+    try {
+      const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error('OpenRouter API key not found');
+      }
+
+      const messages = this.convertConversationToMessages(conversationHistory, promptMessage);
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'X-Title': 'Relay Responder App',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-flash-1.5-8b',
+          messages: messages,
+          tools: [
+            {
+              type: 'function',
+              function: {
+                name: 'generate_report',
+                description: 'Generate an emergency report to be sent to 911 services.',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    report_id: {
+                      type: 'string',
+                      description: 'Unique identifier for the report (format: 911-YYYYMMDD-HHMMSS)'
+                    },
+                    summary: {
+                      type: 'string',
+                      description: 'Brief summary of the emergency situation'
+                    },
+                    details: {
+                      type: 'object',
+                      properties: {
+                        caller_name: { type: 'string', description: 'Name of the person calling' },
+                        phone_number: { type: 'string', description: 'Caller phone number' },
+                        incident_type: { type: 'string', description: 'Type of incident (e.g., traffic accident, medical emergency)' },
+                        description: { type: 'string', description: 'Detailed description of the situation' },
+                        location: {
+                          type: 'object',
+                          properties: {
+                            address: { type: 'string', description: 'Street address of incident' },
+                            latitude: { type: 'number', description: 'GPS latitude' },
+                            longitude: { type: 'number', description: 'GPS longitude' }
+                          },
+                          required: ['address']
+                        },
+                        injuries_reported: { type: 'boolean', description: 'Whether injuries are reported' },
+                        number_of_people_involved: { type: 'number', description: 'Number of people involved' },
+                        is_active_threat: { type: 'boolean', description: 'Whether there is an active threat' },
+                        timestamp: { type: 'string', description: 'ISO timestamp of incident' }
+                      },
+                      required: ['incident_type', 'description', 'location', 'injuries_reported', 'number_of_people_involved', 'is_active_threat', 'timestamp']
+                    }
+                  },
+                  required: ['report_id', 'summary', 'details']
+                }
+              }
+            },
+            {
+              type: 'function',
+              function: {
+                name: 'show_precare_instructions',
+                description: 'Display pre-care instructions to help the user provide immediate assistance.',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    title: {
+                      type: 'string',
+                      description: 'Title for the instruction category (e.g., "First Aid for Chest Pain")'
+                    },
+                    instructions: {
+                      type: 'array',
+                      items: {
+                        type: 'string'
+                      },
+                      description: 'Array of step-by-step instruction strings'
+                    },
+                    priority: {
+                      type: 'string',
+                      enum: ['low', 'medium', 'high'],
+                      description: 'Priority level indicating urgency (low/medium/high)'
+                    }
+                  },
+                  required: ['title', 'instructions', 'priority']
+                }
+              }
+            }
+          ],
+          tool_choice: {
+            type: 'function',
+            function: {
+              name: toolName
+            }
+          },
+          max_tokens: 5000,
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`OpenRouter API error: ${response.status} - ${errorData}`);
+      }
+
+      const data = await response.json();
+      console.log('🔧 OPENROUTER FORCED TOOL API DEBUG: Full response:', JSON.stringify(data, null, 2));
+      console.log('🔧 FORCED TOOL CALLS DEBUG: Tool calls present:', data.choices?.[0]?.message?.tool_calls);
+      console.log('🔧 FORCED MESSAGE CONTENT DEBUG: Message content:', data.choices?.[0]?.message?.content);
+      return data;
+
+    } catch (error) {
+      console.error('OpenRouter Forced Tool API error:', error);
+      throw error;
+    }
+  }
+
   async callOpenRouterVisionAPI(conversationHistory: ConversationMessage[], frames: string[], currentMessage: string): Promise<any> {
     try {
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;

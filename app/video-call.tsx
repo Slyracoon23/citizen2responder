@@ -308,9 +308,40 @@ export default function VideoCallScreen() {
     }
   };
 
+  // Helper to handle forced report generation
+  const handleForcedReportGeneration = async () => {
+    try {
+      console.log('🔧 FORCED REPORT DEBUG: Starting forced report generation');
+      setIsApiLoading(true);
+      
+      const data = await apiService.callOpenRouterAPIWithForcedTool(
+        conversationHistory, 
+        'generate_report',
+        'Generate an emergency report based on our conversation'
+      );
+      
+      // Handle tool calls if present
+      const toolCalls = data.choices?.[0]?.message?.tool_calls;
+      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+        console.log('🔧 FORCED REPORT DEBUG: Processing forced tool calls with bypass');
+        handleToolCalls(toolCalls, true); // bypass toggle check for forced calls
+      } else {
+        console.log('🔧 FORCED REPORT DEBUG: No tool calls returned from forced API call');
+        addAiMessage('Sorry, I was unable to generate a report at this time.');
+      }
+      
+    } catch (error) {
+      console.error('🔧 FORCED REPORT ERROR: Failed to generate forced report:', error);
+      addAiMessage('Sorry, I encountered an error generating the report.');
+    } finally {
+      setIsApiLoading(false);
+    }
+  };
+
   // Helper to handle OpenRouter tool calls
-  const handleToolCalls = (toolCalls: any[]) => {
+  const handleToolCalls = (toolCalls: any[], bypassToggleCheck: boolean = false) => {
     console.log('🔧 TOOL CALL HANDLER DEBUG: Processing tool calls:', JSON.stringify(toolCalls, null, 2));
+    console.log('🔧 TOOL CALL HANDLER DEBUG: Bypass toggle check:', bypassToggleCheck);
     toolCalls.forEach((toolCall) => {
       console.log('🔧 TOOL CALL DEBUG: Processing tool call:', toolCall);
       console.log('🔧 TOOL CALL DEBUG: Type:', toolCall.type);
@@ -318,8 +349,8 @@ export default function VideoCallScreen() {
       
       if (toolCall.type === 'function' && toolCall.function?.name === 'generate_report') {
         console.log('🔧 GENERATE_REPORT DEBUG: Found generate_report tool call');
-        if (!isGenerateReportOn) {
-          console.log('🔧 GENERATE_REPORT DEBUG: Report toggle is OFF - ignoring report generation');
+        if (!bypassToggleCheck && !isGenerateReportOn) {
+          console.log('🔧 GENERATE_REPORT DEBUG: Report toggle is OFF and not bypassing - ignoring report generation');
           return;
         }
         try {
@@ -578,7 +609,15 @@ export default function VideoCallScreen() {
                   } else {
                     // Turn on report generation
                     toggleGenerateReport();
-                    addAiMessage("I will now generate a report.");
+                    addAiMessage(
+                      "I will now generate a report.",
+                      true, // enableSpeech
+                      () => {
+                        // Auto-generate report after message is spoken
+                        console.log('🔧 REPORT DEBUG: Speech completed, triggering forced report generation');
+                        handleForcedReportGeneration();
+                      }
+                    );
                   }
                 }}
                 onAssessConfirm={() => {

@@ -126,12 +126,12 @@ Time: ${formatTimestamp(report.details.timestamp)}`;
           >
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Report ID</Text>
-              <Text style={videoCallStyles.reportText}>{report.report_id}</Text>
+              <Text style={videoCallStyles.reportText}>{report.report_id || 'N/A'}</Text>
             </View>
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Summary</Text>
-              <Text style={videoCallStyles.reportText}>{report.summary}</Text>
+              <Text style={videoCallStyles.reportText}>{report.summary || 'N/A'}</Text>
             </View>
 
             <View style={videoCallStyles.reportImagePlaceholder}>
@@ -143,13 +143,14 @@ Time: ${formatTimestamp(report.details.timestamp)}`;
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Incident Type</Text>
-              <Text style={videoCallStyles.reportText}>{report.details.incident_type}</Text>
+              <Text style={videoCallStyles.reportText}>{report.details?.incident_type || 'N/A'}</Text>
             </View>
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Location</Text>
-              <Text style={videoCallStyles.reportText}>{report.details.location.address}</Text>
-              {report.details.location.latitude && report.details.location.longitude && (
+              <Text style={videoCallStyles.reportText}>{report.details?.location?.address || 'N/A'}</Text>
+              {report.details?.location?.latitude && report.details?.location?.longitude && 
+               report.details.location.latitude !== 0 && report.details.location.longitude !== 0 && (
                 <Text style={videoCallStyles.reportSubText}>
                   GPS: {report.details.location.latitude.toFixed(6)}, {report.details.location.longitude.toFixed(6)}
                 </Text>
@@ -158,34 +159,34 @@ Time: ${formatTimestamp(report.details.timestamp)}`;
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Description</Text>
-              <Text style={videoCallStyles.reportText}>{report.details.description}</Text>
+              <Text style={videoCallStyles.reportText}>{report.details?.description || 'N/A'}</Text>
             </View>
 
             <View style={videoCallStyles.reportRow}>
               <View style={videoCallStyles.reportHalfSection}>
                 <Text style={videoCallStyles.reportSectionTitle}>Injuries</Text>
-                <Text style={[videoCallStyles.reportText, report.details.injuries_reported && videoCallStyles.reportWarning]}>
-                  {report.details.injuries_reported ? 'YES' : 'NO'}
+                <Text style={[videoCallStyles.reportText, report.details?.injuries_reported && videoCallStyles.reportWarning]}>
+                  {report.details?.injuries_reported ? 'YES' : 'NO'}
                 </Text>
               </View>
               <View style={videoCallStyles.reportHalfSection}>
                 <Text style={videoCallStyles.reportSectionTitle}>People Involved</Text>
-                <Text style={videoCallStyles.reportText}>{report.details.number_of_people_involved}</Text>
+                <Text style={videoCallStyles.reportText}>{String(report.details?.number_of_people_involved || 0)}</Text>
               </View>
             </View>
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Active Threat</Text>
-              <Text style={[videoCallStyles.reportText, report.details.is_active_threat && videoCallStyles.reportDanger]}>
-                {report.details.is_active_threat ? 'YES' : 'NO'}
+              <Text style={[videoCallStyles.reportText, report.details?.is_active_threat && videoCallStyles.reportDanger]}>
+                {report.details?.is_active_threat ? 'YES' : 'NO'}
               </Text>
             </View>
 
-            {report.details.caller_name && (
+            {report.details?.caller_name && (
               <View style={videoCallStyles.reportSection}>
                 <Text style={videoCallStyles.reportSectionTitle}>Caller</Text>
                 <Text style={videoCallStyles.reportText}>{report.details.caller_name}</Text>
-                {report.details.phone_number && (
+                {report.details?.phone_number && (
                   <Text style={videoCallStyles.reportSubText}>{report.details.phone_number}</Text>
                 )}
               </View>
@@ -193,7 +194,7 @@ Time: ${formatTimestamp(report.details.timestamp)}`;
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Timestamp</Text>
-              <Text style={videoCallStyles.reportText}>{formatTimestamp(report.details.timestamp)}</Text>
+              <Text style={videoCallStyles.reportText}>{formatTimestamp(report.details?.timestamp || new Date().toISOString())}</Text>
             </View>
           </ScrollView>
 
