@@ -102,6 +102,7 @@ export default function VideoCallScreen() {
     setIsQuestionToggleOn,
     setIsPreCareToggleOn,
     setIsAssessCalled,
+    setIsGenerateReportOn,
     handleCameraToggle,
     handleVoiceToggle,
     toggleTranscription,
@@ -646,7 +647,10 @@ export default function VideoCallScreen() {
                     // Turn off care instructions
                     togglePreCare();
                   } else {
-                    // Turn on care instructions
+                    // Turn on care instructions and deactivate other modes
+                    setIsQuestionToggleOn(false);
+                    setIsAssessCalled(false);
+                    setIsGenerateReportOn(false);
                     togglePreCare();
                     addAiMessage("I will now show care instructions.",
                       true,
@@ -662,7 +666,10 @@ export default function VideoCallScreen() {
                     // Turn off report generation
                     toggleGenerateReport();
                   } else {
-                    // Turn on report generation
+                    // Turn on report generation and deactivate other modes
+                    setIsQuestionToggleOn(false);
+                    setIsAssessCalled(false);
+                    setIsPreCareToggleOn(false);
                     toggleGenerateReport();
                     addAiMessage(
                       "I will now generate a report.",
@@ -682,7 +689,9 @@ export default function VideoCallScreen() {
                     setIsAssessCalled(false);
                     addAiMessage("Assessment mode turned off.");
                   } else {
-                    // Turn on assess mode
+                    // Turn on assess mode and deactivate other modes
+                    setIsPreCareToggleOn(false);
+                    setIsGenerateReportOn(false);
                     setIsQuestionToggleOn(true);
                     setIsAssessCalled(true);
                     addAiMessage(

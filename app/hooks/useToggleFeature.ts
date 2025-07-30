@@ -120,6 +120,7 @@ export function useToggleFeature() {
     setIsQuestionToggleOn,
     setIsPreCareToggleOn,
     setIsAssessCalled,
+    setIsGenerateReportOn,
     handleCameraToggle,
     handleVoiceToggle,
     toggleTranscription,
