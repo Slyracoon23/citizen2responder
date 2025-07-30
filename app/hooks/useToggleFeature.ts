@@ -12,6 +12,7 @@ export function useToggleFeature() {
   const [isGenerateReportOn, setIsGenerateReportOn] = useState(false);
   const [isPreCareToggleOn, setIsPreCareToggleOn] = useState(false);
   const [isKeyboardOn, setIsKeyboardOn] = useState(false);
+  const [isAssessCalled, setIsAssessCalled] = useState(false);
 
   const handleCameraToggle = async (
     hasPermission: boolean | null,
@@ -115,8 +116,10 @@ export function useToggleFeature() {
     isGenerateReportOn,
     isPreCareToggleOn,
     isKeyboardOn,
+    isAssessCalled,
     setIsQuestionToggleOn,
     setIsPreCareToggleOn,
+    setIsAssessCalled,
     handleCameraToggle,
     handleVoiceToggle,
     toggleTranscription,

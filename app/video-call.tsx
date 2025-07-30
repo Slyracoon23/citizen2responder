@@ -98,8 +98,10 @@ export default function VideoCallScreen() {
     isGenerateReportOn,
     isPreCareToggleOn,
     isKeyboardOn,
+    isAssessCalled,
     setIsQuestionToggleOn,
     setIsPreCareToggleOn,
+    setIsAssessCalled,
     handleCameraToggle,
     handleVoiceToggle,
     toggleTranscription,
@@ -123,6 +125,22 @@ export default function VideoCallScreen() {
   useEffect(() => {
     startSlideAnimation(isQuestionToggleOn ? 1 : 0);
   }, [isQuestionToggleOn]);
+
+  // Auto-activate access on component mount
+  useEffect(() => {
+    if (!isAssessCalled) {
+      setIsQuestionToggleOn(true);
+      setIsAssessCalled(true);
+      addAiMessage(
+        "I'm here to help you assess the situation. I'll ask you follow-up questions to better understand what's happening and provide appropriate guidance. Sounds good?",
+        true,
+        () => {
+          console.log('🔍 AUTO-ASSESS DEBUG: Initial message spoken, adding first question');
+          addAiMessage("What is happening right now? Is anyone injured or in immediate danger?");
+        }
+      );
+    }
+  }, []);
 
   // AI Processing Banner Animation
   useEffect(() => {
@@ -661,10 +679,12 @@ export default function VideoCallScreen() {
                   if (isQuestionToggleOn) {
                     // Turn off assess mode
                     setIsQuestionToggleOn(false);
+                    setIsAssessCalled(false);
                     addAiMessage("Assessment mode turned off.");
                   } else {
                     // Turn on assess mode
                     setIsQuestionToggleOn(true);
+                    setIsAssessCalled(true);
                     addAiMessage(
                       "I'm here to help you assess the situation. I'll ask you follow-up questions to better understand what's happening and provide appropriate guidance. Sounds good?",
                       true, // enableSpeech
