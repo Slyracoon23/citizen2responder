@@ -210,6 +210,7 @@ export default function VideoCallScreen() {
           // Only add AI message content if no tool calls were made
           const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
           addAiMessage(aiContent);
+          detectAndActivateQuestion(aiContent);
           console.log('🔍 CONV DEBUG: Added AI response to STT message:', aiContent);
         }
 
@@ -234,23 +235,7 @@ export default function VideoCallScreen() {
       console.log('🔧 TOOL CALL DEBUG: Type:', toolCall.type);
       console.log('🔧 TOOL CALL DEBUG: Function name:', toolCall.function?.name);
       
-      if (toolCall.type === 'function' && toolCall.function?.name === 'ask_question') {
-        console.log('🔧 ASK_QUESTION DEBUG: Found ask_question tool call');
-        try {
-          const args = JSON.parse(toolCall.function.arguments);
-          console.log('🔧 ASK_QUESTION DEBUG: Parsed arguments:', args);
-          if (args.question) {
-            console.log('🔧 ASK_QUESTION DEBUG: Setting question:', args.question);
-            setCurrentQuestion(args.question);
-            setIsQuestionToggleOn(true);
-            console.log('🔧 ASK_QUESTION DEBUG: Question toggle activated');
-          } else {
-            console.log('🔧 ASK_QUESTION DEBUG: No question found in arguments');
-          }
-        } catch (e) {
-          console.error('🔧 ASK_QUESTION ERROR: Failed to parse tool call arguments:', e);
-        }
-      } else if (toolCall.type === 'function' && toolCall.function?.name === 'generate_report') {
+      if (toolCall.type === 'function' && toolCall.function?.name === 'generate_report') {
         console.log('🔧 GENERATE_REPORT DEBUG: Found generate_report tool call');
         if (!isGenerateReportOn) {
           console.log('🔧 GENERATE_REPORT DEBUG: Report toggle is OFF - ignoring report generation');
@@ -330,6 +315,7 @@ export default function VideoCallScreen() {
         // Only add AI message content if no tool calls were made
         const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
         addAiMessage(aiContent);
+        detectAndActivateQuestion(aiContent);
         console.log('🔍 CONV DEBUG: Added AI response:', aiContent);
       }
 
@@ -361,6 +347,7 @@ export default function VideoCallScreen() {
         // Only add AI message content if no tool calls were made
         const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
         addAiMessage(aiContent);
+        detectAndActivateQuestion(aiContent);
       }
     } catch (error) {
       console.error('Error processing question response:', error);
@@ -383,6 +370,20 @@ export default function VideoCallScreen() {
   const handleClosePreCare = () => {
     setIsPreCareModalVisible(false);
     setCurrentPreCareData(null);
+  };
+
+  // Function to detect and extract questions from AI responses
+  const detectAndActivateQuestion = (aiContent: string) => {
+    // Look for questions ending with "?"
+    const sentences = aiContent.split(/[.!]/).map(s => s.trim());
+    const questionSentence = sentences.find(sentence => sentence.endsWith('?'));
+    
+    if (questionSentence) {
+      // Extract the question and activate the question UI
+      setCurrentQuestion(questionSentence);
+      setIsQuestionToggleOn(true);
+      console.log('🔍 QUESTION DETECTED:', questionSentence);
+    }
   };
 
 
