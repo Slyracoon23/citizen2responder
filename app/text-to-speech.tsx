@@ -126,7 +126,7 @@ export default function TextToSpeechScreen() {
               onValueChange={(itemValue) => setSelectedVoice(itemValue)}
             >
               {availableVoices.map((voice) => (
-                <Picker.Item key={voice.identifier} label={voice.name} value={voice.identifier} />
+                <Picker.Item key={voice.id} label={voice.name} value={voice.id} />
               ))}
             </Picker>
           </View>

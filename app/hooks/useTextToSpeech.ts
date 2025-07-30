@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Audio } from 'expo-av';
-import cartesiaService from '../services/cartesiaService';
+import kokoroService from '../services/kokoroService';
 import { configureForTextToSpeech } from '../utils/audioSessionUtils';
 
 type SpeechState = 'idle' | 'speaking';
@@ -18,8 +18,8 @@ export function useTextToSpeech() {
         // Set audio mode for proper playback with maximum volume
         await configureForTextToSpeech();
 
-        const voices = cartesiaService.getAvailableVoices();
-        console.log('TTS: Available Cartesia voices:', voices.length);
+        const voices = kokoroService.getAvailableVoices();
+        console.log('TTS: Available Kokoro voices:', voices.length);
         setAvailableVoices(voices);
         
         // Select default voice
@@ -82,9 +82,9 @@ export function useTextToSpeech() {
       console.log('TTS: Setting state to speaking');
       setSpeechState('speaking');
 
-      // Generate audio using Cartesia API
-      console.log('TTS: Generating audio with Cartesia API...');
-      const audioDataUri = await cartesiaService.generateSpeechDataUri(
+      // Generate audio using Kokoro API
+      console.log('TTS: Generating audio with Kokoro API...');
+      const audioDataUri = await kokoroService.generateSpeechDataUri(
         text,
         selectedVoice || undefined,
         {
@@ -151,5 +151,6 @@ export function useTextToSpeech() {
     speechState,
     availableVoices,
     selectedVoice,
+    setSelectedVoice,
   };
 }
