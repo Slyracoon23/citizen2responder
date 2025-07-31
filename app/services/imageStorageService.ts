@@ -80,12 +80,12 @@ class ImageStorageService {
     }
   }
 
-  getSessionImages(): StoredImage[] {
-    return [...this.sessionImages];
-  }
-
   getImageURIs(): string[] {
     return this.sessionImages.map(img => img.uri);
+  }
+
+  getImageCount(): number {
+    return this.sessionImages.length;
   }
 
   async clearSessionImages() {
@@ -100,19 +100,10 @@ class ImageStorageService {
     }
   }
 
-  startNewSession() {
-    this.clearSessionImages();
+  async startNewSession() {
+    await this.clearSessionImages();
     this.sessionId = Date.now().toString();
     console.log('🔄 Started new image session:', this.sessionId);
-  }
-
-  async getImageCount(): Promise<number> {
-    return this.sessionImages.length;
-  }
-
-  async getLatestImage(): Promise<StoredImage | null> {
-    if (this.sessionImages.length === 0) return null;
-    return this.sessionImages[this.sessionImages.length - 1];
   }
 }
 

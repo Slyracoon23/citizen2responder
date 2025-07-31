@@ -50,27 +50,9 @@ export default function VideoCallScreen() {
     new Animated.Value(0.3)
   ]).current;
 
-  // Default report data to show when toggle is activated
-  const defaultReportData = {
-    report_id: "DEFAULT_001",
-    summary: "Emergency Report Ready",
-    details: {
-      incident_type: "System Notification",
-      description: "Report generation is now enabled. The system is ready to create emergency reports when needed based on the conversation and observations.",
-      location: {
-        address: "Current Location",
-        latitude: undefined,
-        longitude: undefined
-      },
-      injuries_reported: false,
-      number_of_people_involved: 0,
-      is_active_threat: false,
-      timestamp: new Date().toISOString()
-    }
-  };
 
   // Custom hooks
-  const { hasCamera, hasAudio, requestCameraPermission, requestAudioPermission } = usePermissions();
+  const { hasCamera, requestCameraPermission } = usePermissions();
   const {
     slideAnim,
     micPulseAnim,
@@ -106,7 +88,6 @@ export default function VideoCallScreen() {
     setIsAssessCalled,
     setIsGenerateReportOn,
     handleCameraToggle,
-    handleVoiceToggle,
     toggleTranscription,
     toggleQuestion,
     toggleImageInput,
@@ -216,8 +197,11 @@ export default function VideoCallScreen() {
   // Cleanup audio session and images when leaving the video call screen
   useEffect(() => {
     // Start new image session when component mounts
-    imageStorageService.startNewSession();
-    setCapturedImages([]);
+    const initializeImageSession = async () => {
+      await imageStorageService.startNewSession();
+      setCapturedImages([]);
+    };
+    initializeImageSession();
     
     return () => {
       // Reset audio session to playback mode when component unmounts
@@ -233,40 +217,44 @@ export default function VideoCallScreen() {
   }, []);
 
 
+  // Helper function for image capture and API call
+  const handleImageCaptureAndApiCall = async (message: string, isSTT: boolean = false) => {
+    if (isImageInputEnabled && cameraRef.current) {
+      // Capture a single frame if vision is enabled
+      const photo = await cameraRef.current.takePictureAsync({ 
+        base64: true,
+        skipProcessing: true,
+        shutterSound: false
+      });
+      if (photo && photo.base64) {
+        const logMessage = isSTT ? 'Sending STT message with 1 image frame.' : 'Sending message with 1 image frame.';
+        console.log(`🔍 CONV DEBUG: ${logMessage}`);
+        
+        // Save image to temp storage
+        const savedImageUri = await imageStorageService.saveImageToTemp(photo.base64);
+        if (savedImageUri) {
+          setCapturedImages(prev => [...prev, savedImageUri]);
+        }
+        
+        return await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], message);
+      } else {
+        // Fallback to text-only if frame capture fails
+        return await apiService.callOpenRouterAPI(conversationHistory, message);
+      }
+    } else {
+      // Send text-only message
+      return await apiService.callOpenRouterAPI(conversationHistory, message);
+    }
+  };
+
   // Handlers
   const handleEndCall = () => {
     router.back();
   };
 
-  const handleVoice = () => {
-    handleVoiceToggle(hasAudio, requestAudioPermission);
-  };
-
   const handleKeyboard = () => {
     toggleKeyboard();
     setIsTextInputVisible(!isTextInputVisible);
-  };
-
-  const handleShowDefaultReport = () => {
-    setCurrentReport(defaultReportData);
-    setIsReportModalVisible(true);
-  };
-
-  const handleShowDefaultPreCare = () => {
-    const defaultPreCareData = {
-      title: "General Emergency Pre-Care",
-      instructions: [
-        "Stay calm and assess the situation",
-        "Check if the area is safe for you and others",
-        "Call emergency services if needed",
-        "Provide basic first aid if trained to do so",
-        "Monitor the person's breathing and consciousness",
-        "Keep the person comfortable until help arrives"
-      ],
-      priority: "medium" as const
-    };
-    setCurrentPreCareData(defaultPreCareData);
-    setIsPreCareModalVisible(true);
   };
 
   const handleSttPressIn = async () => {
@@ -293,33 +281,7 @@ export default function VideoCallScreen() {
       
       try {
         setIsApiLoading(true);
-        let data;
-
-        if (isImageInputEnabled && cameraRef.current) {
-          // Capture a single frame if vision is enabled
-          const photo = await cameraRef.current.takePictureAsync({ 
-            base64: true,
-            skipProcessing: true,
-            shutterSound: false
-          });
-          if (photo && photo.base64) {
-            console.log(`🔍 CONV DEBUG: Sending STT message with 1 image frame.`);
-            
-            // Save image to temp storage
-            const savedImageUri = await imageStorageService.saveImageToTemp(photo.base64);
-            if (savedImageUri) {
-              setCapturedImages(prev => [...prev, savedImageUri]);
-            }
-            
-            data = await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], transcript);
-          } else {
-            // Fallback to text-only if frame capture fails
-            data = await apiService.callOpenRouterAPI(conversationHistory, transcript);
-          }
-        } else {
-          // Send text-only message
-          data = await apiService.callOpenRouterAPI(conversationHistory, transcript);
-        }
+        const data = await handleImageCaptureAndApiCall(transcript, true);
 
         // Handle tool calls if present
         const toolCalls = data.choices?.[0]?.message?.tool_calls;
@@ -482,33 +444,7 @@ export default function VideoCallScreen() {
 
     try {
       setIsApiLoading(true);
-      let data;
-
-      if (isImageInputEnabled && cameraRef.current) {
-        // Capture a single frame if vision is enabled
-        const photo = await cameraRef.current.takePictureAsync({ 
-          base64: true,
-          skipProcessing: true,
-          shutterSound: false
-        });
-        if (photo && photo.base64) {
-          console.log(`🔍 CONV DEBUG: Sending message with 1 image frame.`);
-          
-          // Save image to temp storage
-          const savedImageUri = await imageStorageService.saveImageToTemp(photo.base64);
-          if (savedImageUri) {
-            setCapturedImages(prev => [...prev, savedImageUri]);
-          }
-          
-          data = await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], message);
-        } else {
-          // Fallback to text-only if frame capture fails
-          data = await apiService.callOpenRouterAPI(conversationHistory, message);
-        }
-      } else {
-        // Send text-only message
-        data = await apiService.callOpenRouterAPI(conversationHistory, message);
-      }
+      const data = await handleImageCaptureAndApiCall(message, false);
 
       // Handle tool calls if present
       const toolCalls = data.choices?.[0]?.message?.tool_calls;
