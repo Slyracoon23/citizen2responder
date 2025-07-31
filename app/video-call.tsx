@@ -320,12 +320,18 @@ export default function VideoCallScreen() {
     const handleForcedCareGeneration = async () => {
     try {
       console.log('🔧 FORCED CARE DEBUG: Starting forced Care generation');
+      console.log('🔧 FORCED CARE DEBUG: Captured images:', capturedImages.length);
       setIsApiLoading(true);
+      
+      let promptMessage = 'Generate care instructions based on our conversation, you must output at least 2-3 care instructions';
+      if (capturedImages.length > 0) {
+        promptMessage += `. Include the following ${capturedImages.length} evidence image(s) in the evidence_images array: ${capturedImages.join(', ')}`;
+      }
       
       const data = await apiService.callOpenRouterAPIWithForcedTool(
         conversationHistory, 
         'show_precare_instructions',
-        'Generate an Care report based on our conversation, you must output at least 2-3 care instructions'
+        promptMessage
       );
       
       // Handle tool calls if present
@@ -389,6 +395,13 @@ export default function VideoCallScreen() {
           console.log('🔧 PRECARE_INSTRUCTIONS DEBUG: Parsed arguments:', args);
           if (args.title && args.instructions && args.priority) {
             console.log('🔧 PRECARE_INSTRUCTIONS DEBUG: Auto-enabling pre-care toggle and setting data');
+            
+            // Add captured images to the precare data if not already included
+            if (!args.evidence_images && capturedImages.length > 0) {
+              args.evidence_images = capturedImages;
+              console.log('🔧 PRECARE_INSTRUCTIONS DEBUG: Added captured images to precare data:', capturedImages.length);
+            }
+            
             setIsPreCareToggleOn(true);
             setCurrentPreCareData(args);
             setIsPreCareModalVisible(true);

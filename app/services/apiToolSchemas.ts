@@ -38,6 +38,8 @@ TOOL USAGE GUIDELINES:
 
 2. GENERATE_REPORT TOOL: When generating emergency reports, always include any evidence images that were captured during the conversation in the evidence_images array. If images were captured, populate the evidence_images field with the provided image URIs. For testing purposes, use realistic fake details to demonstrate the report functionality.
 
+3. SHOW_PRECARE_INSTRUCTIONS TOOL: When providing care instructions, include any evidence images that were captured during the conversation in the evidence_images array. These images can help provide visual context for the care situation and assist in proper instruction delivery.
+
 Always prioritize immediate safety and encourage calling 911 for serious emergencies.`;
 
 export const GENERATE_REPORT_TOOL = {
@@ -113,6 +115,11 @@ export const SHOW_PRECARE_INSTRUCTIONS_TOOL = {
           type: 'string',
           enum: ['low', 'medium', 'high'],
           description: 'Priority level indicating urgency (low/medium/high)'
+        },
+        evidence_images: { 
+          type: 'array', 
+          items: { type: 'string' }, 
+          description: 'Array of image URIs captured during the incident for visual context' 
         }
       },
       required: ['title', 'instructions', 'priority']

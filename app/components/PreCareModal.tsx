@@ -10,11 +10,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { videoCallStyles } from '../styles/videoCallStyles';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
+import ImageGallery from './ImageGallery';
 
 interface PreCareData {
   title: string;
   instructions: string[];
   priority: 'low' | 'medium' | 'high';
+  evidence_images?: string[];
 }
 
 interface PreCareModalProps {
@@ -94,6 +96,15 @@ export default function PreCareModal({ visible, preCareData, onClose }: PreCareM
                 </Text>
               </View>
             </View>
+
+            {/* Evidence Images */}
+            {preCareData.evidence_images && preCareData.evidence_images.length > 0 && (
+              <ImageGallery
+                images={preCareData.evidence_images}
+                showThumbnails={true}
+                showCounter={true}
+              />
+            )}
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Instructions</Text>
