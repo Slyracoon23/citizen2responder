@@ -25,6 +25,7 @@ import { usePermissions } from './hooks/usePermissions';
 import { useSpeechToText } from './hooks/useSpeechToText';
 import { useToggleFeature } from './hooks/useToggleFeature';
 import apiService from './services/apiService';
+import imageStorageService from './services/imageStorageService';
 import { videoCallStyles } from './styles/videoCallStyles';
 import { resetToDefaultPlayback } from './utils/audioSessionUtils';
 
@@ -37,6 +38,7 @@ export default function VideoCallScreen() {
   const [isPreCareModalVisible, setIsPreCareModalVisible] = useState(false);
   const [currentPreCareData, setCurrentPreCareData] = useState<any>(null);
   const [isTextInputVisible, setIsTextInputVisible] = useState(false);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
 
 
   // AI Processing Banner Animation
@@ -211,12 +213,21 @@ export default function VideoCallScreen() {
   }, [isApiLoading]);
 
 
-  // Cleanup audio session when leaving the video call screen
+  // Cleanup audio session and images when leaving the video call screen
   useEffect(() => {
+    // Start new image session when component mounts
+    imageStorageService.startNewSession();
+    setCapturedImages([]);
+    
     return () => {
       // Reset audio session to playback mode when component unmounts
       resetToDefaultPlayback().catch((error) => {
         console.error('Failed to reset audio session on component unmount:', error);
+      });
+      
+      // Clear captured images when leaving
+      imageStorageService.clearSessionImages().catch((error) => {
+        console.error('Failed to clear session images on component unmount:', error);
       });
     };
   }, []);
@@ -293,6 +304,13 @@ export default function VideoCallScreen() {
           });
           if (photo && photo.base64) {
             console.log(`🔍 CONV DEBUG: Sending STT message with 1 image frame.`);
+            
+            // Save image to temp storage
+            const savedImageUri = await imageStorageService.saveImageToTemp(photo.base64);
+            if (savedImageUri) {
+              setCapturedImages(prev => [...prev, savedImageUri]);
+            }
+            
             data = await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], transcript);
           } else {
             // Fallback to text-only if frame capture fails
@@ -331,12 +349,18 @@ export default function VideoCallScreen() {
   const handleForcedReportGeneration = async () => {
     try {
       console.log('🔧 FORCED REPORT DEBUG: Starting forced report generation');
+      console.log('🔧 FORCED REPORT DEBUG: Captured images:', capturedImages.length);
       setIsApiLoading(true);
+      
+      let promptMessage = 'Generate an emergency report based on our conversation';
+      if (capturedImages.length > 0) {
+        promptMessage += `. Include the following ${capturedImages.length} evidence image(s) in the evidence_images array: ${capturedImages.join(', ')}`;
+      }
       
       const data = await apiService.callOpenRouterAPIWithForcedTool(
         conversationHistory, 
         'generate_report',
-        'Generate an emergency report based on our conversation'
+        promptMessage
       );
       
       // Handle tool calls if present
@@ -407,6 +431,13 @@ export default function VideoCallScreen() {
           console.log('🔧 GENERATE_REPORT DEBUG: Parsed arguments:', args);
           if (args.report_id && args.summary && args.details) {
             console.log('🔧 GENERATE_REPORT DEBUG: Setting report data');
+            
+            // Add captured images to the report if not already included
+            if (!args.details.evidence_images && capturedImages.length > 0) {
+              args.details.evidence_images = capturedImages;
+              console.log('🔧 GENERATE_REPORT DEBUG: Added captured images to report:', capturedImages.length);
+            }
+            
             setCurrentReport(args);
             setIsReportModalVisible(true);
             console.log('🔧 GENERATE_REPORT DEBUG: Report modal activated');
@@ -462,6 +493,13 @@ export default function VideoCallScreen() {
         });
         if (photo && photo.base64) {
           console.log(`🔍 CONV DEBUG: Sending message with 1 image frame.`);
+          
+          // Save image to temp storage
+          const savedImageUri = await imageStorageService.saveImageToTemp(photo.base64);
+          if (savedImageUri) {
+            setCapturedImages(prev => [...prev, savedImageUri]);
+          }
+          
           data = await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], message);
         } else {
           // Fallback to text-only if frame capture fails

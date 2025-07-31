@@ -1,18 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Modal,
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  Linking,
   Alert,
+  Image,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as SMS from 'expo-sms';
 import { videoCallStyles } from '../styles/videoCallStyles';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 
 interface ReportData {
   report_id: string;
@@ -31,6 +29,7 @@ interface ReportData {
     number_of_people_involved: number;
     is_active_threat: boolean;
     timestamp: string;
+    evidence_images?: string[];
   };
 }
 
@@ -43,6 +42,8 @@ interface ReportModalProps {
 }
 
 export default function ReportModal({ visible, report, onClose, onSendToEmergency, evidenceImageUri }: ReportModalProps) {
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  
   if (!report) return null;
   
   // Ensure all required fields exist with safe defaults
@@ -63,6 +64,7 @@ export default function ReportModal({ visible, report, onClose, onSendToEmergenc
       number_of_people_involved: Number(report.details?.number_of_people_involved) || 0,
       is_active_threat: Boolean(report.details?.is_active_threat),
       timestamp: report.details?.timestamp || new Date().toISOString(),
+      evidence_images: report.details?.evidence_images || [],
     }
   };
 
@@ -93,22 +95,24 @@ People Involved: ${safeReport.details.number_of_people_involved}
 Active Threat: ${safeReport.details.is_active_threat ? 'YES' : 'NO'}
 Time: ${formatTimestamp(safeReport.details.timestamp)}`;
 
-      const smsOptions: SMS.SMSOptions = {
-        recipients: ['911'],
-        body: smsBody,
-      };
+      // Use selected image or fallback to evidenceImageUri
+      const selectedImageUri = safeReport.details.evidence_images && safeReport.details.evidence_images.length > 0 
+        ? safeReport.details.evidence_images[selectedImageIndex]
+        : evidenceImageUri;
 
-      if (evidenceImageUri) {
+      const smsOptions: SMS.SMSOptions = {};
+        
+      if (selectedImageUri) {
         smsOptions.attachments = [
           {
-            uri: evidenceImageUri,
+            uri: selectedImageUri,
             mimeType: 'image/jpeg',
             filename: `evidence_${safeReport.report_id}.jpg`,
           }
         ];
       }
 
-      const result = await SMS.sendSMSAsync(smsOptions.recipients, smsOptions.body, smsOptions);
+      const result = await SMS.sendSMSAsync(['911'], smsBody, smsOptions);
       
       if (result.result === 'sent') {
         onSendToEmergency();
@@ -155,12 +159,49 @@ Time: ${formatTimestamp(safeReport.details.timestamp)}`;
               <Text style={videoCallStyles.reportText}>{safeReport.summary}</Text>
             </View>
 
-            <View style={videoCallStyles.reportImagePlaceholder}>
-              <MaterialIcons name="image" size={48} color="#666" />
-              <Text style={videoCallStyles.reportImagePlaceholderText}>
-                Evidence Photo/Video{'\n'}(Captured during incident)
-              </Text>
-            </View>
+            {safeReport.details.evidence_images && safeReport.details.evidence_images.length > 0 ? (
+              <View style={videoCallStyles.reportImageSection}>
+                <Text style={videoCallStyles.reportSectionTitle}>Evidence Images ({safeReport.details.evidence_images.length})</Text>
+                
+                {/* Main Selected Image */}
+                <View style={videoCallStyles.reportImageContainer}>
+                  <Image 
+                    source={{ uri: safeReport.details.evidence_images[selectedImageIndex] }}
+                    style={videoCallStyles.reportMainImage}
+                    resizeMode="contain"
+                  />
+                </View>
+                
+                {/* Image Selector Thumbnails */}
+                {safeReport.details.evidence_images.length > 1 && (
+                  <ScrollView horizontal style={videoCallStyles.reportImageThumbnails}>
+                    {safeReport.details.evidence_images.map((imageUri, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => setSelectedImageIndex(index)}
+                        style={[
+                          videoCallStyles.reportThumbnail,
+                          selectedImageIndex === index && videoCallStyles.reportThumbnailSelected
+                        ]}
+                      >
+                        <Image 
+                          source={{ uri: imageUri }}
+                          style={videoCallStyles.reportThumbnailImage}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            ) : (
+              <View style={videoCallStyles.reportImagePlaceholder}>
+                <MaterialIcons name="image" size={48} color="#666" />
+                <Text style={videoCallStyles.reportImagePlaceholderText}>
+                  Evidence Photo/Video{'\n'}(Captured during incident)
+                </Text>
+              </View>
+            )}
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Incident Type</Text>

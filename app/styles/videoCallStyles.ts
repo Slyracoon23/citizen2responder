@@ -310,4 +310,43 @@ export const videoCallStyles = StyleSheet.create({
     marginTop: spacing.sm,
     textAlign: 'center',
   },
+  reportImageSection: {
+    width: '100%',
+    marginBottom: spacing.lg,
+  },
+  reportImageContainer: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.overlay.light,
+    borderRadius: borderRadius.medium,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    overflow: 'hidden',
+  },
+  reportMainImage: {
+    width: '100%',
+    height: '100%',
+  },
+  reportImageThumbnails: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.xs,
+  },
+  reportThumbnail: {
+    width: 60,
+    height: 60,
+    marginRight: spacing.sm,
+    borderRadius: borderRadius.small,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  reportThumbnailSelected: {
+    borderColor: colors.primary,
+  },
+  reportThumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
 });
