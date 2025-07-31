@@ -21,24 +21,23 @@ import VideoCallControls from './components/VideoCallControls';
 import VideoFeed from './components/VideoFeed';
 import { useAnimations } from './hooks/useAnimations';
 import { useConversation } from './hooks/useConversation';
+import { useImageManagement } from './hooks/useImageManagement';
 import { usePermissions } from './hooks/usePermissions';
 import { useSpeechToText } from './hooks/useSpeechToText';
 import { useToggleFeature } from './hooks/useToggleFeature';
 import apiService from './services/apiService';
-import imageStorageService from './services/imageStorageService';
 import { videoCallStyles } from './styles/videoCallStyles';
 import { resetToDefaultPlayback } from './utils/audioSessionUtils';
+import { ReportData, PreCareData } from './types/report';
 
 export default function VideoCallScreen() {
   const router = useRouter();
   const cameraRef = useRef<CameraView>(null);
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
-  const [currentReport, setCurrentReport] = useState<any>(null);
-  const [showDefaultReport, setShowDefaultReport] = useState(false);
+  const [currentReport, setCurrentReport] = useState<ReportData | null>(null);
   const [isPreCareModalVisible, setIsPreCareModalVisible] = useState(false);
-  const [currentPreCareData, setCurrentPreCareData] = useState<any>(null);
+  const [currentPreCareData, setCurrentPreCareData] = useState<PreCareData | null>(null);
   const [isTextInputVisible, setIsTextInputVisible] = useState(false);
-  const [capturedImages, setCapturedImages] = useState<string[]>([]);
 
 
   // AI Processing Banner Animation
@@ -69,13 +68,12 @@ export default function VideoCallScreen() {
     addUserMessage,
     addAiMessage,
     stopSpeech,
-    isSpeaking,
   } = useConversation();
 
+  const { capturedImages, addCapturedImage } = useImageManagement();
 
   const {
     isCameraOn,
-    isVoiceOn,
     isTranscriptionEnabled,
     isQuestionToggleOn,
     isImageInputEnabled,
@@ -87,9 +85,6 @@ export default function VideoCallScreen() {
     setIsPreCareToggleOn,
     setIsAssessCalled,
     setIsGenerateReportOn,
-    handleCameraToggle,
-    toggleTranscription,
-    toggleQuestion,
     toggleImageInput,
     toggleGenerateReport,
     togglePreCare,
@@ -163,16 +158,9 @@ export default function VideoCallScreen() {
       };
 
       // Start staggered dot animations
-      const dotAnimationRefs = [
-        createDotAnimation(dotAnimations[0], 0).start(),
-        createDotAnimation(dotAnimations[1], 150).start(),
-        createDotAnimation(dotAnimations[2], 300).start(),
-      ];
-
-      return () => {
-        // Stop dot animations when component unmounts or loading stops
-        dotAnimationRefs.forEach(animation => animation && animation.stop && animation.stop());
-      };
+      createDotAnimation(dotAnimations[0], 0).start();
+      createDotAnimation(dotAnimations[1], 150).start();
+      createDotAnimation(dotAnimations[2], 300).start();
     } else {
       // Hide banner with slide up animation
       Animated.parallel([
@@ -194,24 +182,12 @@ export default function VideoCallScreen() {
   }, [isApiLoading]);
 
 
-  // Cleanup audio session and images when leaving the video call screen
+  // Cleanup audio session when leaving the video call screen
   useEffect(() => {
-    // Start new image session when component mounts
-    const initializeImageSession = async () => {
-      await imageStorageService.startNewSession();
-      setCapturedImages([]);
-    };
-    initializeImageSession();
-    
     return () => {
       // Reset audio session to playback mode when component unmounts
       resetToDefaultPlayback().catch((error) => {
         console.error('Failed to reset audio session on component unmount:', error);
-      });
-      
-      // Clear captured images when leaving
-      imageStorageService.clearSessionImages().catch((error) => {
-        console.error('Failed to clear session images on component unmount:', error);
       });
     };
   }, []);
@@ -231,10 +207,7 @@ export default function VideoCallScreen() {
         console.log(`🔍 CONV DEBUG: ${logMessage}`);
         
         // Save image to temp storage
-        const savedImageUri = await imageStorageService.saveImageToTemp(photo.base64);
-        if (savedImageUri) {
-          setCapturedImages(prev => [...prev, savedImageUri]);
-        }
+        await addCapturedImage(photo.base64);
         
         return await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], message);
       } else {

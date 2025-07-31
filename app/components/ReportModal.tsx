@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -6,32 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Image,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as SMS from 'expo-sms';
 import { videoCallStyles } from '../styles/videoCallStyles';
-
-interface ReportData {
-  report_id: string;
-  summary: string;
-  details: {
-    caller_name?: string;
-    phone_number?: string;
-    incident_type: string;
-    description: string;
-    location: {
-      address: string;
-      latitude?: number;
-      longitude?: number;
-    };
-    injuries_reported: boolean;
-    number_of_people_involved: number;
-    is_active_threat: boolean;
-    timestamp: string;
-    evidence_images?: string[];
-  };
-}
+import ImageGallery from './ImageGallery';
+import { ReportData } from '../types/report';
 
 interface ReportModalProps {
   visible: boolean;
@@ -41,13 +21,11 @@ interface ReportModalProps {
   evidenceImageUri?: string;
 }
 
-export default function ReportModal({ visible, report, onClose, onSendToEmergency, evidenceImageUri }: ReportModalProps) {
+const ReportModal = memo(function ReportModal({ visible, report, onClose, onSendToEmergency, evidenceImageUri }: ReportModalProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   
-  if (!report) return null;
-  
-  // Ensure all required fields exist with safe defaults
-  const safeReport = {
+  // Ensure all required fields exist with safe defaults - handle null report case
+  const safeReport = report ? {
     report_id: report.report_id || 'N/A',
     summary: report.summary || 'N/A',
     details: {
@@ -66,7 +44,7 @@ export default function ReportModal({ visible, report, onClose, onSendToEmergenc
       timestamp: report.details?.timestamp || new Date().toISOString(),
       evidence_images: report.details?.evidence_images || [],
     }
-  };
+  } : null;
 
   const formatTimestamp = (timestamp: string) => {
     try {
@@ -76,7 +54,9 @@ export default function ReportModal({ visible, report, onClose, onSendToEmergenc
     }
   };
 
-  const handleSendSMS = async () => {
+  const handleSendSMS = useCallback(async () => {
+    if (!safeReport) return;
+    
     try {
       const isAvailable = await SMS.isAvailableAsync();
       
@@ -124,7 +104,12 @@ Time: ${formatTimestamp(safeReport.details.timestamp)}`;
       console.error('Error sending SMS:', error);
       Alert.alert('Error', 'Failed to send emergency report. Please try again.');
     }
-  };
+  }, [safeReport, selectedImageIndex, evidenceImageUri, onSendToEmergency]);
+
+  // Handle null report case without breaking hook rules
+  if (!safeReport) {
+    return null;
+  }
 
   return (
     <Modal
@@ -159,49 +144,13 @@ Time: ${formatTimestamp(safeReport.details.timestamp)}`;
               <Text style={videoCallStyles.reportText}>{safeReport.summary}</Text>
             </View>
 
-            {safeReport.details.evidence_images && safeReport.details.evidence_images.length > 0 ? (
-              <View style={videoCallStyles.reportImageSection}>
-                <Text style={videoCallStyles.reportSectionTitle}>Evidence Images ({safeReport.details.evidence_images.length})</Text>
-                
-                {/* Main Selected Image */}
-                <View style={videoCallStyles.reportImageContainer}>
-                  <Image 
-                    source={{ uri: safeReport.details.evidence_images[selectedImageIndex] }}
-                    style={videoCallStyles.reportMainImage}
-                    resizeMode="contain"
-                  />
-                </View>
-                
-                {/* Image Selector Thumbnails */}
-                {safeReport.details.evidence_images.length > 1 && (
-                  <ScrollView horizontal style={videoCallStyles.reportImageThumbnails}>
-                    {safeReport.details.evidence_images.map((imageUri, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => setSelectedImageIndex(index)}
-                        style={[
-                          videoCallStyles.reportThumbnail,
-                          selectedImageIndex === index && videoCallStyles.reportThumbnailSelected
-                        ]}
-                      >
-                        <Image 
-                          source={{ uri: imageUri }}
-                          style={videoCallStyles.reportThumbnailImage}
-                          resizeMode="cover"
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                )}
-              </View>
-            ) : (
-              <View style={videoCallStyles.reportImagePlaceholder}>
-                <MaterialIcons name="image" size={48} color="#666" />
-                <Text style={videoCallStyles.reportImagePlaceholderText}>
-                  Evidence Photo/Video{'\n'}(Captured during incident)
-                </Text>
-              </View>
-            )}
+            <ImageGallery
+              images={safeReport.details.evidence_images}
+              selectedIndex={selectedImageIndex}
+              onImageSelect={(imageUri, index) => setSelectedImageIndex(index)}
+              showThumbnails={true}
+              showCounter={true}
+            />
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Incident Type</Text>
@@ -281,4 +230,6 @@ Time: ${formatTimestamp(safeReport.details.timestamp)}`;
       </View>
     </Modal>
   );
-}
+});
+
+export default ReportModal;
