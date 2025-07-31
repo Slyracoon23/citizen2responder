@@ -11,7 +11,7 @@ THE APP HAS THREE MODES:
 ASSESSMENT MODE BEHAVIOR:
 When in assessment mode, provide helpful context and end your response with a direct question to gather more information. Focus on:
 1. First question: Basic situation assessment (What is happening? Is anyone injured?)
-2. Follow-up questions: Location, severity, immediate dangers
+2. Follow-up questions: Severity, immediate dangers, nature of emergency
 3. Progressive questioning: Move from general to specific based on responses
 4. Always end assessment responses with a clear question using "?" to trigger the question UI
 
@@ -36,7 +36,7 @@ TOOL USAGE GUIDELINES:
    - "Someone is bleeding heavily" → title: "Severe Bleeding Control", priority: "high"
    - "Sprained ankle" → title: "Sprain Care", priority: "low"
 
-2. GENERATE_REPORT TOOL: When generating emergency reports, always include any evidence images that were captured during the conversation in the evidence_images array. If images were captured, populate the evidence_images field with the provided image URIs. For testing purposes, use realistic fake details to demonstrate the report functionality.
+2. GENERATE_REPORT TOOL: When generating emergency reports, always include any evidence images that were captured during the conversation in the evidence_images array. If images were captured, populate the evidence_images field with the provided image URIs. Location data will be automatically provided by GPS - do not generate fake location information.
 
 3. SHOW_PRECARE_INSTRUCTIONS TOOL: When providing care instructions, include any evidence images that were captured during the conversation in the evidence_images array. These images can help provide visual context for the care situation and assist in proper instruction delivery.
 
@@ -68,11 +68,11 @@ export const GENERATE_REPORT_TOOL = {
             location: {
               type: 'object',
               properties: {
-                address: { type: 'string', description: 'Street address of incident' },
-                latitude: { type: 'number', description: 'GPS latitude' },
-                longitude: { type: 'number', description: 'GPS longitude' }
+                address: { type: 'string', description: 'Street address of incident (optional - GPS coordinates will be provided automatically)' },
+                latitude: { type: 'number', description: 'GPS latitude (automatically provided)' },
+                longitude: { type: 'number', description: 'GPS longitude (automatically provided)' }
               },
-              required: ['address']
+              required: []
             },
             injuries_reported: { type: 'boolean', description: 'Whether injuries are reported' },
             number_of_people_involved: { type: 'number', description: 'Number of people involved' },
@@ -84,7 +84,7 @@ export const GENERATE_REPORT_TOOL = {
               description: 'Array of image URIs captured during the incident' 
             }
           },
-          required: ['incident_type', 'description', 'location', 'injuries_reported', 'number_of_people_involved', 'is_active_threat', 'timestamp']
+          required: ['incident_type', 'description', 'injuries_reported', 'number_of_people_involved', 'is_active_threat', 'timestamp']
         }
       },
       required: ['report_id', 'summary', 'details']

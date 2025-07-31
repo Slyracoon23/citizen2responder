@@ -22,6 +22,7 @@ import VideoFeed from './components/VideoFeed';
 import { useAnimations } from './hooks/useAnimations';
 import { useConversation } from './hooks/useConversation';
 import { useImageManagement } from './hooks/useImageManagement';
+import { useLocation } from './hooks/useLocation';
 import { usePermissions } from './hooks/usePermissions';
 import { useSpeechToText } from './hooks/useSpeechToText';
 import { useToggleFeature } from './hooks/useToggleFeature';
@@ -52,6 +53,7 @@ export default function VideoCallScreen() {
 
   // Custom hooks
   const { hasCamera, requestCameraPermission } = usePermissions();
+  const { currentLocation, isLocationLoading, getCurrentLocation } = useLocation();
   const {
     slideAnim,
     micPulseAnim,
@@ -377,6 +379,22 @@ export default function VideoCallScreen() {
             if (!args.details.evidence_images && capturedImages.length > 0) {
               args.details.evidence_images = capturedImages;
               console.log('🔧 GENERATE_REPORT DEBUG: Added captured images to report:', capturedImages.length);
+            }
+            
+            // Inject GPS location data if available
+            if (currentLocation && currentLocation.coords) {
+              console.log('🔧 GPS DEBUG: Injecting GPS location data');
+              args.details.location = {
+                address: args.details.location?.address || 'GPS Location',
+                latitude: currentLocation.coords.latitude,
+                longitude: currentLocation.coords.longitude
+              };
+              console.log('🔧 GPS DEBUG: GPS coordinates injected:', {
+                latitude: currentLocation.coords.latitude,
+                longitude: currentLocation.coords.longitude
+              });
+            } else {
+              console.log('🔧 GPS DEBUG: No GPS location available, using AI-generated location');
             }
             
             setCurrentReport(args);
