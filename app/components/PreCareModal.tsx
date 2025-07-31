@@ -36,6 +36,19 @@ export default function PreCareModal({ visible, preCareData, onClose }: PreCareM
     return colors.gradients.secondary;
   };
 
+  const getPriorityTextColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return '#F44336'; // Red
+      case 'medium':
+        return '#FF9800'; // Orange
+      case 'low':
+        return '#4CAF50'; // Green
+      default:
+        return colors.success;
+    }
+  };
+
   const getPriorityText = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -74,37 +87,28 @@ export default function PreCareModal({ visible, preCareData, onClose }: PreCareM
           >
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>{preCareData.title}</Text>
-              <View style={[
-                videoCallStyles.reportImagePlaceholder, 
-                { 
-                  backgroundColor: `${getPriorityColor(preCareData.priority)}20`,
-                  borderColor: getPriorityColor(preCareData.priority),
-                  borderWidth: 1,
-                  marginBottom: 16,
-                  paddingVertical: 8
-                }
-              ]}>
-                <Text style={[
-                  videoCallStyles.reportImagePlaceholderText,
-                  { 
-                    color: getPriorityColor(preCareData.priority),
-                    fontSize: 12,
-                    fontWeight: '600'
-                  }
-                ]}>
-                  {getPriorityText(preCareData.priority)}
-                </Text>
-              </View>
             </View>
 
-            {/* Evidence Images */}
-            {preCareData.evidence_images && preCareData.evidence_images.length > 0 && (
-              <ImageGallery
-                images={preCareData.evidence_images}
-                showThumbnails={true}
-                showCounter={true}
-              />
-            )}
+            {/* Evidence Images - Always visible for consistent layout */}
+            <ImageGallery
+              images={preCareData.evidence_images || []}
+              showThumbnails={true}
+              showCounter={true}
+            />
+
+            {/* Priority - Compact single line display */}
+            <View style={videoCallStyles.reportSection}>
+              <Text style={videoCallStyles.reportSectionTitle}>Priority</Text>
+              <Text style={[
+                videoCallStyles.reportText,
+                { 
+                  color: getPriorityTextColor(preCareData.priority),
+                  fontWeight: '600'
+                }
+              ]}>
+                {getPriorityText(preCareData.priority)}
+              </Text>
+            </View>
 
             <View style={videoCallStyles.reportSection}>
               <Text style={videoCallStyles.reportSectionTitle}>Instructions</Text>
