@@ -68,7 +68,8 @@ const ReportModal = memo(function ReportModal({ visible, report, onClose, onSend
       const smsBody = `EMERGENCY REPORT
 ID: ${safeReport.report_id}
 Type: ${safeReport.details.incident_type}
-Location: ${safeReport.details.location.address}
+Location: ${safeReport.details.location.address}${safeReport.details.location.latitude && safeReport.details.location.longitude ? `
+GPS Location: ${safeReport.details.location.latitude.toFixed(6)}, ${safeReport.details.location.longitude.toFixed(6)}` : ''}
 Description: ${safeReport.details.description}
 Injuries: ${safeReport.details.injuries_reported ? 'YES' : 'NO'}
 People Involved: ${safeReport.details.number_of_people_involved}
