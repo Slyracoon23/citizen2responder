@@ -41,6 +41,8 @@ export default function VideoCallScreen() {
   const [isPreCareModalVisible, setIsPreCareModalVisible] = useState(false);
   const [currentPreCareData, setCurrentPreCareData] = useState<PreCareData | null>(null);
   const [isTextInputVisible, setIsTextInputVisible] = useState(false);
+  const [isLocalModelInitializing, setIsLocalModelInitializing] = useState(true);
+  const [localModelError, setLocalModelError] = useState<string | null>(null);
 
 
   // AI Processing Banner Animation
@@ -108,6 +110,26 @@ export default function VideoCallScreen() {
   useEffect(() => {
     startSlideAnimation(isQuestionToggleOn ? 1 : 0);
   }, [isQuestionToggleOn]);
+
+  // Initialize local model on component mount
+  useEffect(() => {
+    const initializeModel = async () => {
+      try {
+        setIsLocalModelInitializing(true);
+        setLocalModelError(null);
+        console.log('🦙 VIDEO CALL: Initializing local model...');
+        await apiService.initializeLocalModel();
+        console.log('🦙 VIDEO CALL: Local model initialized successfully');
+      } catch (error) {
+        console.error('🦙 VIDEO CALL: Local model initialization failed:', error);
+        setLocalModelError('Failed to initialize local AI model. Using cloud fallback.');
+      } finally {
+        setIsLocalModelInitializing(false);
+      }
+    };
+
+    initializeModel();
+  }, []);
 
   // Auto-activate access on component mount
   useEffect(() => {
@@ -186,12 +208,17 @@ export default function VideoCallScreen() {
   }, [isApiLoading]);
 
 
-  // Cleanup audio session when leaving the video call screen
+  // Cleanup audio session and local model when leaving the video call screen
   useEffect(() => {
     return () => {
       // Reset audio session to playback mode when component unmounts
       resetToDefaultPlayback().catch((error) => {
         console.error('Failed to reset audio session on component unmount:', error);
+      });
+
+      // Release local model resources
+      apiService.releaseLocalModel().catch((error) => {
+        console.error('Failed to release local model on component unmount:', error);
       });
     };
   }, []);
@@ -338,32 +365,32 @@ export default function VideoCallScreen() {
 
   // Helper to handle API responses (both native tool calls and JSON responses)
   const handleApiResponse = (data: any, bypassToggleCheck: boolean = false, isImageInputEnabled: boolean = false) => {
-    const model = getModelForContext(isImageInputEnabled);
-    const supportsTools = supportsNativeToolCalling(model);
+    console.log('🔧 API RESPONSE DEBUG: Processing response data:', JSON.stringify(data, null, 2));
     
-    if (supportsTools) {
-      // Handle native tool calls
-      const toolCalls = data.choices?.[0]?.message?.tool_calls;
-      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
-        handleToolCalls(toolCalls, bypassToggleCheck);
+    // First, check for native tool calls regardless of source (local model or OpenRouter)
+    const toolCalls = data.choices?.[0]?.message?.tool_calls;
+    if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+      console.log('🔧 API RESPONSE DEBUG: Found native tool calls:', toolCalls);
+      handleToolCalls(toolCalls, bypassToggleCheck);
+      return;
+    }
+    
+    // Second, check for JSON tool calls in content (for models without native tool support)
+    const aiContent = data.choices?.[0]?.message?.content;
+    if (aiContent) {
+      console.log('🔧 API RESPONSE DEBUG: Checking content for JSON tool calls:', aiContent);
+      const parsedResponse = parseGemmaResponse(aiContent);
+      if (parsedResponse.isToolCall && parsedResponse.standardToolCalls) {
+        console.log('🔧 JSON TOOL CALL DEBUG: Parsed JSON tool calls:', parsedResponse.standardToolCalls);
+        handleToolCalls(parsedResponse.standardToolCalls, bypassToggleCheck);
         return;
-      }
-    } else {
-      // Handle JSON tool calls for models without native support
-      const aiContent = data.choices?.[0]?.message?.content;
-      if (aiContent) {
-        const parsedResponse = parseGemmaResponse(aiContent);
-        if (parsedResponse.isToolCall && parsedResponse.standardToolCalls) {
-          console.log('🔧 JSON TOOL CALL DEBUG: Parsed JSON tool calls:', parsedResponse.standardToolCalls);
-          handleToolCalls(parsedResponse.standardToolCalls, bypassToggleCheck);
-          return;
-        }
       }
     }
     
     // No tool calls found, add as regular message
-    const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
-    addAiMessage(aiContent);
+    const finalContent = aiContent || 'No response received from AI service';
+    console.log('🔧 API RESPONSE DEBUG: No tool calls found, adding as regular message:', finalContent);
+    addAiMessage(finalContent);
   };
 
   // Helper to handle OpenRouter tool calls
@@ -530,6 +557,22 @@ export default function VideoCallScreen() {
         <View style={videoCallStyles.container}>
           <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
+          {/* Local Model Initialization Banner */}
+          {isLocalModelInitializing && (
+            <View style={[videoCallStyles.aiProcessingBanner, { backgroundColor: '#FF9F0A' }]}>
+              <MaterialIcons name="download" size={16} color="white" />
+              <Text style={videoCallStyles.aiProcessingText}>Initializing local AI model...</Text>
+            </View>
+          )}
+
+          {/* Local Model Error Banner */}
+          {localModelError && (
+            <View style={[videoCallStyles.aiProcessingBanner, { backgroundColor: '#FF3B30' }]}>
+              <MaterialIcons name="warning" size={16} color="white" />
+              <Text style={videoCallStyles.aiProcessingText}>{localModelError}</Text>
+            </View>
+          )}
+
           {/* AI Processing Banner */}
           {isApiLoading && (
             <Animated.View 
@@ -542,7 +585,9 @@ export default function VideoCallScreen() {
               ]}
             >
               <MaterialIcons name="psychology" size={16} color="white" />
-              <Text style={videoCallStyles.aiProcessingText}>AI is thinking</Text>
+              <Text style={videoCallStyles.aiProcessingText}>
+                {apiService.isLocalModelReady ? 'Local AI is thinking' : 'Cloud AI is thinking'}
+              </Text>
               <View style={{ flexDirection: 'row', marginLeft: 4 }}>
                 {dotAnimations.map((dot, index) => (
                   <Animated.View

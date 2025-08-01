@@ -26,6 +26,11 @@ const ImageGallery = memo(function ImageGallery({
 }: ImageGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(selectedIndex);
 
+  const handleImageSelect = useCallback((index: number) => {
+    setCurrentIndex(index);
+    onImageSelect?.(images[index], index);
+  }, [images, onImageSelect]);
+
   if (!images || images.length === 0) {
     return (
       <View style={videoCallStyles.reportImagePlaceholder}>
@@ -36,11 +41,6 @@ const ImageGallery = memo(function ImageGallery({
       </View>
     );
   }
-
-  const handleImageSelect = useCallback((index: number) => {
-    setCurrentIndex(index);
-    onImageSelect?.(images[index], index);
-  }, [images, onImageSelect]);
 
   return (
     <View style={videoCallStyles.reportImageSection}>

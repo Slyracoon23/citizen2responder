@@ -13,7 +13,8 @@
       "bundleIdentifier": "com.slyracoon23.relayresponderapp",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "This app needs access to the microphone for audio recording features."
-      }
+      },
+      "deploymentTarget": "13.0"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +22,10 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.slyracoon23.relayresponderapp"
+      "package": "com.slyracoon23.relayresponderapp",
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "minSdkVersion": 24
     },
     "web": {
       "bundler": "metro",

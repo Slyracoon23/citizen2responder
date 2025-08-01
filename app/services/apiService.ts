@@ -1,5 +1,6 @@
 
 import { SYSTEM_PROMPT, ALL_TOOLS, API_CONFIG, JSON_TOOL_SYSTEM_PROMPT, supportsNativeToolCalling, getModelForContext } from './apiToolSchemas';
+import localModelService from './localModelService';
 
 export interface ConversationMessage {
   id: string;
@@ -16,6 +17,35 @@ class ApiService {
       ApiService.instance = new ApiService();
     }
     return ApiService.instance;
+  }
+
+  async initializeLocalModel(): Promise<void> {
+    try {
+      console.log('🔧 API SERVICE: Initializing local model...');
+      await localModelService.initializeModel();
+      console.log('🔧 API SERVICE: Local model initialized successfully');
+    } catch (error) {
+      console.error('🔧 API SERVICE: Failed to initialize local model:', error);
+      throw error;
+    }
+  }
+
+  async releaseLocalModel(): Promise<void> {
+    try {
+      console.log('🔧 API SERVICE: Releasing local model...');
+      await localModelService.releaseModel();
+      console.log('🔧 API SERVICE: Local model released successfully');
+    } catch (error) {
+      console.error('🔧 API SERVICE: Failed to release local model:', error);
+    }
+  }
+
+  get isLocalModelReady(): boolean {
+    return localModelService.isModelReady;
+  }
+
+  get isLocalModelInitializing(): boolean {
+    return localModelService.isModelInitializing;
   }
 
   private convertConversationToMessages(conversationHistory: ConversationMessage[], currentMessage: string, currentMessageContent?: any[], useJsonToolPrompt: boolean = false): any[] {
@@ -38,6 +68,18 @@ class ApiService {
   }
 
   async callOpenRouterAPI(conversationHistory: ConversationMessage[], currentMessage: string, isImageInputEnabled: boolean = false): Promise<any> {
+    // For text-only requests, use local model
+    if (!isImageInputEnabled) {
+      try {
+        console.log('🔧 API SERVICE: Routing text-only request to local model');
+        return await localModelService.callLocalModel(conversationHistory, currentMessage);
+      } catch (error) {
+        console.error('🔧 API SERVICE: Local model failed, falling back to OpenRouter:', error);
+        // Fall through to OpenRouter as backup
+      }
+    }
+
+    // Use OpenRouter for vision requests or as fallback
     try {
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
@@ -60,6 +102,8 @@ class ApiService {
         requestBody.tools = ALL_TOOLS;
       }
 
+      console.log(`🔧 API SERVICE: Using OpenRouter for ${isImageInputEnabled ? 'vision' : 'fallback'} request`);
+
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -76,7 +120,7 @@ class ApiService {
       }
 
       const data = await response.json();
-      console.log('🔧 OPENROUTER TEXT API DEBUG: Full response:', JSON.stringify(data, null, 2));
+      console.log('🔧 OPENROUTER API DEBUG: Full response:', JSON.stringify(data, null, 2));
       console.log('🔧 TOOL CALLS DEBUG: Tool calls present:', data.choices?.[0]?.message?.tool_calls);
       console.log('🔧 MESSAGE CONTENT DEBUG: Message content:', data.choices?.[0]?.message?.content);
       return data;
@@ -88,6 +132,18 @@ class ApiService {
   }
 
   async callOpenRouterAPIWithForcedTool(conversationHistory: ConversationMessage[], toolName: string, promptMessage: string = 'Generate based on our conversation', isImageInputEnabled: boolean = false): Promise<any> {
+    // For text-only forced tool calls, try local model first
+    if (!isImageInputEnabled) {
+      try {
+        console.log('🔧 API SERVICE: Routing forced tool call to local model');
+        return await localModelService.callLocalModelWithForcedTool(conversationHistory, toolName, promptMessage);
+      } catch (error) {
+        console.error('🔧 API SERVICE: Local model forced tool failed, falling back to OpenRouter:', error);
+        // Fall through to OpenRouter as backup
+      }
+    }
+
+    // Use OpenRouter for vision requests or as fallback
     try {
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
@@ -97,6 +153,8 @@ class ApiService {
       const model = getModelForContext(isImageInputEnabled);
       const supportsTools = supportsNativeToolCalling(model);
       
+      console.log(`🔧 API SERVICE: Using OpenRouter for ${isImageInputEnabled ? 'vision' : 'fallback'} forced tool call`);
+
       if (!supportsTools) {
         // For models without native tool calling, enhance the prompt to force tool usage
         const enhancedPrompt = `${promptMessage}\n\nYou MUST respond with a ${toolName} tool call. Use the JSON format specified in your instructions.`;
