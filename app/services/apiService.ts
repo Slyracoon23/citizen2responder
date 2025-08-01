@@ -1,5 +1,5 @@
 
-import { SYSTEM_PROMPT, ALL_TOOLS, API_CONFIG } from './apiToolSchemas';
+import { SYSTEM_PROMPT, ALL_TOOLS, API_CONFIG, JSON_TOOL_SYSTEM_PROMPT, supportsNativeToolCalling, getModelForContext } from './apiToolSchemas';
 
 export interface ConversationMessage {
   id: string;
@@ -18,10 +18,10 @@ class ApiService {
     return ApiService.instance;
   }
 
-  private convertConversationToMessages(conversationHistory: ConversationMessage[], currentMessage: string, currentMessageContent?: any[]): any[] {
+  private convertConversationToMessages(conversationHistory: ConversationMessage[], currentMessage: string, currentMessageContent?: any[], useJsonToolPrompt: boolean = false): any[] {
     const systemMessage = {
       role: 'system',
-      content: SYSTEM_PROMPT
+      content: useJsonToolPrompt ? JSON_TOOL_SYSTEM_PROMPT : SYSTEM_PROMPT
     };
 
     const historyMessages = conversationHistory.map(msg => ({
@@ -37,14 +37,28 @@ class ApiService {
     return [systemMessage, ...historyMessages, currentUserMessage];
   }
 
-  async callOpenRouterAPI(conversationHistory: ConversationMessage[], currentMessage: string): Promise<any> {
+  async callOpenRouterAPI(conversationHistory: ConversationMessage[], currentMessage: string, isImageInputEnabled: boolean = false): Promise<any> {
     try {
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error('OpenRouter API key not found');
       }
 
-      const messages = this.convertConversationToMessages(conversationHistory, currentMessage);
+      const model = getModelForContext(isImageInputEnabled);
+      const supportsTools = supportsNativeToolCalling(model);
+      const messages = this.convertConversationToMessages(conversationHistory, currentMessage, undefined, !supportsTools);
+
+      const requestBody: any = {
+        model: model,
+        messages: messages,
+        max_tokens: API_CONFIG.maxTokens,
+        temperature: API_CONFIG.temperature,
+      };
+
+      // Only add tools parameter for models that support it
+      if (supportsTools) {
+        requestBody.tools = ALL_TOOLS;
+      }
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -53,13 +67,7 @@ class ApiService {
           'Content-Type': 'application/json',
           'X-Title': 'Relay Responder App',
         },
-        body: JSON.stringify({
-          model: API_CONFIG.model,
-          messages: messages,
-          tools: ALL_TOOLS,
-          max_tokens: API_CONFIG.maxTokens,
-          temperature: API_CONFIG.temperature,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -79,13 +87,48 @@ class ApiService {
     }
   }
 
-  async callOpenRouterAPIWithForcedTool(conversationHistory: ConversationMessage[], toolName: string, promptMessage: string = 'Generate based on our conversation'): Promise<any> {
+  async callOpenRouterAPIWithForcedTool(conversationHistory: ConversationMessage[], toolName: string, promptMessage: string = 'Generate based on our conversation', isImageInputEnabled: boolean = false): Promise<any> {
     try {
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
         throw new Error('OpenRouter API key not found');
       }
 
+      const model = getModelForContext(isImageInputEnabled);
+      const supportsTools = supportsNativeToolCalling(model);
+      
+      if (!supportsTools) {
+        // For models without native tool calling, enhance the prompt to force tool usage
+        const enhancedPrompt = `${promptMessage}\n\nYou MUST respond with a ${toolName} tool call. Use the JSON format specified in your instructions.`;
+        const messages = this.convertConversationToMessages(conversationHistory, enhancedPrompt, undefined, true);
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'X-Title': 'Relay Responder App',
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: messages,
+            max_tokens: API_CONFIG.maxTokens,
+            temperature: API_CONFIG.temperature,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(`OpenRouter API error: ${response.status} - ${errorData}`);
+        }
+
+        const data = await response.json();
+        console.log('🔧 OPENROUTER FORCED TOOL API DEBUG (No Tool Support): Full response:', JSON.stringify(data, null, 2));
+        console.log('🔧 FORCED MESSAGE CONTENT DEBUG: Message content:', data.choices?.[0]?.message?.content);
+        return data;
+      }
+
+      // Original implementation for models with native tool calling
       const messages = this.convertConversationToMessages(conversationHistory, promptMessage);
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -96,7 +139,7 @@ class ApiService {
           'X-Title': 'Relay Responder App',
         },
         body: JSON.stringify({
-          model: API_CONFIG.model,
+          model: model,
           messages: messages,
           tools: ALL_TOOLS,
           tool_choice: {
@@ -127,7 +170,7 @@ class ApiService {
     }
   }
 
-  async callOpenRouterVisionAPI(conversationHistory: ConversationMessage[], frames: string[], currentMessage: string): Promise<any> {
+  async callOpenRouterVisionAPI(conversationHistory: ConversationMessage[], frames: string[], currentMessage: string, isImageInputEnabled: boolean = true): Promise<any> {
     try {
       const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY;
       if (!apiKey) {
@@ -147,7 +190,21 @@ class ApiService {
         }))
       ];
 
-      const messages = this.convertConversationToMessages(conversationHistory, currentMessage, messageContent);
+      const model = getModelForContext(isImageInputEnabled);
+      const supportsTools = supportsNativeToolCalling(model);
+      const messages = this.convertConversationToMessages(conversationHistory, currentMessage, messageContent, !supportsTools);
+
+      const requestBody: any = {
+        model: model,
+        messages: messages,
+        max_tokens: API_CONFIG.visionMaxTokens,
+        temperature: API_CONFIG.temperature,
+      };
+
+      // Only add tools parameter for models that support it
+      if (supportsTools) {
+        requestBody.tools = ALL_TOOLS;
+      }
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -156,13 +213,7 @@ class ApiService {
           'Content-Type': 'application/json',
           'X-Title': 'Relay Responder App',
         },
-        body: JSON.stringify({
-          model: API_CONFIG.model,
-          messages: messages,
-          tools: ALL_TOOLS,
-          max_tokens: API_CONFIG.visionMaxTokens,
-          temperature: API_CONFIG.temperature,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {

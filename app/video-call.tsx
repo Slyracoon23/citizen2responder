@@ -27,6 +27,8 @@ import { usePermissions } from './hooks/usePermissions';
 import { useSpeechToText } from './hooks/useSpeechToText';
 import { useToggleFeature } from './hooks/useToggleFeature';
 import apiService from './services/apiService';
+import { parseGemmaResponse } from './config/gemmaPrompts';
+import { supportsNativeToolCalling, getModelForContext } from './services/apiToolSchemas';
 import { videoCallStyles } from './styles/videoCallStyles';
 import { resetToDefaultPlayback } from './utils/audioSessionUtils';
 import { ReportData, PreCareData } from './types/report';
@@ -211,14 +213,14 @@ export default function VideoCallScreen() {
         // Save image to temp storage
         await addCapturedImage(photo.base64);
         
-        return await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], message);
+        return await apiService.callOpenRouterVisionAPI(conversationHistory, [photo.base64], message, isImageInputEnabled);
       } else {
         // Fallback to text-only if frame capture fails
-        return await apiService.callOpenRouterAPI(conversationHistory, message);
+        return await apiService.callOpenRouterAPI(conversationHistory, message, isImageInputEnabled);
       }
     } else {
       // Send text-only message
-      return await apiService.callOpenRouterAPI(conversationHistory, message);
+      return await apiService.callOpenRouterAPI(conversationHistory, message, isImageInputEnabled);
     }
   };
 
@@ -258,16 +260,8 @@ export default function VideoCallScreen() {
         setIsApiLoading(true);
         const data = await handleImageCaptureAndApiCall(transcript, true);
 
-        // Handle tool calls if present
-        const toolCalls = data.choices?.[0]?.message?.tool_calls;
-        if (Array.isArray(toolCalls) && toolCalls.length > 0) {
-          handleToolCalls(toolCalls);
-        } else {
-          // Only add AI message content if no tool calls were made
-          const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
-          addAiMessage(aiContent);
-          console.log('🔍 CONV DEBUG: Added AI response to STT message:', aiContent);
-        }
+        // Handle both native tool calls and JSON responses
+        handleApiResponse(data, false, isImageInputEnabled);
 
       } catch (error) {
         console.error('Error sending STT message:', error);
@@ -297,18 +291,12 @@ export default function VideoCallScreen() {
       const data = await apiService.callOpenRouterAPIWithForcedTool(
         conversationHistory, 
         'generate_report',
-        promptMessage
+        promptMessage,
+        isImageInputEnabled
       );
       
-      // Handle tool calls if present
-      const toolCalls = data.choices?.[0]?.message?.tool_calls;
-      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
-        console.log('🔧 FORCED REPORT DEBUG: Processing forced tool calls with bypass');
-        handleToolCalls(toolCalls, true); // bypass toggle check for forced calls
-      } else {
-        console.log('🔧 FORCED REPORT DEBUG: No tool calls returned from forced API call');
-        addAiMessage('Sorry, I was unable to generate a report at this time.');
-      }
+      // Handle both native tool calls and JSON responses
+      handleApiResponse(data, true, isImageInputEnabled); // bypass toggle check for forced calls
       
     } catch (error) {
       console.error('🔧 FORCED REPORT ERROR: Failed to generate forced report:', error);
@@ -333,18 +321,12 @@ export default function VideoCallScreen() {
       const data = await apiService.callOpenRouterAPIWithForcedTool(
         conversationHistory, 
         'show_precare_instructions',
-        promptMessage
+        promptMessage,
+        isImageInputEnabled
       );
       
-      // Handle tool calls if present
-      const toolCalls = data.choices?.[0]?.message?.tool_calls;
-      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
-        console.log('🔧 FORCED CARE DEBUG: Processing forced tool calls with bypass');
-        handleToolCalls(toolCalls, true); // bypass toggle check for forced calls
-      } else {
-        console.log('🔧 FORCED CARE DEBUG: No tool calls returned from forced API call');
-        addAiMessage('Sorry, I was unable to generate a care at this time.');
-      }
+      // Handle both native tool calls and JSON responses
+      handleApiResponse(data, true, isImageInputEnabled); // bypass toggle check for forced calls
       
     } catch (error) {
       console.error('🔧 FORCED CARE ERROR: Failed to generate forced care:', error);
@@ -352,6 +334,36 @@ export default function VideoCallScreen() {
     } finally {
       setIsApiLoading(false);
     }
+  };
+
+  // Helper to handle API responses (both native tool calls and JSON responses)
+  const handleApiResponse = (data: any, bypassToggleCheck: boolean = false, isImageInputEnabled: boolean = false) => {
+    const model = getModelForContext(isImageInputEnabled);
+    const supportsTools = supportsNativeToolCalling(model);
+    
+    if (supportsTools) {
+      // Handle native tool calls
+      const toolCalls = data.choices?.[0]?.message?.tool_calls;
+      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+        handleToolCalls(toolCalls, bypassToggleCheck);
+        return;
+      }
+    } else {
+      // Handle JSON tool calls for models without native support
+      const aiContent = data.choices?.[0]?.message?.content;
+      if (aiContent) {
+        const parsedResponse = parseGemmaResponse(aiContent);
+        if (parsedResponse.isToolCall && parsedResponse.standardToolCalls) {
+          console.log('🔧 JSON TOOL CALL DEBUG: Parsed JSON tool calls:', parsedResponse.standardToolCalls);
+          handleToolCalls(parsedResponse.standardToolCalls, bypassToggleCheck);
+          return;
+        }
+      }
+    }
+    
+    // No tool calls found, add as regular message
+    const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
+    addAiMessage(aiContent);
   };
 
   // Helper to handle OpenRouter tool calls
@@ -450,16 +462,8 @@ export default function VideoCallScreen() {
       setIsApiLoading(true);
       const data = await handleImageCaptureAndApiCall(message, false);
 
-      // Handle tool calls if present
-      const toolCalls = data.choices?.[0]?.message?.tool_calls;
-      if (Array.isArray(toolCalls) && toolCalls.length > 0) {
-        handleToolCalls(toolCalls);
-      } else {
-        // Only add AI message content if no tool calls were made
-        const aiContent = data.choices?.[0]?.message?.content || 'No response from OpenRouter API';
-        addAiMessage(aiContent);
-        console.log('🔍 CONV DEBUG: Added AI response:', aiContent);
-      }
+      // Handle both native tool calls and JSON responses
+      handleApiResponse(data, false, isImageInputEnabled);
 
     } catch (error) {
       console.error('Error sending message:', error);
