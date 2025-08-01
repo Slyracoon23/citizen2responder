@@ -82,116 +82,90 @@ export interface ParsedResponse {
   standardToolCalls?: StandardToolCall[];
 }
 
-// Helper function to extract JSON from various response formats
-function extractJsonFromResponse(response: string): string | null {
-  const trimmedResponse = response.trim();
-  console.log('🔧 JSON EXTRACTOR DEBUG: Processing response of length:', trimmedResponse.length);
+// Helper function to extract complete JSON object by counting braces
+function extractCompleteJson(text: string, startIndex: number): string | null {
+  let braceCount = 0;
+  let endIndex = -1;
   
-  // Method 1: Direct JSON (current behavior)
-  if (trimmedResponse.startsWith('{"name":')) {
-    console.log('🔧 JSON EXTRACTOR DEBUG: Found direct JSON');
-    return trimmedResponse;
-  }
-  
-  // Method 2: Code block wrapped JSON
-  const codeBlockPatterns = [
-    /```json\s*\n?([\s\S]*?)\n?\s*```/i,     // ```json\n{...}\n```
-    /```\s*\n?([\s\S]*?)\n?\s*```/i,         // ```\n{...}\n```
-    /`([^`]*\{"name"[^`]*)`/i                // Single backticks `{...}`
-  ];
-  
-  for (let i = 0; i < codeBlockPatterns.length; i++) {
-    const pattern = codeBlockPatterns[i];
-    console.log(`🔧 JSON EXTRACTOR DEBUG: Trying pattern ${i + 1}:`, pattern.toString());
-    const match = trimmedResponse.match(pattern);
-    
-    if (match) {
-      console.log(`🔧 JSON EXTRACTOR DEBUG: Pattern ${i + 1} matched, groups:`, match.length);
-      if (match[1]) {
-        const jsonCandidate = match[1].trim();
-        console.log('🔧 JSON EXTRACTOR DEBUG: Found code block match, candidate starts with:', jsonCandidate.substring(0, 50));
-        console.log('🔧 JSON EXTRACTOR DEBUG: Full candidate length:', jsonCandidate.length);
-        
-        // Check if it contains the JSON structure we're looking for
-        if (jsonCandidate.includes('"name":')) {
-          // Find the start of the JSON object
-          const jsonStart = jsonCandidate.indexOf('{');
-          if (jsonStart !== -1) {
-            const jsonFromStart = jsonCandidate.substring(jsonStart);
-            if (jsonFromStart.startsWith('{"name":') || jsonFromStart.includes('"name":')) {
-              console.log('🔧 JSON EXTRACTOR DEBUG: Valid JSON found in code block');
-              return jsonFromStart;
-            }
-          }
-        }
-      }
-    } else {
-      console.log(`🔧 JSON EXTRACTOR DEBUG: Pattern ${i + 1} did not match`);
-    }
-  }
-  
-  // Method 3: Search for JSON anywhere in the response and extract complete object
-  console.log('🔧 JSON EXTRACTOR DEBUG: Trying fallback method - searching for {"name": anywhere');
-  
-  // Look for any occurrence of {"name": (with or without exact spacing)
-  const patterns = [
-    '{"name":',
-    '{ "name":',
-    '{\n  "name":',
-    '{\n"name":'
-  ];
-  
-  let nameIndex = -1;
-  for (const pattern of patterns) {
-    nameIndex = trimmedResponse.indexOf(pattern);
-    if (nameIndex !== -1) {
-      console.log(`🔧 JSON EXTRACTOR DEBUG: Found pattern "${pattern}" at index ${nameIndex}`);
+  for (let i = startIndex; i < text.length; i++) {
+    if (text[i] === '{') braceCount++;
+    if (text[i] === '}') braceCount--;
+    if (braceCount === 0) {
+      endIndex = i + 1;
       break;
     }
   }
   
-  if (nameIndex !== -1) {
-    // Find the start of the JSON object (look backwards for the opening brace)
-    let jsonStart = nameIndex;
-    while (jsonStart > 0 && trimmedResponse[jsonStart] !== '{') {
-      jsonStart--;
-    }
-    
-    // Find the complete JSON object by counting braces
-    let braceCount = 0;
-    let endIndex = -1;
-    
-    for (let i = jsonStart; i < trimmedResponse.length; i++) {
-      if (trimmedResponse[i] === '{') braceCount++;
-      if (trimmedResponse[i] === '}') braceCount--;
-      if (braceCount === 0) {
-        endIndex = i + 1;
-        break;
+  return endIndex > startIndex ? text.substring(startIndex, endIndex) : null;
+}
+
+// Helper function to validate if extracted content is a valid tool call JSON
+function isValidToolCallJson(jsonString: string): boolean {
+  try {
+    const parsed = JSON.parse(jsonString);
+    return parsed.name && parsed.parameters && 
+           ['ask_question', 'generate_report', 'show_precare_instructions'].includes(parsed.name);
+  } catch {
+    return false;
+  }
+}
+
+// Simplified helper function to extract JSON from various response formats
+function extractJsonFromResponse(response: string): string | null {
+  const trimmedResponse = response.trim();
+  
+  // Direct JSON check
+  if (trimmedResponse.startsWith('{"name":')) {
+    return trimmedResponse;
+  }
+  
+  // Comprehensive regex for all code block variations and inline JSON
+  const jsonExtractionRegex = /(?:```(?:json)?\s*\n?)?\s*(\{[\s\S]*?"name"\s*:[\s\S]*?\})(?:\s*\n?```)?/i;
+  const match = trimmedResponse.match(jsonExtractionRegex);
+  
+  if (match && match[1]) {
+    const candidate = match[1].trim();
+    const jsonStart = candidate.indexOf('{');
+    if (jsonStart !== -1) {
+      const completeJson = extractCompleteJson(candidate, jsonStart);
+      if (completeJson && isValidToolCallJson(completeJson)) {
+        return completeJson;
       }
-    }
-    
-    if (endIndex > jsonStart) {
-      const extractedJson = trimmedResponse.substring(jsonStart, endIndex);
-      console.log('🔧 JSON EXTRACTOR DEBUG: Extracted JSON from anywhere in response, length:', extractedJson.length);
-      console.log('🔧 JSON EXTRACTOR DEBUG: Extracted JSON starts with:', extractedJson.substring(0, 100));
-      return extractedJson;
     }
   }
   
-  console.log('🔧 JSON EXTRACTOR DEBUG: No JSON found in response');
+  // Fallback: Search for {"name": pattern anywhere and extract complete object
+  const namePattern = /\{\s*"name"\s*:/;
+  const nameMatch = trimmedResponse.match(namePattern);
+  if (nameMatch) {
+    const startIndex = nameMatch.index!;
+    const completeJson = extractCompleteJson(trimmedResponse, startIndex);
+    if (completeJson && isValidToolCallJson(completeJson)) {
+      return completeJson;
+    }
+  }
+  
   return null;
+}
+
+// Helper function to create standard tool call format
+function createStandardToolCall(toolCall: ToolCall): StandardToolCall {
+  return {
+    type: 'function',
+    function: {
+      name: toolCall.name,
+      arguments: JSON.stringify(toolCall.parameters)
+    }
+  };
 }
 
 export function parseGemmaResponse(response: string): ParsedResponse {
   const trimmedResponse = response.trim();
-  
-  // Try to extract JSON from the response using various methods
   const jsonContent = extractJsonFromResponse(response);
   
   if (jsonContent) {
     try {
       const toolCall = JSON.parse(jsonContent);
-      console.log('🔧 JSON PARSER DEBUG: Successfully parsed JSON tool call:', toolCall.name);
       
       // Handle ask_question (legacy support)
       if (toolCall.name === 'ask_question' && toolCall.parameters?.question) {
@@ -205,31 +179,17 @@ export function parseGemmaResponse(response: string): ParsedResponse {
       // Handle generate_report and show_precare_instructions
       if ((toolCall.name === 'generate_report' || toolCall.name === 'show_precare_instructions') 
           && toolCall.parameters) {
-        // Convert to standard tool call format expected by existing handlers
-        const standardToolCall: StandardToolCall = {
-          type: 'function',
-          function: {
-            name: toolCall.name,
-            arguments: JSON.stringify(toolCall.parameters)
-          }
-        };
-        
-        console.log('🔧 JSON PARSER DEBUG: Converted to standard tool call format');
         return {
           isToolCall: true,
           content: '',
           toolCall: toolCall,
-          standardToolCalls: [standardToolCall]
+          standardToolCalls: [createStandardToolCall(toolCall)]
         };
       }
       
-      console.log('🔧 JSON PARSER DEBUG: Unknown tool call name:', toolCall.name);
     } catch (error) {
-      console.error('🔧 JSON PARSER ERROR: Failed to parse extracted JSON:', error);
-      console.error('🔧 JSON PARSER ERROR: Extracted content was:', jsonContent);
+      console.error('🔧 JSON PARSER: Failed to parse extracted JSON:', error);
     }
-  } else {
-    console.log('🔧 JSON PARSER DEBUG: No JSON tool call detected, treating as regular text');
   }
   
   return {
