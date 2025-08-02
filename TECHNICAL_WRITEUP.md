@@ -43,6 +43,11 @@ Our development was driven by real emergency scenarios: medical conversations th
 
 ### The Core Innovation: Privacy-First Intelligent Routing
 
+<div align="center">
+  <img src="assets/images/technical-architecture.png" alt="Relay Responder Hybrid AI Architecture" width="800"/>
+  <p><em>Hybrid AI Architecture: Privacy-First Smart Routing with Emergency Response Modes</em></p>
+</div>
+
 ```typescript
 // Smart routing: Text → Local Gemma-3n, Vision → Cloud
 async callOpenRouterAPI(conversationHistory, currentMessage, isImageInputEnabled = false) {
