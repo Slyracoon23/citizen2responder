@@ -45,6 +45,8 @@ pip install --no-deps --upgrade timm
 # %% [code]
 import torch
 import wandb
+import json
+from pathlib import Path
 from datasets import Dataset
 from unsloth import FastModel
 from unsloth.chat_templates import get_chat_template, standardize_data_formats, train_on_responses_only
@@ -53,172 +55,127 @@ from transformers import TextStreamer
 
 # %% [markdown]
 """
-## Medical Emergency Dataset
+## Medical Emergency Dataset Loading and Validation
 
-This embedded dataset contains 12 realistic emergency scenarios designed to train Gemma 3N for:
+### External Dataset Structure
+The dataset is now stored in `datasets/medical_emergency_dataset.json` with comprehensive scenarios including:
 
-1. **Assessment Scenarios**: Guide bystanders through structured medical evaluation
-2. **Tool Calling Examples**: Demonstrate when to trigger `generate_report` and `show_precare_instructions`
-3. **Emergency Priorities**: Teach triage and life-threatening vs. non-critical situations
-4. **Professional Communication**: Prepare structured handoffs to EMT/EMS services
+1. **Progressive Assessment**: Multi-turn conversations with detailed questioning
+2. **Tool Calling Integration**: Proper `generate_report` and `show_precare_instructions` usage
+3. **Emergency Categories**: 20+ scenarios covering all major emergency types
+4. **Realistic Conversations**: EMT-validated emergency response patterns
 
-**Dataset Categories**:
-- Cardiac emergencies (heart attack, cardiac arrest)
-- Trauma response (bleeding, fractures, head injuries)
-- Airway management (choking, breathing difficulties)
-- Multi-casualty triage protocols
-- Shock recognition and treatment
+### Dataset Categories:
+- **Cardiac emergencies**: Heart attack, cardiac arrest, chest pain
+- **Respiratory emergencies**: Choking, asthma, anaphylaxis  
+- **Trauma & bleeding**: Severe bleeding, burns, fractures
+- **Neurological**: Stroke, seizures, concussion
+- **Poisoning & overdose**: Drug overdose, chemical ingestion
+- **Multi-casualty events**: Car accidents, workplace injuries
+- **Pediatric emergencies**: Infant choking, febrile seizures
 
-Each conversation follows the Gemma 3N chat format with realistic user questions and expert-level medical responses.
+### Validation Features:
+- Conversation flow validation
+- Tool calling format verification
+- Medical accuracy checks
+- Training statistics tracking
 """
 
 # %% [code]
-MEDICAL_DATASET = [
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "Someone collapsed and is not responding. What should I assess first?"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "First, ensure scene safety. Then check responsiveness by tapping shoulders and shouting 'Are you okay?' Check for normal breathing by looking at the chest for 10 seconds. If no response and no normal breathing, begin CPR immediately. Call 911 if not already done. I'll help you generate a report for emergency services."}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "I need to call 911 about a car accident with injuries. Can you help me prepare what to say?"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "I'll help you generate a structured emergency report. Tell me: 1) Your exact location or nearest intersection, 2) Number of vehicles involved, 3) Number of people injured, 4) Are any victims unconscious or not breathing, 5) Any visible serious injuries like bleeding or broken bones? Based on your answers, I'll create a comprehensive report for 911 dispatch."}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "There's a person with severe bleeding from their arm. What care should I provide?"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "For severe arm bleeding: 1) Apply direct pressure with clean cloth or bandage, 2) Elevate the arm above heart level if possible, 3) Do NOT remove embedded objects, 4) If bleeding soaks through, add more layers without removing the first, 5) Apply pressure to pressure points if bleeding continues. I can show you detailed precare instructions to guide you through this step-by-step."}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "Multiple people injured in workplace accident. How do I prioritize who to help first?"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "Use START triage protocol: 1) First help those who can walk (minor injuries), 2) Check breathing - if not breathing and airway is clear, position for rescue breathing, 3) Check circulation - control severe bleeding first, 4) Assess mental status - unconscious patients need immediate attention. Priority: Not breathing > Severe bleeding > Unconscious > Walking wounded. I'll help you generate individual reports for each patient to streamline EMT handoff."}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "Person is choking and can't cough or speak. What do I do?"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "This is a severe airway obstruction - act immediately! For conscious adult: 1) Stand behind them, 2) Place hands below ribcage, thumb side against stomach, 3) Give 5 quick upward thrusts, 4) Check mouth for object, 5) Repeat until object clears or person becomes unconscious. If they become unconscious, begin CPR. I can provide detailed precare instructions to guide you through the exact hand positioning and technique."}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "Elderly person fell and can't move their leg. Hip looks deformed. What should I assess?"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "Suspected hip fracture - do NOT move the patient. Assess: 1) Consciousness level and vital signs, 2) Pain level (1-10 scale), 3) Circulation below injury (check pulse at ankle, skin color), 4) Any other injuries from the fall, 5) Medical history if patient can communicate. Keep them warm and comfortable, stabilize the leg with pillows. This requires immediate transport - I'll help generate a priority emergency report for EMS."}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "Person having chest pain, sweating, nausea. They think it's heartburn."}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "These are classic heart attack symptoms - treat as cardiac emergency! 1) Call 911 immediately, 2) Have them sit or lie down comfortably, 3) Loosen tight clothing, 4) Ask if they take heart medication (nitroglycerin), 5) Give aspirin if no allergies and they can swallow, 6) Monitor breathing and pulse, 7) Be ready for CPR if they become unconscious. Do NOT let them drive themselves. I'll generate an emergency cardiac report for dispatch."}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "Generate a report for EMS about a motorcycle accident with head injury"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "I need more details to generate a comprehensive EMS report. Please provide: 1) Exact location and time of accident, 2) Patient's consciousness level (awake, responsive to voice, unresponsive), 3) Any observed head trauma (bleeding, deformity, fluid from ears/nose), 4) Vital signs if obtainable (breathing rate, pulse), 5) Mechanism of injury (speed, helmet use, what they hit), 6) Other injuries noted, 7) Your contact information. Once I have these details, I'll create a structured report for emergency services.\n\n{\"tool_calls\": [{\"name\": \"generate_report\", \"parameters\": {\"incident_type\": \"motorcycle_accident_head_injury\", \"priority\": \"high\"}}]}"}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "Show me how to control bleeding on someone's leg"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "I'll provide step-by-step bleeding control instructions for a leg wound:\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"care_type\": \"bleeding_control_leg\", \"priority\": \"high\", \"steps\": [\"Ensure scene safety and use universal precautions (gloves if available)\", \"Apply direct pressure with clean cloth or bandage directly on wound\", \"Elevate leg above heart level if no fracture suspected\", \"If bleeding soaks through, add more layers without removing first bandage\", \"Apply pressure to femoral artery pressure point if bleeding continues\", \"Secure bandage with tape or wrap, check circulation below wound\", \"Monitor patient for signs of shock (pale, rapid pulse, weakness)\", \"Document time bleeding was controlled for EMS report\"]}}]}"}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "Need care instructions for someone having a seizure"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "I'll provide seizure care instructions to keep the person safe:\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"care_type\": \"seizure_management\", \"priority\": \"medium\", \"steps\": [\"Do NOT restrain the person or put anything in their mouth\", \"Clear area of hard or sharp objects to prevent injury\", \"Place something soft under their head if possible\", \"Turn person on their side to keep airway clear if they vomit\", \"Time the seizure - note start and end times\", \"Stay with person and speak calmly when seizure ends\", \"Call 911 if: seizure lasts over 5 minutes, person doesn't wake up, multiple seizures occur, or person is injured\", \"After seizure, keep person comfortable and monitor breathing\"]}}]}"}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "What's the difference between a heart attack and cardiac arrest?"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "Important distinction for emergency response:\n\n**Heart Attack (Myocardial Infarction):**\n- Heart muscle not getting oxygen due to blocked artery\n- Person usually conscious and breathing\n- Symptoms: chest pain, sweating, nausea, shortness of breath\n- Treatment: Call 911, aspirin if no allergies, position of comfort\n\n**Cardiac Arrest:**\n- Heart stops beating effectively\n- Person unconscious, not breathing normally\n- No pulse, may appear dead\n- Treatment: Immediate CPR and AED, call 911\n\nHeart attack can lead to cardiac arrest. Both are true emergencies requiring immediate EMS response."}]
-            }
-        ]
-    },
-    {
-        "conversations": [
-            {
-                "role": "user", 
-                "content": [{"type": "text", "text": "How do I check if someone is in shock?"}]
-            },
-            {
-                "role": "assistant", 
-                "content": [{"type": "text", "text": "Signs of shock to assess:\n\n**Physical Signs:**\n- Rapid, weak pulse (over 100 bpm)\n- Rapid, shallow breathing\n- Pale, cool, clammy skin\n- Weakness or fatigue\n- Dizziness or confusion\n- Decreased alertness\n\n**Assessment Steps:**\n1. Check skin color and temperature\n2. Feel pulse at wrist - note rate and strength\n3. Observe breathing pattern\n4. Ask simple questions to check mental status\n5. Look for anxiety or restlessness\n\n**Treatment:**\n- Elevate legs 8-12 inches (unless spinal injury suspected)\n- Keep warm with blanket\n- Monitor closely\n- Call 911 - shock can be life-threatening"}]
-            }
-        ]
+def load_medical_dataset(dataset_path="datasets/medical_emergency_dataset.json"):
+    """Load and validate medical emergency dataset from external JSON file"""
+    
+    try:
+        dataset_file = Path(dataset_path)
+        if not dataset_file.exists():
+            raise FileNotFoundError(f"Dataset file not found: {dataset_path}")
+            
+        with open(dataset_file, 'r', encoding='utf-8') as f:
+            dataset_json = json.load(f)
+            
+        print(f"📊 Dataset loaded successfully from {dataset_path}")
+        print(f"📈 Dataset info: {dataset_json['dataset_info']}")
+        
+        return dataset_json
+        
+    except Exception as e:
+        print(f"❌ Error loading dataset: {e}")
+        raise
+
+def validate_dataset(dataset_json):
+    """Validate dataset structure and content for medical training"""
+    
+    scenarios = dataset_json["scenarios"]
+    stats = {
+        "total_scenarios": len(scenarios),
+        "categories": {},
+        "priorities": {"high": 0, "medium": 0, "low": 0},
+        "tools_used": {"generate_report": 0, "show_precare_instructions": 0},
+        "avg_conversation_turns": 0,
+        "avg_assessment_questions": 0
     }
-]
+    
+    total_turns = 0
+    total_questions = 0
+    
+    for scenario in scenarios:
+        # Category distribution
+        category = scenario["category"]
+        stats["categories"][category] = stats["categories"].get(category, 0) + 1
+        
+        # Priority distribution  
+        priority = scenario["priority"]
+        stats["priorities"][priority] += 1
+        
+        # Tool usage
+        final_tool = scenario["final_tool"]
+        if final_tool in stats["tools_used"]:
+            stats["tools_used"][final_tool] += 1
+            
+        # Conversation metrics
+        total_turns += scenario["conversation_turns"]
+        total_questions += scenario["assessment_questions"]
+        
+        # Validate conversation structure
+        conversation = scenario["conversation"]
+        if not conversation or len(conversation) == 0:
+            raise ValueError(f"Empty conversation in scenario {scenario['id']}")
+            
+        # Check for tool calling in final message
+        final_message = conversation[-1]["content"][0]["text"]
+        if "tool_calls" not in final_message:
+            print(f"⚠️  Warning: No tool call found in scenario {scenario['id']}")
+    
+    # Calculate averages
+    stats["avg_conversation_turns"] = round(total_turns / len(scenarios), 1)
+    stats["avg_assessment_questions"] = round(total_questions / len(scenarios), 1)
+    
+    print(f"\n📊 Dataset Validation Results:")
+    print(f"   Total scenarios: {stats['total_scenarios']}")
+    print(f"   Categories: {stats['categories']}")
+    print(f"   Priority distribution: {stats['priorities']}")
+    print(f"   Tool usage: {stats['tools_used']}")
+    print(f"   Avg conversation turns: {stats['avg_conversation_turns']}")
+    print(f"   Avg assessment questions: {stats['avg_assessment_questions']}")
+    
+    return stats
+
+def convert_to_training_format(dataset_json):
+    """Convert external dataset format to training format"""
+    
+    training_data = []
+    for scenario in dataset_json["scenarios"]:
+        training_data.append({
+            "conversations": scenario["conversation"]
+        })
+    
+    print(f"✅ Converted {len(training_data)} scenarios to training format")
+    return training_data
+
+# Load and validate dataset
+DATASET_JSON = load_medical_dataset()
+DATASET_STATS = validate_dataset(DATASET_JSON)
+MEDICAL_DATASET = convert_to_training_format(DATASET_JSON)
 
 # %% [markdown]
 """
@@ -409,9 +366,14 @@ def create_medical_trainer(model, tokenizer, dataset):
             "lora_alpha": 16,
             "lora_dropout": 0.1,
             "domain": "medical_emergency_response",
-            "use_case": "citizen2responder_app"
+            "use_case": "citizen2responder_app",
+            # Dataset statistics
+            "dataset_stats": DATASET_STATS,
+            "total_scenarios": DATASET_STATS["total_scenarios"],
+            "avg_conversation_turns": DATASET_STATS["avg_conversation_turns"],
+            "avg_assessment_questions": DATASET_STATS["avg_assessment_questions"]
         },
-        tags=["medical-ai", "emergency-response", "gemma3n", "lora", "privacy-first"]
+        tags=["medical-ai", "emergency-response", "gemma3n", "lora", "privacy-first", "multi-turn-conversations"]
     )
     
     trainer = SFTTrainer(

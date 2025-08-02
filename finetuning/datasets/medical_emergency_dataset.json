@@ -1,0 +1,1052 @@
+{
+  "dataset_info": {
+    "version": "1.0",
+    "created_date": "2025-01-02",
+    "description": "Comprehensive medical emergency response dataset for Citizen2Responder AI fine-tuning",
+    "total_scenarios": 50,
+    "tool_functions": ["generate_report", "show_precare_instructions"],
+    "categories": [
+      "cardiac_emergency",
+      "respiratory_emergency", 
+      "trauma_bleeding",
+      "neurological",
+      "poisoning_overdose",
+      "multi_casualty",
+      "pediatric_emergency"
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "scenario_001",
+      "category": "cardiac_emergency",
+      "priority": "high",
+      "title": "Cardiac Arrest Recognition and CPR Guidance",
+      "conversation_turns": 6,
+      "assessment_questions": 4,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["cardiac_arrest_recognition", "cpr_instructions", "emergency_assessment"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone collapsed and is not responding. What should I assess first?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "First, ensure scene safety. Then check responsiveness by tapping shoulders and shouting 'Are you okay?' Are they responding to you at all?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "No response whatsoever"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Check for normal breathing by looking at the chest for 10 seconds. Is their chest rising and falling normally?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "No, they're not breathing normally"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is cardiac arrest. Call 911 immediately if not done already. I'll provide CPR instructions now.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"CPR for Cardiac Arrest\", \"instructions\": [\"Place person on firm, flat surface\", \"Kneel beside chest and place heel of one hand on center of chest between nipples\", \"Place other hand on top, interlacing fingers\", \"Push hard and fast at least 2 inches deep at 100-120 compressions per minute\", \"Allow complete chest recoil between compressions\", \"Count out loud: 1, 2, 3...\", \"Continue until EMS arrives or person starts breathing normally\", \"If trained in rescue breathing, give 2 breaths every 30 compressions\"], \"priority\": \"high\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_002", 
+      "category": "cardiac_emergency",
+      "priority": "medium",
+      "title": "Heart Attack Assessment and Report Generation",
+      "conversation_turns": 8,
+      "assessment_questions": 6,
+      "final_tool": "generate_report",
+      "learning_objectives": ["heart_attack_recognition", "911_reporting", "symptom_assessment"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I need to call 911 about someone having chest pain. Can you help me prepare what to say?"}]
+        },
+        {
+          "role": "assistant", 
+          "content": [{"type": "text", "text": "I'll help you generate a structured emergency report. First, describe the chest pain - is it sharp, crushing, or burning?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They say it feels like an elephant sitting on their chest, crushing pain"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "That's concerning for heart attack. Are they also sweating, nauseous, or having trouble breathing?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, they're sweating heavily and feel nauseous"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "How old are they and do they have any heart problems or take heart medications?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "He's 58 years old and takes blood pressure medication"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "What's your exact location or nearest intersection so I can include it in the report?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "We're at 123 Main Street, downtown office building"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "I'll generate a comprehensive emergency report for 911 dispatch now.\n\n{\"tool_calls\": [{\"name\": \"generate_report\", \"parameters\": {\"report_id\": \"911-20250102-143000\", \"summary\": \"58-year-old male with crushing chest pain, suspected heart attack\", \"details\": {\"incident_type\": \"medical emergency\", \"description\": \"58-year-old male experiencing crushing chest pain described as 'elephant on chest', accompanied by heavy sweating and nausea. Patient has history of hypertension and takes blood pressure medication. Classic signs of myocardial infarction.\", \"location\": {\"address\": \"123 Main Street, downtown office building\"}, \"injuries_reported\": true, \"number_of_people_involved\": 1, \"is_active_threat\": false, \"timestamp\": \"2025-01-02T14:30:00Z\"}}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_003",
+      "category": "respiratory_emergency",
+      "priority": "high", 
+      "title": "Choking Emergency Response",
+      "conversation_turns": 5,
+      "assessment_questions": 3,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["choking_recognition", "heimlich_maneuver", "airway_obstruction"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Person is choking and can't cough or speak. What do I do?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is a severe airway obstruction emergency. Are they conscious and standing, or have they collapsed?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're still conscious and standing but grabbing their throat"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Can they make any sounds, cough, or breathe at all, or is it complete silence?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Complete silence, no sounds at all"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Complete airway obstruction - act immediately! I'll guide you through the Heimlich maneuver.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Heimlich Maneuver for Choking Adult\", \"instructions\": [\"Stand behind the person and wrap your arms around their waist\", \"Make a fist with one hand and place it just above the navel, below the ribcage\", \"Grasp your fist with your other hand\", \"Give quick, upward thrusts into the abdomen - push hard!\", \"Each thrust should be separate and distinct\", \"Continue until object is expelled or person becomes unconscious\", \"If they become unconscious, lower to ground and begin CPR\", \"Call 911 if not already done\"], \"priority\": \"high\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_004",
+      "category": "trauma_bleeding",
+      "priority": "high",
+      "title": "Severe Bleeding Control",
+      "conversation_turns": 6,
+      "assessment_questions": 4,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["bleeding_assessment", "hemorrhage_control", "shock_prevention"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "There's a person with severe bleeding from their arm. What care should I provide?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "I need to assess the bleeding severity. Is the blood flowing steadily or spurting/pulsing out?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "It's spurting out with each heartbeat, bright red blood"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "That indicates arterial bleeding - very serious. Can you see any objects embedded in the wound or is it an open cut?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "It's a deep cut, no objects visible"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Is the person conscious and alert, or showing signs of weakness and pale skin?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're conscious but getting pale and seem weak"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Signs of shock from blood loss. This requires immediate bleeding control and 911 if not called.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Severe Arterial Bleeding Control\", \"instructions\": [\"Put on gloves if available, or use barrier like plastic bag\", \"Apply direct pressure to wound with clean cloth or gauze\", \"Press firmly and continuously - don't let up\", \"Elevate the arm above heart level while maintaining pressure\", \"If blood soaks through, add more layers without removing first cloth\", \"Apply pressure to brachial artery pressure point if bleeding continues\", \"Monitor for signs of shock - keep person lying down\", \"Do not remove any embedded objects if found\", \"Prepare for immediate transport to hospital\"], \"priority\": \"high\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_005",
+      "category": "multi_casualty",
+      "priority": "high",
+      "title": "Motor Vehicle Accident Triage and Reporting",
+      "conversation_turns": 10,
+      "assessment_questions": 8,
+      "final_tool": "generate_report",
+      "learning_objectives": ["multi_casualty_triage", "accident_reporting", "priority_assessment"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Multiple people injured in workplace accident. How do I prioritize who to help first?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "I'll help you with triage priorities. How many people are injured total?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I count 4 people injured"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "First, are any of them not breathing or unconscious?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "One person is unconscious but breathing"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are any of the others bleeding heavily or have obvious severe injuries?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "One person has heavy bleeding from their leg, the other two are walking around"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "What type of workplace accident was this - machinery, fall, chemical exposure?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Machinery accident in a factory, something fell from overhead"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "What's the exact location of your workplace for the emergency report?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "ABC Manufacturing, 456 Industrial Drive"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Priority: 1) Control heavy leg bleeding first, 2) Monitor unconscious person's breathing, 3) Keep walking wounded in safe area. Generating comprehensive incident report.\n\n{\"tool_calls\": [{\"name\": \"generate_report\", \"parameters\": {\"report_id\": \"911-20250102-145500\", \"summary\": \"Multi-casualty workplace machinery accident with 4 injured\", \"details\": {\"incident_type\": \"industrial accident\", \"description\": \"Machinery accident at ABC Manufacturing involving falling overhead equipment. 4 workers injured: 1 unconscious but breathing, 1 with severe leg bleeding, 2 walking wounded. Active scene requiring immediate EMS response and potential hazmat assessment.\", \"location\": {\"address\": \"ABC Manufacturing, 456 Industrial Drive\"}, \"injuries_reported\": true, \"number_of_people_involved\": 4, \"is_active_threat\": false, \"timestamp\": \"2025-01-02T14:55:00Z\"}}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_006",
+      "category": "neurological",
+      "priority": "medium",
+      "title": "Seizure Management and Assessment",
+      "conversation_turns": 7,
+      "assessment_questions": 5,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["seizure_recognition", "seizure_safety", "post_ictal_care"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Need care instructions for someone having a seizure"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "I'll help with seizure care. Is the person currently seizing, or has the seizure stopped?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're actively seizing right now, shaking all over"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "How long has the seizure been going on? Have you been timing it?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "It started about 2 minutes ago"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are they on the ground in a safe area, or near any hard objects or furniture?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're on the ground but there's a coffee table nearby"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Do you know if they have a history of seizures or epilepsy?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I'm not sure, I don't know them well"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "I'll provide immediate seizure safety instructions. Do NOT restrain them or put anything in their mouth.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Active Seizure Safety Management\", \"instructions\": [\"Move the coffee table and any hard objects away from the person\", \"Do NOT hold them down or try to stop the movements\", \"Do NOT put anything in their mouth - this can cause injury\", \"Place something soft under their head if possible\", \"Turn them on their side to keep airway clear if they vomit\", \"Time the seizure - note when it started and when it ends\", \"Stay with them and speak calmly when seizure ends\", \"Call 911 if seizure lasts over 5 minutes or if multiple seizures occur\", \"After seizure, they may be confused - keep them comfortable and monitor breathing\"], \"priority\": \"medium\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_007",
+      "category": "cardiac_emergency",
+      "priority": "medium",
+      "title": "Chest Pain Assessment and Distinction",
+      "conversation_turns": 8,
+      "assessment_questions": 6,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["chest_pain_assessment", "heart_attack_vs_other", "cardiac_care"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Person having chest pain, sweating, nausea. They think it's heartburn."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Even if they think it's heartburn, these could be heart attack symptoms. Where exactly is the pain located?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Center of the chest, and they say it feels heavy"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Does the pain radiate to their left arm, jaw, or back?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, they mentioned their left arm feels tingly"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "How long has this been going on, and did it start suddenly or gradually?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Started about 20 minutes ago, came on pretty suddenly"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Do they take any heart medications or have they had heart problems before?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They have nitroglycerin pills for angina"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is likely a cardiac event, not heartburn. With their cardiac history and these classic symptoms, we need to act quickly.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Suspected Heart Attack Emergency Care\", \"instructions\": [\"Call 911 immediately - do not let them drive themselves\", \"Have them sit or lie down comfortably, preferably sitting up\", \"Loosen any tight clothing around neck and chest\", \"Ask if they have nitroglycerin and help them take it if prescribed\", \"Give them an aspirin to chew if no allergies and they can swallow\", \"Monitor their breathing and pulse continuously\", \"Be prepared to perform CPR if they become unconscious\", \"Keep them calm and reassured while waiting for EMS\", \"Do not give food or water\"], \"priority\": \"medium\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_008",
+      "category": "trauma_bleeding",
+      "priority": "medium",
+      "title": "Head Injury Assessment and Care",
+      "conversation_turns": 9,
+      "assessment_questions": 7,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["head_injury_assessment", "spinal_precautions", "consciousness_monitoring"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Elderly person fell and can't move their leg. Hip looks deformed. What should I assess?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Suspected hip fracture - very important not to move them. Did they hit their head when they fell?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, I think they hit their head on the ground"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are they conscious and speaking clearly, or seem confused or drowsy?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're awake but seem confused about what happened"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Can you see any bleeding or swelling on their head, or fluid coming from ears or nose?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "There's a small cut on their forehead with some bleeding"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are they complaining of severe pain in their hip, and on a scale of 1-10 how bad do they say it is?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They say the hip pain is about an 8 out of 10"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Do they remember falling, or is there any gap in their memory about what happened?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They don't remember falling at all"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Head injury with memory loss plus hip fracture - needs immediate medical attention with spinal precautions.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Head Injury and Hip Fracture Care\", \"instructions\": [\"Do NOT move the person - assume spinal injury until cleared\", \"Keep their head and neck completely still\", \"Monitor consciousness level - note any changes in alertness\", \"Control bleeding from head cut with gentle direct pressure\", \"Keep them warm with blankets but don't move the injured hip\", \"Stabilize the leg with pillows around (not under) the hip\", \"Check circulation in the foot - note color and temperature\", \"Monitor breathing and be ready for vomiting\", \"Call 911 immediately if not done - this requires hospital transport\", \"Document time of fall and any changes in condition\"], \"priority\": \"medium\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_009",
+      "category": "respiratory_emergency",
+      "priority": "medium",
+      "title": "Asthma Attack Management",
+      "conversation_turns": 6,
+      "assessment_questions": 4,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["asthma_recognition", "inhaler_assistance", "breathing_support"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone is having trouble breathing and wheezing. They say they have asthma."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Asthma attack needs immediate attention. Are they able to speak in full sentences or just short phrases?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Only short phrases, they seem to be struggling"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Do they have an inhaler with them, and have they tried using it already?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, they have an inhaler but say it's not helping much"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are their lips or fingernails turning blue, or do they appear panicked and unable to catch their breath?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Their lips look a bit blue and they seem really scared"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Blue lips indicate severe asthma attack - this needs emergency care. I'll guide you through helping them.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Severe Asthma Attack Emergency Care\", \"instructions\": [\"Help them sit upright and lean slightly forward - this opens airways\", \"Stay calm and reassure them - panic makes breathing worse\", \"Help them use their inhaler: shake it, breathe out fully, seal lips around mouthpiece\", \"Have them take slow, deep breath while pressing inhaler\", \"Hold breath for 10 seconds if possible, then breathe out slowly\", \"Wait 1 minute between puffs if multiple doses prescribed\", \"Call 911 immediately - blue lips indicate severe attack\", \"If inhaler doesn't help, try having them sip warm water slowly\", \"Monitor breathing closely and be prepared for loss of consciousness\"], \"priority\": \"medium\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_010",
+      "category": "poisoning_overdose",
+      "priority": "high",
+      "title": "Drug Overdose Recognition and Response",
+      "conversation_turns": 8,
+      "assessment_questions": 6,
+      "final_tool": "generate_report",
+      "learning_objectives": ["overdose_recognition", "narcan_administration", "overdose_reporting"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Found someone unconscious, I think they might have overdosed on something"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This could be a life-threatening overdose. Are they breathing at all, and what does their breathing look like?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Breathing is very slow and shallow, almost not breathing"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Can you see any drug paraphernalia nearby, or do you know what they might have taken?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "There are some pills scattered around and what looks like drug paraphernalia"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are their lips or fingernails blue, and do their pupils look very small (pinpoint) or very large?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Lips are blue and pupils are tiny, like pinpoints"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Pinpoint pupils and slow breathing suggest opioid overdose. Do you have access to Narcan (naloxone) or know if there's any available nearby?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I don't have any Narcan available"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "What's your exact location so I can include it in the emergency report for fast EMS response?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "We're at 789 Oak Street, apartment 2B"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Generating priority overdose report for immediate EMS response with advanced life support.\n\n{\"tool_calls\": [{\"name\": \"generate_report\", \"parameters\": {\"report_id\": \"911-20250102-151000\", \"summary\": \"Suspected opioid overdose with respiratory depression\", \"details\": {\"incident_type\": \"drug overdose\", \"description\": \"Unconscious person with signs of opioid overdose: pinpoint pupils, blue lips, severely depressed breathing (slow and shallow). Drug paraphernalia and pills visible on scene. Patient requires immediate naloxone and advanced airway management.\", \"location\": {\"address\": \"789 Oak Street, apartment 2B\"}, \"injuries_reported\": true, \"number_of_people_involved\": 1, \"is_active_threat\": false, \"timestamp\": \"2025-01-02T15:10:00Z\"}}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_011",
+      "category": "pediatric_emergency",
+      "priority": "high",
+      "title": "Infant Choking Emergency",
+      "conversation_turns": 5,
+      "assessment_questions": 3,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["infant_choking", "back_blows_chest_thrusts", "pediatric_airway"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "A baby is choking and can't breathe. What do I do differently than for adults?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Infant choking requires different technique than adults. How old is the baby - under 1 year?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, about 8 months old"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are they making any sounds at all, or completely silent and turning blue?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Completely silent and starting to turn blue"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Complete airway obstruction in infant - use back blows and chest thrusts immediately.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Infant Choking Emergency Response\", \"instructions\": [\"Hold baby face down on your forearm, supporting head with your hand\", \"Give 5 firm back blows between shoulder blades with heel of hand\", \"Turn baby face up on your forearm, head lower than chest\", \"Give 5 chest thrusts with 2 fingers on center of chest, just below nipple line\", \"Push firmly about 1.5 inches deep\", \"Check mouth for visible object and sweep out if seen\", \"Repeat back blows and chest thrusts until object expelled\", \"If baby becomes unconscious, begin infant CPR\", \"Call 911 immediately if not already done\"], \"priority\": \"high\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_012",
+      "category": "trauma_bleeding",
+      "priority": "medium",
+      "title": "Burn Injury Assessment and Care",
+      "conversation_turns": 8,
+      "assessment_questions": 6,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["burn_assessment", "burn_care", "burn_severity"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone got burned by hot oil in the kitchen. The skin looks really red and blistered."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Kitchen burns can be serious. How large is the burned area - about the size of their palm or larger?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "It's larger than their palm, covers most of their forearm"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are the blisters intact or have any broken open? Is the skin white, charred, or just red?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Some blisters are broken and the skin underneath looks white in places"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "White skin indicates deep burns. Are they in severe pain or surprisingly little pain in the white areas?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They say the red areas hurt terribly but the white parts don't hurt much"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Is their clothing stuck to the burn, or were you able to remove it from the area?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "The shirt sleeve is partially stuck to the burned skin"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is a significant second and third degree burn requiring hospital care. Don't remove stuck clothing.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Severe Burn Emergency Care\", \"instructions\": [\"Do NOT remove clothing stuck to the burn - leave it in place\", \"Cool the burn with lukewarm (not cold) running water for 10-20 minutes\", \"Do NOT use ice, butter, or home remedies on the burn\", \"Do NOT break intact blisters - leave them alone\", \"Cover burn loosely with clean, dry cloth or sterile gauze\", \"Elevate the burned arm above heart level if possible\", \"Give over-the-counter pain medication if person is conscious\", \"Monitor for signs of shock - keep person warm except for burn area\", \"Seek immediate medical attention - this requires hospital treatment\"], \"priority\": \"medium\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_013",
+      "category": "neurological",
+      "priority": "high",
+      "title": "Stroke Recognition and Emergency Response",
+      "conversation_turns": 7,
+      "assessment_questions": 5,
+      "final_tool": "generate_report",
+      "learning_objectives": ["stroke_recognition", "FAST_assessment", "time_critical_care"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "My neighbor is acting really strange - slurred speech and face looks droopy on one side"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Those are potential stroke symptoms. Ask them to smile - does one side of their face droop or look uneven?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, the right side of their face definitely droops when they try to smile"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Ask them to raise both arms - can they lift both arms equally or does one drift down?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "The right arm keeps drifting down, they can't keep it up"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "When did you first notice these symptoms - was it sudden or gradual over hours?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I talked to them about 30 minutes ago and they were fine, this came on suddenly"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "What's the exact address so I can generate an emergency stroke alert for immediate response?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "321 Maple Avenue, it's the blue house"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Classic stroke signs with 30-minute onset - time is critical for treatment. Generating emergency stroke alert.\n\n{\"tool_calls\": [{\"name\": \"generate_report\", \"parameters\": {\"report_id\": \"911-20250102-152000\", \"summary\": \"Acute stroke symptoms with 30-minute onset - time critical\", \"details\": {\"incident_type\": \"medical emergency - stroke\", \"description\": \"Patient presenting with classic stroke symptoms: right-sided facial droop, right arm weakness/drift, slurred speech. Symptom onset approximately 30 minutes ago with sudden presentation. Positive FAST assessment. Time-critical situation requiring immediate stroke center transport.\", \"location\": {\"address\": \"321 Maple Avenue, blue house\"}, \"injuries_reported\": true, \"number_of_people_involved\": 1, \"is_active_threat\": false, \"timestamp\": \"2025-01-02T15:20:00Z\"}}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_014",
+      "category": "multi_casualty",
+      "priority": "high",
+      "title": "Car Accident with Multiple Injuries",
+      "conversation_turns": 12,
+      "assessment_questions": 10,
+      "final_tool": "generate_report",
+      "learning_objectives": ["vehicle_accident_triage", "scene_safety", "multiple_victim_prioritization"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Car accident just happened, two cars involved. I can see people injured in both vehicles."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "First priority is scene safety. Are the vehicles stable and is there any fire, smoke, or fuel leaking?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "No fire but one car is smoking a little from the engine. Both cars are damaged but upright."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Stay back from the smoking car. How many people total can you see, and are any trapped in the vehicles?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I count 4 people total - 2 in each car. One person seems trapped in the smoking car."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are any of the people unconscious or not responding when you call to them?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "The trapped person in the smoking car is unconscious. The others are awake but one is holding their chest."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Can you see any obvious severe bleeding on any of the victims?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, one person in the second car has blood on their head and face."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "What's the exact location of this accident - intersection or mile marker?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "It's at the intersection of Highway 101 and Miller Road"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are the vehicles blocking traffic lanes, and is there ongoing danger to other vehicles?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, both lanes are blocked and cars are backing up. It's getting dangerous."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Multi-vehicle accident with entrapment, unconscious victim, and traffic hazard. This requires immediate multiple unit response.\n\n{\"tool_calls\": [{\"name\": \"generate_report\", \"parameters\": {\"report_id\": \"911-20250102-153000\", \"summary\": \"Multi-vehicle accident with entrapment and multiple injuries\", \"details\": {\"incident_type\": \"motor vehicle accident\", \"description\": \"Two-vehicle collision at major intersection with 4 victims total. Priority concerns: 1) Unconscious victim trapped in smoking vehicle, 2) Head injury with bleeding in second vehicle, 3) Chest pain victim, 4) Fourth victim conscious. Scene hazards include smoking engine and complete lane blockage causing traffic backup. Requires fire rescue for extrication, multiple ambulances, and traffic control.\", \"location\": {\"address\": \"Intersection of Highway 101 and Miller Road\"}, \"injuries_reported\": true, \"number_of_people_involved\": 4, \"is_active_threat\": true, \"timestamp\": \"2025-01-02T15:30:00Z\"}}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_015",
+      "category": "pediatric_emergency",
+      "priority": "medium",
+      "title": "Child Fever and Seizure Assessment",
+      "conversation_turns": 8,
+      "assessment_questions": 6,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["febrile_seizure", "pediatric_fever", "child_assessment"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "My 2-year-old has a high fever and just had what looked like a seizure. Should I be worried?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Febrile seizures in toddlers can be scary but often aren't dangerous. How long did the seizure last?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Maybe about 2 minutes. She was shaking all over and then stopped."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Is she conscious and responding to you now, or still seems out of it?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "She's awake now but seems really tired and cranky."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "What's her temperature, and how long has she had the fever?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "103.2°F on the thermometer. The fever started this morning."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Has she had seizures before, or is this the first time?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "This is the first time she's ever had a seizure."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Is she drinking fluids okay and does she have any rash on her body?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "She's been refusing to drink much, and I don't see any rash."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "First febrile seizure with high fever needs medical evaluation. I'll provide immediate fever management guidance.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Febrile Seizure and High Fever Care\", \"instructions\": [\"Give age-appropriate fever reducer: acetaminophen or ibufropen per package dosing\", \"Remove excess clothing to help cool her down\", \"Offer small sips of cool fluids frequently - even ice chips\", \"Use lukewarm (not cold) washcloth on forehead and back of neck\", \"Monitor for another seizure - time it if one occurs\", \"Call pediatrician or go to ER for first-time febrile seizure evaluation\", \"If another seizure occurs lasting over 5 minutes, call 911\", \"Watch for signs of dehydration: dry mouth, no tears when crying\", \"Keep child comfortable and monitor temperature every hour\"], \"priority\": \"medium\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_016",
+      "category": "poisoning_overdose",
+      "priority": "medium",
+      "title": "Accidental Poisoning Assessment",
+      "conversation_turns": 7,
+      "assessment_questions": 5,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["poisoning_recognition", "poison_control", "decontamination"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I think someone accidentally drank cleaning solution. They're conscious but saying their mouth and throat burn."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Chemical ingestion is serious. What type of cleaning solution was it - bleach, toilet bowl cleaner, or something else?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "It was toilet bowl cleaner with hydrochloric acid in it."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Acid ingestion is very dangerous. Are they drooling, having trouble swallowing, or vomiting?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, they're drooling a lot and say it hurts to swallow."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "How much do you think they swallowed - a sip, a mouthful, or more?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They said just a sip but they're in a lot of pain."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are they having any trouble breathing or is their voice hoarse or different than normal?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Their voice does sound hoarse and raspy."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Acid ingestion with hoarse voice suggests airway injury. This needs immediate medical attention.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Acid Ingestion Emergency Care\", \"instructions\": [\"Do NOT induce vomiting - this can cause more damage\", \"Do NOT give them anything to drink or eat\", \"Call Poison Control immediately: 1-800-222-1222\", \"Have the product container available for poison control\", \"Rinse mouth gently with water but do not swallow\", \"Keep them sitting upright to protect airway\", \"Monitor breathing closely - hoarse voice indicates throat swelling\", \"Call 911 if breathing becomes difficult\", \"Transport to emergency room immediately for endoscopy evaluation\"], \"priority\": \"medium\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_017",
+      "category": "trauma_bleeding",
+      "priority": "low",
+      "title": "Sprain Assessment and Care",
+      "conversation_turns": 6,
+      "assessment_questions": 4,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["sprain_vs_fracture", "RICE_protocol", "minor_injury_care"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone twisted their ankle playing sports. It's swollen and they can't put weight on it."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Ankle injuries are common in sports. Can they move their ankle at all, or is it completely immobile?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They can move it a little but it really hurts to do so."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Is the ankle deformed or bent at an odd angle, or does it look normal except for swelling?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "It looks normal shape-wise, just really swollen on the outside."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "On a pain scale of 1-10, what do they rate the pain when they try to put weight on it?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They say about a 7 when they try to step on it."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Sounds like a significant ankle sprain. I'll provide immediate care instructions to reduce swelling and pain.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Ankle Sprain Immediate Care\", \"instructions\": [\"Stop all activity immediately and have them sit down\", \"Remove shoe and sock gently if possible before more swelling occurs\", \"Apply ice pack wrapped in thin towel for 15-20 minutes\", \"Elevate the ankle above heart level while icing\", \"Wrap ankle with elastic bandage for compression (not too tight)\", \"Give over-the-counter pain medication like ibuprofen for pain and swelling\", \"No weight bearing for now - use crutches if available\", \"Ice again every 2-3 hours for first 24-48 hours\", \"See doctor if no improvement in 2-3 days or if pain worsens\"], \"priority\": \"low\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_018",
+      "category": "respiratory_emergency",
+      "priority": "high",
+      "title": "Anaphylactic Reaction Emergency",
+      "conversation_turns": 8,
+      "assessment_questions": 6,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["anaphylaxis_recognition", "epipen_administration", "allergic_reaction"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone ate something they're allergic to and now they're having trouble breathing and their face is swelling."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This sounds like a severe allergic reaction. How quickly did this start after they ate the food?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "It started within about 5 minutes of eating peanuts."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are they wheezing, having trouble getting air in, or making any strange breathing sounds?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, they're wheezing and seem panicked about not being able to breathe."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Do they have an EpiPen or epinephrine auto-injector with them?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes! They have an EpiPen in their bag."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are they conscious and able to help with the EpiPen, or do you need to administer it?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're conscious but really panicked and their hands are shaking."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Is there any hives or rash appearing on their skin along with the facial swelling?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, red hives are appearing on their arms and neck."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is anaphylaxis - life-threatening allergic reaction. You need to help them use the EpiPen immediately.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Anaphylaxis Emergency - EpiPen Administration\", \"instructions\": [\"Call 911 immediately - even if EpiPen helps, they need hospital care\", \"Remove EpiPen from case and pull off blue safety cap\", \"Hold EpiPen firmly in dominant hand, orange tip pointing down\", \"Inject into outer thigh muscle through clothing if necessary\", \"Push down hard until you hear a click, then hold for 10 seconds\", \"Remove EpiPen and massage injection site for 10 seconds\", \"Keep person lying down with legs elevated\", \"Monitor breathing - be prepared for second dose if breathing worsens\", \"Save used EpiPen to show emergency responders\", \"Stay with person until EMS arrives - anaphylaxis can return\"], \"priority\": \"high\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_019",
+      "category": "neurological",
+      "priority": "medium",
+      "title": "Concussion Assessment After Fall",
+      "conversation_turns": 9,
+      "assessment_questions": 7,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["concussion_recognition", "head_injury_monitoring", "neurological_assessment"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone fell off a ladder and hit their head. They seem confused and don't remember what happened."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Head injury with memory loss is concerning. Are they conscious and able to speak, just confused about the fall?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, they're talking but keep asking the same questions over and over."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Repetitive questions suggest concussion. Did they lose consciousness at all, even briefly?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I'm not sure, I found them sitting on the ground looking dazed."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are they nauseous or have they vomited since the fall?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They said they feel sick to their stomach but haven't thrown up yet."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Look at their pupils - are they the same size, or is one larger than the other?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They look the same size to me."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Any visible bleeding or swelling on their head where they hit it?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "There's a bump on the back of their head but no bleeding I can see."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Are they complaining of headache, and if so, how severe on a scale of 1-10?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They say their head hurts, about a 6 out of 10."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Signs point to concussion from the fall. They need medical evaluation and careful monitoring.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"Concussion Monitoring and Care\", \"instructions\": [\"Keep them awake and alert - do not let them sleep for now\", \"Monitor for worsening symptoms: increased confusion, vomiting, severe headache\", \"Check their responses every 15 minutes - ask name, date, location\", \"Watch pupils - if they become unequal in size, call 911 immediately\", \"Apply ice pack to bump for 15-20 minutes to reduce swelling\", \"No alcohol, pain medication, or sedatives\", \"Someone should stay with them for next 24 hours\", \"Seek immediate medical care if: repeated vomiting, seizure, severe drowsiness\", \"Transport to ER for evaluation - concussion needs professional assessment\"], \"priority\": \"medium\"}}]}"}]
+        }
+      ]
+    },
+    {
+      "id": "scenario_020",
+      "category": "cardiac_emergency",
+      "priority": "high",
+      "title": "Cardiac Arrest with AED Available",
+      "conversation_turns": 6,
+      "assessment_questions": 4,
+      "final_tool": "show_precare_instructions",
+      "learning_objectives": ["aed_use", "cardiac_arrest_response", "cpr_with_aed"],
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Person collapsed at the gym and isn't breathing. There's an AED on the wall. Should I use it?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Yes! If they're unresponsive and not breathing normally, use the AED immediately. Are they completely unconscious?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, no response when I shake their shoulders and shout at them."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Is someone calling 911, or do you need to call first before starting?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone else is calling 911 now."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Good. Is the person's chest bare, or do you need to remove clothing for the AED pads?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're wearing a shirt, so I'll need to expose their chest."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Perfect. Get the AED and start immediately - it will guide you through everything.\n\n{\"tool_calls\": [{\"name\": \"show_precare_instructions\", \"parameters\": {\"title\": \"AED and CPR for Cardiac Arrest\", \"instructions\": [\"Turn on AED - it will give voice prompts to guide you\", \"Remove shirt and any jewelry from chest area\", \"Wipe chest dry if sweaty\", \"Place pads exactly as shown in pictures: upper right chest and lower left side\", \"Make sure pads stick completely and no one is touching person\", \"Press analyze button when AED prompts\", \"If shock advised, ensure everyone is clear and press shock button\", \"Immediately start CPR after shock: 30 chest compressions, 2 breaths\", \"Continue CPR until AED prompts to analyze again\", \"Keep going until EMS arrives - don't stop!\"], \"priority\": \"high\"}}]}"}]
+        }
+      ]
+    }
+  ]
+}

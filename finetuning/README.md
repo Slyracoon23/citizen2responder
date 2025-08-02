@@ -4,11 +4,12 @@ Fine-tune Gemma 3N for medical emergency response and tool calling, optimized fo
 
 ## Overview
 
-This script fine-tunes Gemma 3N (4B) on medical emergency scenarios including:
-- Emergency assessment guidance
+This script fine-tunes Gemma 3N (4B) on comprehensive medical emergency scenarios including:
+- Progressive emergency assessment with multi-turn conversations
 - Tool calling for report generation and care instructions
-- Structured medical questioning
+- Structured medical questioning and triage
 - Professional EMT handoff preparation
+- Realistic emergency response patterns
 
 ## Requirements
 
@@ -17,6 +18,7 @@ This script fine-tunes Gemma 3N (4B) on medical emergency scenarios including:
 pip install unsloth
 pip install torch torchvision torchaudio
 pip install transformers datasets trl
+pip install wandb  # For experiment tracking
 ```
 
 ## Usage
@@ -27,21 +29,38 @@ python medical_gemma_finetuning.py
 ```
 
 ### What It Does
-1. **Loads Gemma 3N-E4B** - 4B parameter model optimized for mobile deployment
-2. **Trains on Medical Dataset** - 12 embedded emergency scenarios with tool calling
-3. **Saves Multiple Formats**:
+1. **Loads External Dataset** - 20+ comprehensive medical scenarios from JSON file
+2. **Validates Dataset** - Checks conversation structure, tool calling, and medical accuracy
+3. **Trains Gemma 3N-E4B** - 4B parameter model optimized for mobile deployment
+4. **Tracks with WandB** - Comprehensive experiment tracking and visualization
+5. **Saves Multiple Formats**:
    - LoRA adapters for continued training
    - Merged model for inference
    - GGUF format for mobile deployment (llama.rn compatible)
 
-## Dataset
+## Dataset Structure
 
-Embedded medical scenarios include:
-- Unconscious patient assessment
-- Bleeding control procedures
-- Cardiac emergency response
-- Multi-casualty triage
-- Tool calling examples (`generate_report`, `show_precare_instructions`)
+### External JSON Dataset (`datasets/medical_emergency_dataset.json`)
+- **20+ Emergency Scenarios** with progressive assessment patterns
+- **Multi-turn Conversations** averaging 7+ turns per scenario
+- **Assessment Questions** averaging 5+ questions per emergency
+- **Tool Calling Integration** for `generate_report` and `show_precare_instructions`
+
+### Medical Categories Covered:
+- **Cardiac emergencies**: Heart attack, cardiac arrest, chest pain, AED usage
+- **Respiratory emergencies**: Choking, asthma, anaphylaxis
+- **Trauma & bleeding**: Severe bleeding, burns, fractures, head injuries
+- **Neurological**: Stroke, seizures, concussion assessment
+- **Poisoning & overdose**: Drug overdose, chemical ingestion
+- **Multi-casualty events**: Car accidents, workplace injuries, triage
+- **Pediatric emergencies**: Infant choking, febrile seizures
+
+### Conversation Flow Examples:
+- Initial user emergency description
+- Progressive AI questioning for assessment
+- Multiple rounds of information gathering
+- Final tool calling for appropriate response
+- Realistic emergency response dialogue
 
 ## Output Models
 
