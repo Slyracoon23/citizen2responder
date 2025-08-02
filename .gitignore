@@ -91,5 +91,3 @@ yarn-error.*
 
 
 *.mp4
-
-!assets/preview-video.mp4
