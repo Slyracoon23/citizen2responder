@@ -89,5 +89,6 @@ yarn-error.*
 
 # @end expo-cli
 
+!assets/preview-video.mp4
 
 *.mp4
