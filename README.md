@@ -1,50 +1,217 @@
-# Welcome to your Expo app 👋
+<div align="center">
+  <img src="assets/images/logo-transparent-with-white-text-and-full-icon.png" alt="Citizen2 Responder Logo" width="400"/>
+  
+  # Relay Responder App
+  
+  *A cutting-edge emergency response and medical assistance application that combines AI-powered real-time video communication with intelligent assessment tools. Built with React Native and Expo, featuring local AI processing with cloud fallback for optimal performance and privacy.*
+</div>
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## 🚨 Overview
 
-## Get started
+The Relay Responder App is designed to assist emergency responders, medical professionals, and individuals during critical situations. It provides AI-guided assessments, automated report generation, and real-time care instructions through an intuitive video calling interface.
 
-1. Install dependencies
+## 🎥 App Preview
 
+<div align="center">
+  <video width="300" controls>
+    <source src="assets/preview-video.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  
+  *See the app in action - AI-powered emergency response tools, real-time assessment, and care instructions*
+</div>
+
+## 📱 Try the App
+
+<div align="center">
+  <img src="assets/images/qr-code.png" alt="QR Code for Expo Live Demo" width="200"/>
+  
+  *Scan the QR code with Expo Go or use the link below*
+</div>
+
+**[🚀 Live Demo on Expo](https://expo.dev/preview/update?message=add+precare&updateRuntimeVersion=1.0.0&createdAt=2025-07-31T15%3A20%3A58.533Z&slug=exp&projectId=bb716e6f-12c3-4027-8469-842404ef30f5&group=a46ec03a-d9bc-40c8-affe-95b4aab85a12)**
+
+Experience the app instantly using the Expo Go app on your mobile device. Scan the QR code or open the link above to test all features including the AI assessment tools, emergency reporting, and care instructions.
+
+### Key Capabilities
+
+- **AI-Powered Emergency Assessment** - Intelligent questioning and situation analysis
+- **Automated Report Generation** - Comprehensive emergency documentation
+- **Real-time Care Instructions** - AI-generated medical guidance and protocols
+- **Vision Analysis** - Image and video analysis for medical situations
+- **Local AI Processing** - Privacy-focused on-device AI with cloud fallback
+- **Professional Communication** - Video calling optimized for emergency scenarios
+
+## 🧠 AI Technology
+
+### Local AI Processing
+- **Model**: Gemma-3n (gemma-3n-E2B-it-Q4_K_M.gguf)
+- **Framework**: llama.rn for on-device inference
+- **Benefits**: Low latency, privacy protection, offline capability
+- **Use Cases**: Text conversations, assessments, report generation
+
+### Cloud AI Integration
+- **Model**: Gemini Flash 1.5 8B via OpenRouter
+- **Purpose**: Vision processing and image analysis
+- **Features**: Medical image interpretation, visual assessment support
+
+> **⚠️ Framework Limitation**: While Gemma-3n supports multimodal capabilities, llama.rn currently does not support vision and audio processing. This is a limitation of the mobile framework, not the underlying model. Therefore, we route vision and audio tasks to cloud-based models to provide complete functionality.
+
+### Smart Routing
+The app intelligently routes requests based on capability requirements:
+- **Text-only interactions** → Local Gemma-3n model
+- **Vision/image analysis** → Cloud Gemini Flash model
+- **Automatic fallback** → Cloud processing if local model fails
+
+## 🎛️ Core Features
+
+### Emergency Response Toggles
+
+The app features four primary access modes accessible through intuitive toggle controls:
+
+#### ASSESS Mode
+- **Purpose**: Guided emergency assessment
+- **Function**: AI-driven questioning to evaluate situations
+- **Icon**: Quiz/Question mark
+- **Usage**: Activate to receive structured assessment questions
+
+<div align="center">
+  <img src="assets/images/access-image.PNG" alt="Assess Mode Interface" width="300"/>
+  <p><em>Assess Mode - Initial emergency assessment with toggle controls</em></p>
+</div>
+
+#### REPORT Mode  
+- **Purpose**: Automated emergency report generation
+- **Function**: Creates comprehensive incident documentation
+- **Icon**: Assignment/Document
+- **Usage**: Generate detailed reports based on conversation history
+
+<div align="center">
+  <img src="assets/images/report-image.PNG" alt="Report Mode Interface" width="300"/>
+  <p><em>Report Mode - Emergency report generation with incident details</em></p>
+</div>
+
+#### CARE Mode
+- **Purpose**: Real-time care instructions
+- **Function**: Provides immediate medical guidance and protocols
+- **Icon**: Hospital/Medical cross
+- **Usage**: Access emergency care instructions and procedures
+
+<div align="center">
+  <img src="assets/images/care-image.PNG" alt="Care Mode Interface" width="300"/>
+  <p><em>Care Mode - Pre-care instructions with step-by-step guidance</em></p>
+</div>
+
+#### VISION Mode
+- **Purpose**: Visual analysis capabilities
+- **Function**: AI-powered image and video analysis
+- **Icon**: Eye/Vision
+- **Usage**: Enable camera input for visual assessment
+
+### Additional Controls
+- **Camera Toggle**: Video feed control with permission management
+- **Voice Toggle**: Audio recording and transcription
+- **Keyboard Input**: Text-based communication option
+- **Transcription**: Real-time speech-to-text conversion
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **React Native** - Cross-platform mobile development
+- **Expo** - Development and deployment platform
+- **TypeScript** - Type-safe development
+
+### AI & ML
+- **llama.rn** - Local AI inference library
+- **Gemma-3n** - On-device language model
+- **OpenRouter** - Cloud AI API gateway
+
+## 📱 Setup Instructions
+
+### Prerequisites
+- Node.js 18+ 
+- Expo CLI
+- iOS Simulator or Android Emulator
+- Physical device for optimal performance
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd relay-responder-app
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
+3. **Configure Local AI Model**
+   
+   ⚠️ **IMPORTANT**: Configure the local model path in your `.env` file
+   
+   **Model Requirements:**
+   - Download the Gemma-3n GGUF model file
+   - Place it in an accessible directory on your development machine
+   - Add the model path to your `.env` file
 
-   ```bash
-   npx expo start
+4. **Environment Setup**
+   Create a `.env` file with required API keys and model configuration:
+   ```env
+   OPENROUTER_API_KEY=your_openrouter_api_key_here
+   EXPO_PUBLIC_MODEL_PATH=/path/to/your/models/gemma-3n-E2B-it-Q4_K_M.gguf
    ```
 
-In the output, you'll find options to open the app in a
+### Development
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+1. **Prebuild (first time only)**
+   ```bash
+   npm run prebuild
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+2. **Start development server**
+   ```bash
+   npm run start:dev
+   ```
 
-## Get a fresh project
+3. **Run on device**
+   ```bash
+   # iOS
+   npm run ios:dev
+   
+   # Android  
+   npm run android:dev
+   ```
 
-When you're ready, run:
+### Production Build
 
 ```bash
-npm run reset-project
+# iOS
+npm run build:ios
+
+# Android
+npm run build:android
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-## Learn more
+## 📋 Development Scripts
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm run start          # Standard Expo start
+npm run start:dev      # Development client start  
+npm run android:dev    # Android debug build
+npm run ios:dev        # iOS debug build
+npm run build:android  # Android production build
+npm run build:ios      # iOS production build
+npm run prebuild       # Clean prebuild
+npm run lint           # Code linting
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📄 License
 
-## Join the community
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+**⚠️ Emergency Disclaimer**: This application is designed to assist in emergency situations but should not replace professional medical advice or emergency services. Always contact appropriate emergency services (911, etc.) for immediate medical emergencies.
