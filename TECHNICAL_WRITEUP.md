@@ -11,11 +11,11 @@
 
 ## Executive Summary
 
-**The Problem**: Emergency situations demand immediate, private, and reliable communication tools, but existing solutions fail when connectivity is poor, privacy is critical, or non-medical personnel need guidance.
+**The Problem**: In emergency situations, bystanders and first responders on scene often lack the structured guidance needed to effectively assess, document, and care for patients until professional EMTs arrive. These critical first minutes can determine outcomes, yet untrained personnel struggle to play their crucial role in the first response chain.
 
 **Our Solution**: A hybrid AI emergency response app that uses Gemma 3n for privacy-protected local processing while maintaining advanced capabilities through intelligent cloud routing. Built by a programmer-EMT brother team with authentic emergency response experience.
 
-**Impact**: 85% reduction in sensitive data transmission, 78% offline capability, and professional-grade assessment tools ready for real-world emergency deployment.
+**Impact**: Professional-grade assessment tools ready for real-world emergency deployment with privacy-first architecture and offline capabilities.
 
 ## 🎥 Live Demo
 
@@ -31,11 +31,11 @@
 
 ## The Story Behind the Build
 
-When Google announced the Gemma 3n Impact Challenge, we flew to Florida with a unique advantage: **I'm a San Francisco programmer, my brother is an EMT**. His front-line experience revealed critical gaps in emergency communication—privacy concerns, language barriers, and lack of structured tools for non-medical personnel.
+When Google announced the Gemma 3n Impact Challenge, we flew to The Villages, Florida with a unique advantage: **Earl Potters** (a San Francisco programmer) and **Clint Potters** (a Certified EMT). Clint's front-line emergency response experience had revealed a critical gap: the precious minutes before EMTs arrive, when bystanders and first responders on scene could save lives but lack the structured guidance to be truly effective.
 
-**"Since my brother was an EMT and the competition had a track for crisis and response, I immediately was inspired on the idea."** We realized Gemma 3n's on-device capabilities were perfect for medical emergencies where privacy isn't just preferred—it's legally required and life-critical.
+"Since Clint was an EMT and the competition had a track for crisis and response, I was immediately inspired," says Earl. "Clint showed me how often people on scene want to help but don't know how to properly assess, document, or provide care until professionals arrive." We realized Gemma 3n's on-device capabilities were perfect for empowering these critical first responders in the chain.
 
-Our development was driven by real emergency scenarios: medical conversations that must stay private, assessments needed when cell service fails, and the need for non-experts to provide structured information to professional responders.
+Our development was driven by real scenarios Clint had encountered: untrained bystanders who could have made a difference with proper guidance, the need for structured triage when multiple patients are involved, and bridging the communication gap between scene responders and incoming professional EMTs.
 
 ---
 
@@ -48,42 +48,20 @@ Our development was driven by real emergency scenarios: medical conversations th
   <p><em>Hybrid AI Architecture: Privacy-First Smart Routing with Emergency Response Modes</em></p>
 </div>
 
-```typescript
-// Smart routing: Text → Local Gemma-3n, Vision → Cloud
-async callOpenRouterAPI(conversationHistory, currentMessage, isImageInputEnabled = false) {
-  if (!isImageInputEnabled) {
-    // Route text-only requests to local Gemma-3n for privacy
-    return await localModelService.callLocalModel(conversationHistory, currentMessage);
-  }
-  // Use cloud for vision capabilities with secure fallback
-}
-```
+**Smart Routing Logic**: The app intelligently routes text-only requests to local Gemma-3n for privacy protection, while routing vision-enabled requests to cloud services when needed. This hybrid approach ensures medical conversations remain private while enabling advanced visual assessment capabilities.
 
 **Why This Matters**: 
 - **Medical conversations never leave the device** → HIPAA-compliant privacy
-- **85% reduction in data transmission** → Critical for emergency scenarios
 - **Seamless capability expansion** → Cloud vision when needed, local privacy when essential
+- **Critical for emergency scenarios** → Reliable operation when connectivity is poor
 
 ### Emergency-Optimized Gemma 3n Implementation
 
 #### Local Model Configuration
-```typescript
-const MODEL_CONFIG = {
-  use_mlock: true,
-  n_ctx: 32768,        // Extended context for emergency conversations
-  n_gpu_layers: 99,    // Mobile GPU acceleration
-  temperature: 0.7,    // Balanced creativity for medical guidance
-};
-```
+**Optimized for Emergency Response**: Gemma-3n runs with memory locking enabled for stable performance, extended context windows (32,768 tokens) to maintain conversation history throughout emergency scenarios, full GPU acceleration for mobile devices, and balanced temperature settings (0.7) to provide creative yet reliable medical guidance.
 
 #### Custom Emergency Prompting
-```typescript
-export const GEMMA_SYSTEM_PROMPT = `You are a medical video call AI assistant. 
-CRITICAL RULES:
-- NEVER combine text with JSON in any response
-- If you call a function, output ONLY the JSON
-- Emergency assessment questions must be precise and actionable`;
-```
+**Specialized Medical Assistant**: The system prompt configures Gemma-3n as a medical emergency assistant with strict rules for structured responses. The model never combines text with JSON outputs, ensuring clean function calling for emergency tools, and focuses on precise, actionable assessment questions that guide scene responders effectively.
 
 **Innovation**: Custom prompt engineering transforms Gemma 3n into a specialized emergency response tool with structured assessment capabilities.
 
@@ -100,24 +78,24 @@ Our app features four AI-powered modes optimized for different emergency scenari
 </div>
 
 ### ASSESS Mode
-- **Local Gemma-3n** generates contextual medical questions
-- **Structured triage** guides non-medical personnel through assessments
-- **Privacy-protected** - sensitive information never transmitted
+- **Empowers bystanders** with structured medical assessment questions
+- **Transforms untrained responders** into effective first-line assessors
+- **Privacy-protected** - sensitive patient information never transmitted
 
 ### REPORT Mode  
-- **Automated documentation** from conversation history
-- **Professional formatting** for emergency services integration
-- **Tool calling system** leveraging Gemma 3n's function capabilities
+- **Bridges communication gap** between scene responders and incoming EMTs
+- **Professional documentation** that EMTs can immediately use upon arrival
+- **Seamless handoff** from civilian first responders to professional care
 
 ### CARE Mode
-- **Step-by-step instructions** for emergency care procedures
-- **Context-aware guidance** based on assessment results
-- **Offline capability** for disaster scenarios
+- **Guides life-saving interventions** that bystanders can safely perform
+- **Context-aware instructions** based on assessment results
+- **Empowers immediate action** while waiting for professional help
 
 ### VISION Mode
-- **Hybrid processing**: Local text analysis + cloud vision when needed
-- **Medical image interpretation** for visual assessment support
-- **Intelligent fallback** maintains functionality during connectivity issues
+- **Visual assessment support** for scene responders
+- **Medical image interpretation** to help identify critical conditions
+- **Enhanced situational awareness** for more effective first response
 
 ---
 
@@ -127,38 +105,67 @@ Our app features four AI-powered modes optimized for different emergency scenari
 **Problem**: llama.rn doesn't support Gemma 3n's multimodal capabilities
 **Solution**: Intelligent routing system that maximizes local processing while enabling advanced features
 
+#### llama.rn Framework Implementation
+
+The solution leverages llama.rn, a React Native binding for llama.cpp, which brings the optimized C++ inference engine directly to mobile devices. This enables Gemma-3n to run completely locally on smartphones without internet dependency—critical for emergency scenarios where connectivity may be unreliable. While Gemma-3n supports multimodal capabilities, llama.rn doesn't yet support vision processing—a limitation of the mobile framework binding, not the underlying model. The hybrid architecture works around this by routing text-based conversations to local llama.rn for privacy and directing vision tasks to cloud services, providing emergency responders with full AI capabilities while maintaining on-device processing for sensitive conversations.
+
 ### Challenge 2: Emergency Response Requirements
 **Problem**: Generic AI assistants aren't optimized for medical emergencies
-**Solution**: Custom JSON parsing and emergency-specific tool calling
-```typescript
-function isValidToolCallJson(jsonString: string): boolean {
-  const parsed = JSON.parse(jsonString);
-  return ['ask_question', 'generate_report', 'show_precare_instructions'].includes(parsed.name);
-}
-```
+**Solution**: Custom emergency tool calling system that transforms bystanders into structured first responders
 
-### Challenge 3: Mobile Performance in Crisis
-**Problem**: Emergency response demands instant reliability on resource-constrained devices
-**Solution**: Singleton pattern, proactive initialization, graceful cloud fallback
+#### Emergency Tool Calling System
+
+##### Two Core Emergency Tools
+
+**1. Report Generation (`generate_report`)**
+- Transforms conversation history into professional 911-ready documentation
+- Includes caller information, incident details, GPS coordinates, and evidence images
+- Provides seamless handoff information when EMTs arrive on scene
+
+**2. Care Instructions (`show_precare_instructions`)**
+- Delivers step-by-step emergency care guidance for bystanders
+- Priority-based categorization (high/medium/low) based on life-threatening urgency
+- Enables safe, effective interventions while waiting for professional help
+
+##### Hybrid Tool Calling Architecture
+
+**For Cloud Models**: Native tool calling with structured function definitions ensures reliable emergency response triggers.
+
+**For Local Gemma-3n**: Since Gemma-3n doesn't support native tool calling, the system uses intelligent JSON parsing to extract emergency tools from natural language responses. Custom validation ensures only emergency-specific tools (`generate_report`, `show_precare_instructions`) are executed, maintaining safety and reliability.
+
+**Smart Validation System**: The `isValidToolCallJson` function verifies that extracted tools match emergency response patterns, preventing invalid or unsafe tool execution during critical situations.
+
+##### Structured Emergency Responses
+
+Each tool call triggers specific UI modes that transform the app interface:
+- **Care instructions** display as prioritized, step-by-step guidance  
+- **Generated reports** format professionally for immediate EMT review
+
+This tool calling system bridges the gap between untrained bystanders and professional emergency responders, creating an effective first response chain.
+
+### Challenge 3: Professional Emergency Communication
+**Problem**: Scene responders need to communicate critical information directly to 911 dispatch and incoming EMTs
+**Solution**: Direct SMS integration to 911 services with structured emergency reports
+
+<div align="center">
+  <img src="assets/images/sms-911.PNG" alt="911 SMS Integration" width="300"/>
+  <p><em>Direct 911 SMS Integration: Professional emergency reports sent directly to dispatch</em></p>
+</div>
+
+**Professional Communication Bridge**: Generated reports include structured emergency information (incident type, GPS coordinates, injury details, evidence images) formatted for immediate dispatch and EMT use. This creates a direct communication channel from scene responders to professional emergency services, ensuring critical information reaches the right people instantly.
 
 ---
 
 ## Real-World Impact & Deployment
 
 ### Emergency Scenarios Addressed
-1. **Remote Medical Emergency**: Offline assessment guidance when cell service is poor
-2. **Mass Casualty Event**: Coordinated triage with standardized documentation  
-3. **Language Barrier Crisis**: Multi-language support with privacy protection
-4. **HIPAA-Compliant Response**: Medical conversations that never leave the device
-
-### Performance Metrics
-- **Response Time**: 2.3 seconds for local assessments
-- **Privacy Protection**: 85% reduction in sensitive data transmission
-- **Offline Capability**: 78% of core features work without internet
-- **Mobile Optimization**: 2.1GB RAM usage, 12% battery per hour
+1. **Bystander-Witnessed Emergency**: Transforms untrained witnesses into effective first responders with structured assessment guidance
+2. **Mass Casualty Event**: Enables multiple scene responders to conduct coordinated triage and documentation until EMTs arrive
+3. **Remote Emergency Response**: Empowers first responders in areas with delayed professional response times
+4. **Workplace/School Emergency**: Helps designated first responders bridge the gap with professional-grade assessment and care guidance
 
 ### Professional Integration Ready
-- **EMS-validated workflows** through brother's emergency response experience
+- **EMS-validated workflows** through Clint Potters' emergency response experience
 - **Standardized documentation** for professional emergency services
 - **Open-source architecture** for widespread adoption
 - **HIPAA-compliant potential** through local processing design
