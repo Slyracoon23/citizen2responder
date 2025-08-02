@@ -1,7 +1,7 @@
 import { initLlama, LlamaContext } from 'llama.rn';
+import { parseGemmaResponse } from '../config/gemmaPrompts';
 import { ConversationMessage } from './apiService';
 import { JSON_TOOL_SYSTEM_PROMPT } from './apiToolSchemas';
-import { parseGemmaResponse } from '../config/gemmaPrompts';
 
 // Constants for the local model
 const STOP_WORDS = [
@@ -20,8 +20,8 @@ const MODEL_CONFIG = {
   min_p: 0.0,
 };
 
-// Get the model path dynamically based on the models folder
-const MODEL_PATH = '/Users/earlpotters/Documents/ai-projects/relay-responder-app/models/gemma-3n-E2B-it-Q4_K_M.gguf';
+// Get the model path from environment variable
+const MODEL_PATH = process.env.EXPO_PUBLIC_MODEL_PATH;
 
 export interface LocalModelResponse {
   choices: Array<{
