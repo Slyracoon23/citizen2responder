@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/images/logo-transparent-with-white-text-and-full-icon.png" alt="Citizen2 Responder Logo" width="400"/>
   
-  # Relay Responder App: Technical Writeup
+  # Citizen2Responder: Technical Writeup
   ## Transforming Emergency Response with Gemma 3n
 
   *Privacy-focused, offline-capable emergency medical assistance powered by local AI*
@@ -13,7 +13,7 @@
 
 **The Problem**: In emergency situations, bystanders and first responders on scene often lack the structured guidance needed to effectively assess, document, and care for patients until professional EMTs arrive. These critical first minutes can determine outcomes, yet untrained personnel struggle to play their crucial role in the first response chain.
 
-**Our Solution**: A hybrid AI emergency response app that uses Gemma 3n for privacy-protected local processing while maintaining advanced capabilities through intelligent cloud routing. Built by a programmer-EMT brother team with authentic emergency response experience.
+**Our Solution**: Citizen2Responder, a hybrid AI emergency response app that uses Gemma 3n for privacy-protected local processing while maintaining advanced capabilities through intelligent cloud routing. Built by a programmer-EMT brother team with authentic emergency response experience.
 
 **Impact**: Professional-grade assessment tools ready for real-world emergency deployment with privacy-first architecture and offline capabilities.
 
@@ -44,15 +44,15 @@ Our development was driven by real scenarios Clint had encountered: untrained by
 ### The Core Innovation: Privacy-First Intelligent Routing
 
 <div align="center">
-  <img src="assets/images/technical-architecture.png" alt="Relay Responder Hybrid AI Architecture" width="800"/>
+  <img src="assets/images/technical-architecture.png" alt="Citizen2Responder Hybrid AI Architecture" width="800"/>
   <p><em>Hybrid AI Architecture: Privacy-First Smart Routing with Emergency Response Modes</em></p>
 </div>
 
-**Smart Routing Logic**: The app intelligently routes text-only requests to local Gemma-3n for privacy protection, while routing vision-enabled requests to cloud services when needed. This hybrid approach ensures medical conversations remain private while enabling advanced visual assessment capabilities.
+**Smart Routing Logic**: The app intelligently routes text-only requests to local Gemma-3n for privacy protection, while routing to cloud services when the optional vision feature is enabled. This hybrid approach ensures medical conversations remain private while providing advanced visual assessment capabilities when users choose to enable them.
 
 **Why This Matters**: 
 - **Medical conversations never leave the device** → HIPAA-compliant privacy
-- **Seamless capability expansion** → Cloud vision when needed, local privacy when essential
+- **Seamless capability expansion** → Optional vision features when enabled, local privacy when essential
 - **Critical for emergency scenarios** → Reliable operation when connectivity is poor
 
 ### Emergency-Optimized Gemma 3n Implementation
@@ -67,9 +67,9 @@ Our development was driven by real scenarios Clint had encountered: untrained by
 
 ---
 
-## Architecture Overview: Four Emergency Modes
+## Architecture Overview: Three Emergency Modes
 
-Our app features four AI-powered modes optimized for different emergency scenarios:
+Our app features three AI-powered modes optimized for different emergency scenarios, with optional vision capabilities that can be enabled when needed:
 
 <div align="center">
   <img src="assets/images/access-image.PNG" alt="Assess Mode" width="250"/>
@@ -92,10 +92,8 @@ Our app features four AI-powered modes optimized for different emergency scenari
 - **Context-aware instructions** based on assessment results
 - **Empowers immediate action** while waiting for professional help
 
-### VISION Mode
-- **Visual assessment support** for scene responders
-- **Medical image interpretation** to help identify critical conditions
-- **Enhanced situational awareness** for more effective first response
+### Optional Vision Feature
+When enabled, the app provides **visual assessment support** for scene responders, **medical image interpretation** to help identify critical conditions, and **enhanced situational awareness** for more effective first response. This feature can be toggled on/off based on privacy requirements and available connectivity.
 
 ---
 
@@ -107,7 +105,7 @@ Our app features four AI-powered modes optimized for different emergency scenari
 
 #### llama.rn Framework Implementation
 
-The solution leverages llama.rn, a React Native binding for llama.cpp, which brings the optimized C++ inference engine directly to mobile devices. This enables Gemma-3n to run completely locally on smartphones without internet dependency—critical for emergency scenarios where connectivity may be unreliable. While Gemma-3n supports multimodal capabilities, llama.rn doesn't yet support vision processing—a limitation of the mobile framework binding, not the underlying model. The hybrid architecture works around this by routing text-based conversations to local llama.rn for privacy and directing vision tasks to cloud services, providing emergency responders with full AI capabilities while maintaining on-device processing for sensitive conversations.
+The solution leverages llama.rn, a React Native binding for llama.cpp, which brings the optimized C++ inference engine directly to mobile devices. This enables Gemma-3n to run completely locally on smartphones without internet dependency—critical for emergency scenarios where connectivity may be unreliable. While Gemma-3n supports multimodal capabilities, llama.rn doesn't yet support vision processing—a limitation of the mobile framework binding, not the underlying model. The hybrid architecture maintains all core emergency functionality through local llama.rn processing for privacy, while offering optional vision capabilities through cloud services when users choose to enable this feature for enhanced assessment support.
 
 ### Challenge 2: Emergency Response Requirements
 **Problem**: Generic AI assistants aren't optimized for medical emergencies
