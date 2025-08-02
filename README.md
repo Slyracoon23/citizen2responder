@@ -148,12 +148,14 @@ The app features four primary access modes accessible through intuitive toggle c
    Create a `.env` file with required API keys:
    ```env
    OPENROUTER_API_KEY=your_openrouter_api_key_here
+   EXPO_PUBLIC_DEEPGRAM_PUBLIC_KEY=your_deepgram_api_key_here
+   EXPO_PUBLIC_REPLICATE_PUBLIC_KEY=your_replicate_api_key_here
    ```
    
-   **API Key Setup:**
-   - Sign up at [OpenRouter](https://openrouter.ai/) to get your API key
-   - Add credits to your OpenRouter account for model usage
-   - Replace `your_openrouter_api_key_here` with your actual API key
+   **Required API Keys:**
+   - **OpenRouter**: Sign up at [OpenRouter](https://openrouter.ai/) for AI model access
+   - **Deepgram**: Required for Speech-to-Text (STT) functionality
+   - **Replicate**: Required for Text-to-Speech (TTS) functionality
 
 ### Development
 
