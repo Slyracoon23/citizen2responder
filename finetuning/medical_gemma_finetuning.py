@@ -1,17 +1,29 @@
 # %% [markdown]
 """
 # Medical Emergency Response Fine-tuning with Gemma 3N
-## Citizen2Responder: Privacy-First Emergency AI
+## Citizen2Responder: Dual-Mode Privacy-First Emergency AI
 
-This notebook fine-tunes Gemma 3N for medical emergency response scenarios, including:
-- **Emergency Assessment**: Structured medical questioning for bystanders
-- **Tool Calling**: Report generation and care instruction triggers  
-- **Professional Integration**: EMT-ready documentation and handoff
+This notebook fine-tunes Gemma 3N for dual-mode medical emergency response scenarios:
+
+### 🗣️ Natural Conversation Mode
+- **Emergency Assessment**: Progressive medical questioning and guidance
+- **Conversational Flow**: Natural dialogue without tool call JSON
+- **Educational Support**: Teaching bystanders emergency response
+
+### 🔧 Forced Tool Call Mode  
+- **Report Generation**: Structured emergency reports for EMTs/dispatch
+- **Care Instructions**: Formatted step-by-step medical procedures
+- **Pure JSON Output**: Direct tool responses without explanatory text
+
+### 🏥 Key Features
+- **Dual Training Approach**: Separate datasets for conversation vs tool calling
 - **Privacy Protection**: Local processing for sensitive medical conversations
+- **Professional Integration**: EMT-ready documentation and handoff
+- **Mobile Deployment**: Optimized for llama.rn integration
 
-Based on Unsloth's Gemma 3N framework, optimized for mobile deployment via llama.rn integration.
+Based on Unsloth's Gemma 3N framework, designed to understand when to engage in natural conversation vs when to output structured tool responses.
 
-**Target Use Case**: Transform untrained bystanders into effective first responders with AI-guided assessment and care.
+**Target Use Case**: Transform untrained bystanders into effective first responders with context-aware AI that can both educate and generate professional documentation.
 """
 
 # %% [markdown]
@@ -82,24 +94,56 @@ The dataset is now stored in `datasets/medical_emergency_dataset.json` with comp
 """
 
 # %% [code]
-def load_medical_dataset(dataset_path="datasets/medical_emergency_dataset.json"):
-    """Load and validate medical emergency dataset from external JSON file"""
+def load_medical_dataset(natural_dataset_path="datasets/medical_emergency_dataset.json", 
+                        forced_tools_path="datasets/forced_tool_calls_dataset.json"):
+    """Load and combine both natural conversation and forced tool call datasets"""
     
     try:
-        dataset_file = Path(dataset_path)
-        if not dataset_file.exists():
-            raise FileNotFoundError(f"Dataset file not found: {dataset_path}")
+        # Load natural conversation dataset
+        natural_file = Path(natural_dataset_path)
+        if not natural_file.exists():
+            raise FileNotFoundError(f"Natural conversation dataset not found: {natural_dataset_path}")
             
-        with open(dataset_file, 'r', encoding='utf-8') as f:
-            dataset_json = json.load(f)
+        with open(natural_file, 'r', encoding='utf-8') as f:
+            natural_dataset = json.load(f)
             
-        print(f"📊 Dataset loaded successfully from {dataset_path}")
-        print(f"📈 Dataset info: {dataset_json['dataset_info']}")
+        print(f"📊 Natural conversation dataset loaded from {natural_dataset_path}")
+        print(f"📈 Natural dataset: {natural_dataset['dataset_info']['total_scenarios']} scenarios")
         
-        return dataset_json
+        # Load forced tool calls dataset
+        forced_file = Path(forced_tools_path)
+        if not forced_file.exists():
+            raise FileNotFoundError(f"Forced tool calls dataset not found: {forced_tools_path}")
+            
+        with open(forced_file, 'r', encoding='utf-8') as f:
+            forced_dataset = json.load(f)
+            
+        print(f"📊 Forced tool calls dataset loaded from {forced_tools_path}")
+        print(f"📈 Forced dataset: {forced_dataset['dataset_info']['total_scenarios']} scenarios")
+        
+        # Combine datasets
+        combined_dataset = {
+            "dataset_info": {
+                "version": "1.2-combined",
+                "created_date": "2025-08-02",
+                "description": "Combined medical emergency dataset with natural conversations and forced tool calls",
+                "natural_scenarios": natural_dataset['dataset_info']['total_scenarios'],
+                "forced_tool_scenarios": forced_dataset['dataset_info']['total_scenarios'],
+                "total_scenarios": natural_dataset['dataset_info']['total_scenarios'] + forced_dataset['dataset_info']['total_scenarios'],
+                "tool_functions": ["generate_report", "show_precare_instructions"],
+                "training_types": ["natural_conversation", "forced_tool_calls"]
+            },
+            "scenarios": natural_dataset["scenarios"] + forced_dataset["scenarios"]
+        }
+        
+        print(f"✅ Combined dataset created with {combined_dataset['dataset_info']['total_scenarios']} total scenarios")
+        print(f"   - Natural conversations: {combined_dataset['dataset_info']['natural_scenarios']}")
+        print(f"   - Forced tool calls: {combined_dataset['dataset_info']['forced_tool_scenarios']}")
+        
+        return combined_dataset
         
     except Exception as e:
-        print(f"❌ Error loading dataset: {e}")
+        print(f"❌ Error loading datasets: {e}")
         raise
 
 def validate_dataset(dataset_json):
@@ -110,13 +154,14 @@ def validate_dataset(dataset_json):
         "total_scenarios": len(scenarios),
         "categories": {},
         "priorities": {"high": 0, "medium": 0, "low": 0},
+        "training_types": {"natural_conversation": 0, "forced_tool_call": 0},
         "tools_used": {"generate_report": 0, "show_precare_instructions": 0},
         "avg_conversation_turns": 0,
-        "avg_assessment_questions": 0
+        "conversation_analysis": {"natural": [], "forced": []}
     }
     
     total_turns = 0
-    total_questions = 0
+    conversation_count = 0
     
     for scenario in scenarios:
         # Category distribution
@@ -127,36 +172,73 @@ def validate_dataset(dataset_json):
         priority = scenario["priority"]
         stats["priorities"][priority] += 1
         
-        # Tool usage
-        final_tool = scenario["final_tool"]
-        if final_tool in stats["tools_used"]:
-            stats["tools_used"][final_tool] += 1
+        # Training type classification
+        if category == "forced_tool_call":
+            stats["training_types"]["forced_tool_call"] += 1
+            # For forced tool calls, analyze the tool type
+            subcategory = scenario.get("subcategory", "unknown")
+            if subcategory in stats["tools_used"]:
+                stats["tools_used"][subcategory] += 1
+        else:
+            stats["training_types"]["natural_conversation"] += 1
+            # For natural conversations, check final tool if available
+            final_tool = scenario.get("final_tool")
+            if final_tool and final_tool in stats["tools_used"]:
+                stats["tools_used"][final_tool] += 1
             
         # Conversation metrics
-        total_turns += scenario["conversation_turns"]
-        total_questions += scenario["assessment_questions"]
+        conversation_turns = scenario.get("conversation_turns", len(scenario["conversation"]))
+        total_turns += conversation_turns
+        conversation_count += 1
         
         # Validate conversation structure
         conversation = scenario["conversation"]
         if not conversation or len(conversation) == 0:
             raise ValueError(f"Empty conversation in scenario {scenario['id']}")
             
-        # Check for tool calling in final message
-        final_message = conversation[-1]["content"][0]["text"]
-        if "tool_calls" not in final_message:
-            print(f"⚠️  Warning: No tool call found in scenario {scenario['id']}")
+        # Analyze conversation type
+        if category == "forced_tool_call":
+            # For forced tool calls, expect final assistant response to be pure JSON
+            final_message = conversation[-1]["content"][0]["text"]
+            if not (final_message.strip().startswith("{") and "function" in final_message):
+                print(f"⚠️  Warning: Forced tool call scenario {scenario['id']} doesn't end with JSON tool call")
+            stats["conversation_analysis"]["forced"].append({
+                "id": scenario["id"],
+                "turns": len(conversation),
+                "ends_with_json": final_message.strip().startswith("{")
+            })
+        else:
+            # For natural conversations, expect NO tool calls in responses
+            for turn in conversation:
+                if turn["role"] == "assistant":
+                    response_text = turn["content"][0]["text"]
+                    if "tool_calls" in response_text or response_text.strip().startswith("{"):
+                        print(f"⚠️  Warning: Natural conversation {scenario['id']} contains tool call JSON")
+            stats["conversation_analysis"]["natural"].append({
+                "id": scenario["id"],
+                "turns": len(conversation),
+                "has_tool_calls": any("tool_calls" in turn["content"][0]["text"] 
+                                    for turn in conversation if turn["role"] == "assistant")
+            })
     
     # Calculate averages
-    stats["avg_conversation_turns"] = round(total_turns / len(scenarios), 1)
-    stats["avg_assessment_questions"] = round(total_questions / len(scenarios), 1)
+    stats["avg_conversation_turns"] = round(total_turns / conversation_count, 1) if conversation_count > 0 else 0
     
-    print(f"\n📊 Dataset Validation Results:")
+    print(f"\n📊 Combined Dataset Validation Results:")
     print(f"   Total scenarios: {stats['total_scenarios']}")
+    print(f"   Training types: {stats['training_types']}")
     print(f"   Categories: {stats['categories']}")
     print(f"   Priority distribution: {stats['priorities']}")
     print(f"   Tool usage: {stats['tools_used']}")
     print(f"   Avg conversation turns: {stats['avg_conversation_turns']}")
-    print(f"   Avg assessment questions: {stats['avg_assessment_questions']}")
+    
+    # Validation summary
+    natural_clean = sum(1 for conv in stats["conversation_analysis"]["natural"] if not conv["has_tool_calls"])
+    forced_valid = sum(1 for conv in stats["conversation_analysis"]["forced"] if conv["ends_with_json"])
+    
+    print(f"\n✅ Dataset Quality Check:")
+    print(f"   Natural conversations without tool calls: {natural_clean}/{stats['training_types']['natural_conversation']}")
+    print(f"   Forced tool calls with valid JSON: {forced_valid}/{stats['training_types']['forced_tool_call']}")
     
     return stats
 
@@ -354,7 +436,7 @@ def create_medical_trainer(model, tokenizer, dataset):
     # Initialize Weights & Biases for experiment tracking
     wandb.init(
         project="medical-gemma3n-finetuning",
-        name="citizen2responder-emergency-ai",
+        name="citizen2responder-dual-training-v2",
         config={
             "model": "gemma-3n-E4B-it",
             "dataset_size": len(dataset),
@@ -367,13 +449,16 @@ def create_medical_trainer(model, tokenizer, dataset):
             "lora_dropout": 0.1,
             "domain": "medical_emergency_response",
             "use_case": "citizen2responder_app",
+            "training_approach": "dual_mode_training",
             # Dataset statistics
             "dataset_stats": DATASET_STATS,
             "total_scenarios": DATASET_STATS["total_scenarios"],
+            "natural_conversations": DATASET_STATS.get("training_types", {}).get("natural_conversation", 0),
+            "forced_tool_calls": DATASET_STATS.get("training_types", {}).get("forced_tool_call", 0),
             "avg_conversation_turns": DATASET_STATS["avg_conversation_turns"],
-            "avg_assessment_questions": DATASET_STATS["avg_assessment_questions"]
+            "tool_usage": DATASET_STATS.get("tools_used", {})
         },
-        tags=["medical-ai", "emergency-response", "gemma3n", "lora", "privacy-first", "multi-turn-conversations"]
+        tags=["medical-ai", "emergency-response", "gemma3n", "lora", "privacy-first", "dual-training", "natural-conversation", "forced-tool-calls"]
     )
     
     trainer = SFTTrainer(
@@ -490,17 +575,20 @@ After training, we validate the model's performance on key emergency scenarios:
 
 # %% [code]
 def test_medical_inference(model, tokenizer):
-    """Test the fine-tuned model with medical scenarios"""
-    print("\n=== Testing Medical Emergency Responses ===")
+    """Test the fine-tuned model with both natural and forced tool scenarios"""
+    print("\n=== Testing Dual-Mode Medical Emergency Responses ===")
     
-    test_scenarios = [
+    # Test natural conversation scenarios
+    natural_scenarios = [
         "Someone is unconscious and not breathing. What should I do?",
-        "I need to generate a report for a car accident with multiple injuries",
-        "Show me how to help someone who is choking"
+        "I found someone bleeding heavily from their arm. How can I help?",
+        "A person is having chest pain and sweating. Should I be worried?"
     ]
     
-    for scenario in test_scenarios:
-        print(f"\n🚨 Scenario: {scenario}")
+    print("\n🗣️  Testing Natural Conversation Mode:")
+    for scenario in natural_scenarios:
+        print(f"\n📝 Scenario: {scenario}")
+        print("Expected: Natural conversation response")
         print("Response:")
         
         messages = [{
@@ -519,9 +607,45 @@ def test_medical_inference(model, tokenizer):
         _ = model.generate(
             **inputs,
             max_new_tokens=256,
-            temperature=0.7,  # Balanced for medical accuracy
-            top_p=0.9,  # Focused response generation
-            top_k=50,  # Controlled vocabulary
+            temperature=0.7,
+            top_p=0.9,
+            top_k=50,
+            streamer=TextStreamer(tokenizer, skip_prompt=True),
+        )
+        print("\n" + "-"*50)
+    
+    # Test forced tool call scenarios
+    forced_scenarios = [
+        "Generate report",
+        "I need to generate a report for a car accident with multiple injuries", 
+        "Show care instructions"
+    ]
+    
+    print("\n🔧 Testing Forced Tool Call Mode:")
+    for scenario in forced_scenarios:
+        print(f"\n⚙️  Scenario: {scenario}")
+        print("Expected: Pure JSON tool call response")
+        print("Response:")
+        
+        messages = [{
+            "role": "user", 
+            "content": [{"type": "text", "text": scenario}]
+        }]
+        
+        inputs = tokenizer.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            return_tensors="pt",
+            tokenize=True,
+            return_dict=True,
+        ).to("cuda")
+        
+        _ = model.generate(
+            **inputs,
+            max_new_tokens=512,  # More tokens for JSON responses
+            temperature=0.3,  # Lower temperature for structured output
+            top_p=0.8,
+            top_k=40,
             streamer=TextStreamer(tokenizer, skip_prompt=True),
         )
         print("\n" + "-"*50)
