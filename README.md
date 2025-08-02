@@ -13,10 +13,11 @@ The Relay Responder App is designed to assist emergency responders, medical prof
 ## 🎥 App Preview
 
 <div align="center">
-  <video width="300" controls>
-    <source src="assets/preview-video.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
+  <a href="https://youtube.com/shorts/sZiRVKiMAcw?feature=share">
+    <img src="assets/images/access-image.PNG" alt="Watch App Preview on YouTube" width="300"/>
+  </a>
+  
+  **[📺 Watch Demo Video](https://youtube.com/shorts/sZiRVKiMAcw?feature=share)**
   
   *See the app in action - AI-powered emergency response tools, real-time assessment, and care instructions*
 </div>
