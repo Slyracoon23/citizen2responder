@@ -58,7 +58,7 @@ The app intelligently selects models based on task requirements:
 - **Vision/image analysis** → Gemini Flash model for multimodal capabilities
 - **Automatic optimization** → Model selection based on input type and context
 
-> **📝 Model Selection Note**: We use Gemma-3n exclusively for text processing due to limitations in local model frameworks for mobile devices. While Gemma-3n supports multimodal capabilities, current mobile AI frameworks cannot efficiently handle vision and audio processing locally. Therefore, we route these tasks to specialized cloud models (Gemini Flash) to ensure full functionality and optimal user experience.
+> **📝 Model Selection Note**: We use Gemma-3n exclusively for text processing due to limitations in local model frameworks for mobile devices. While Gemma-3n supports multimodal capabilities, current mobile AI frameworks do not support vision and audio processing locally. Therefore, we route these tasks to specialized cloud models (Gemini Flash) to ensure full functionality and optimal user experience.
 
 ## 🎛️ Core Features
 
