@@ -162,7 +162,13 @@ The app features four primary access modes accessible through intuitive toggle c
    ```env
    OPENROUTER_API_KEY=your_openrouter_api_key_here
    EXPO_PUBLIC_MODEL_PATH=/path/to/your/models/gemma-3n-E2B-it-Q4_K_M.gguf
+   EXPO_PUBLIC_DEEPGRAM_PUBLIC_KEY=your_deepgram_api_key_here
+   EXPO_PUBLIC_REPLICATE_PUBLIC_KEY=your_replicate_api_key_here
    ```
+   
+   **Required API Keys:**
+   - **Deepgram API Key**: Required for Speech-to-Text (STT) functionality
+   - **Replicate API Key**: Required for Text-to-Speech (TTS) functionality
 
 ### Development
 
