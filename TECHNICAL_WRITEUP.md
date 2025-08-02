@@ -189,7 +189,7 @@ This tool calling system bridges the gap between untrained bystanders and profes
 
 ## Conclusion: Beyond the Hackathon
 
-The Relay Responder App demonstrates Gemma 3n's transformative potential for privacy-critical, life-saving applications. By combining authentic emergency response experience with cutting-edge local AI capabilities, we've created a solution that addresses real gaps in emergency communication.
+The Citizen2Responder App demonstrates Gemma 3n's transformative potential for privacy-critical, life-saving applications. By combining authentic emergency response experience with cutting-edge local AI capabilities, we've created a solution that addresses real gaps in emergency communication.
 
 **Key Achievements**:
 - **Privacy-preserving emergency AI** through local Gemma-3n processing
