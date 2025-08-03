@@ -142,6 +142,8 @@ The app includes AI-powered vision analysis for visual assessment support.
 - **llama.rn** - Local AI inference library
 - **Gemma-3n** - On-device language model
 - **OpenRouter** - Cloud AI API gateway
+- **Replicate** - Text-to-Speech (TTS) services
+- **Deepgram** - Speech-to-Text (STT) transcription
 
 ## 📱 Setup Instructions
 
