@@ -91,3 +91,16 @@ yarn-error.*
 
 
 *.mp4
+
+
+finetuning/unsloth_compiled_cache/
+
+finetuning/wandb
+
+finetuning/medical_gemma_output
+
+finetuning/medical_gemma_lora
+
+finetuning/medical_gemma_merged
+
+finetuning/medical_gemma_hf_upload

@@ -1,0 +1,385 @@
+{
+  "dataset_info": {
+    "name": "Medical Emergency Forced Tool Calls Dataset",
+    "description": "Pure JSON responses for forced tool calling scenarios in Citizen2Responder",
+    "version": "1.0",
+    "created_date": "2025-08-02",
+    "total_scenarios": 12,
+    "purpose": "Train model to output pure JSON tool responses when triggered by buttons/commands",
+    "note": "These conversations train the model to respond with tool call JSON only, without explanatory text"
+  },
+  "scenarios": [
+    {
+      "id": "forced_report_001",
+      "category": "forced_tool_call",
+      "subcategory": "generate_report",
+      "priority": "high",
+      "description": "Generate report for cardiac arrest scenario",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone collapsed and isn't breathing. They're unconscious."}]
+        },
+        {
+          "role": "assistant", 
+          "content": [{"type": "text", "text": "This sounds like a cardiac arrest emergency. Let me gather some information to help. Are you able to check if they have a pulse? Feel for their wrist or neck."}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I can't feel a pulse. What should I do?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is a cardiac arrest. Start CPR immediately: 1) Place hands on center of chest 2) Push hard and fast at least 2 inches deep 3) 30 compressions then 2 breaths 4) Continue until help arrives. Are you able to start CPR?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I've started CPR. Generate report"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"generate_report\",\n    \"arguments\": \"{\\\"report_id\\\":\\\"RPT-CA-001\\\",\\\"summary\\\":\\\"Cardiac arrest - adult patient unconscious, no pulse, CPR in progress\\\",\\\"details\\\":{\\\"patient\\\":{\\\"age_group\\\":\\\"unknown\\\",\\\"gender\\\":\\\"unknown\\\",\\\"consciousness\\\":\\\"unconscious\\\",\\\"breathing\\\":\\\"not breathing\\\",\\\"pulse\\\":\\\"no pulse detected\\\"},\\\"situation\\\":{\\\"emergency_type\\\":\\\"cardiac arrest\\\",\\\"location\\\":\\\"unknown\\\",\\\"time_discovered\\\":\\\"just now\\\",\\\"bystander_actions\\\":[\\\"CPR initiated\\\",\\\"compressions started\\\"]},\\\"assessment\\\":{\\\"priority\\\":\\\"critical\\\",\\\"response_needed\\\":\\\"immediate ALS\\\",\\\"estimated_downtime\\\":\\\"unknown\\\"},\\\"evidence_images\\\":[],\\\"location\\\":{\\\"address\\\":\\\"Current GPS location\\\",\\\"latitude\\\":null,\\\"longitude\\\":null}}}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_report_002", 
+      "category": "forced_tool_call",
+      "subcategory": "generate_report",
+      "priority": "high",
+      "description": "Generate report for car accident with injuries",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "There's been a car accident. Two cars involved, I can see people injured."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "I'll help you handle this car accident. First, ensure your safety - are you in a safe location away from traffic? Can you tell me how many people appear injured?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I'm safe. I see three people - one person is bleeding from their head, another is holding their arm, and one seems okay but shaken up."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Good that you're safe. For the person with head bleeding - do not move them, apply gentle pressure with clean cloth if possible. For the arm injury, support the arm if they'll let you. Have you called 911 yet?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, 911 is on the way. Generate report"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"generate_report\",\n    \"arguments\": \"{\\\"report_id\\\":\\\"RPT-MVA-002\\\",\\\"summary\\\":\\\"Multi-vehicle accident with 3 patients - head injury, arm injury, and one ambulatory\\\",\\\"details\\\":{\\\"patients\\\":[{\\\"id\\\":\\\"P1\\\",\\\"injuries\\\":[\\\"head laceration with active bleeding\\\"],\\\"consciousness\\\":\\\"conscious\\\",\\\"mobility\\\":\\\"unknown\\\"},{\\\"id\\\":\\\"P2\\\",\\\"injuries\\\":[\\\"arm injury - possible fracture\\\"],\\\"consciousness\\\":\\\"conscious\\\",\\\"mobility\\\":\\\"ambulatory\\\"},{\\\"id\\\":\\\"P3\\\",\\\"injuries\\\":[\\\"no visible injuries\\\"],\\\"consciousness\\\":\\\"conscious\\\",\\\"mobility\\\":\\\"ambulatory\\\"}],\\\"situation\\\":{\\\"emergency_type\\\":\\\"motor vehicle accident\\\",\\\"vehicles_involved\\\":2,\\\"location\\\":\\\"roadway\\\",\\\"hazards\\\":[\\\"traffic\\\",\\\"potential vehicle fluids\\\"],\\\"ems_notified\\\":true},\\\"assessment\\\":{\\\"priority\\\":\\\"urgent\\\",\\\"response_needed\\\":\\\"multiple units\\\",\\\"scene_safety\\\":\\\"bystander in safe location\\\"},\\\"evidence_images\\\":[],\\\"location\\\":{\\\"address\\\":\\\"Accident scene\\\",\\\"latitude\\\":null,\\\"longitude\\\":null}}}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_report_003",
+      "category": "forced_tool_call", 
+      "subcategory": "generate_report",
+      "priority": "medium",
+      "description": "Generate report for choking incident",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone is choking at a restaurant. They can't speak or breathe."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is a choking emergency. If they can't speak or breathe, perform the Heimlich maneuver immediately: 1) Stand behind them 2) Arms around waist 3) Make fist above belly button 4) Quick upward thrusts. Are you able to do this?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I did the Heimlich and the object came out. They're breathing now but coughing. Generate report"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"generate_report\",\n    \"arguments\": \"{\\\"report_id\\\":\\\"RPT-CHK-003\\\",\\\"summary\\\":\\\"Choking incident resolved with Heimlich maneuver - patient now breathing\\\",\\\"details\\\":{\\\"patient\\\":{\\\"age_group\\\":\\\"adult\\\",\\\"gender\\\":\\\"unknown\\\",\\\"consciousness\\\":\\\"conscious\\\",\\\"breathing\\\":\\\"breathing with cough\\\",\\\"airway\\\":\\\"cleared\\\"},\\\"situation\\\":{\\\"emergency_type\\\":\\\"choking\\\",\\\"location\\\":\\\"restaurant\\\",\\\"obstruction\\\":\\\"food object - expelled\\\",\\\"intervention\\\":[\\\"Heimlich maneuver performed\\\",\\\"airway cleared\\\"]},\\\"assessment\\\":{\\\"priority\\\":\\\"stable\\\",\\\"response_needed\\\":\\\"evaluation recommended\\\",\\\"outcome\\\":\\\"successful intervention\\\"},\\\"evidence_images\\\":[],\\\"location\\\":{\\\"address\\\":\\\"Restaurant location\\\",\\\"latitude\\\":null,\\\"longitude\\\":null}}}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_care_001",
+      "category": "forced_tool_call",
+      "subcategory": "show_precare_instructions", 
+      "priority": "high",
+      "description": "Show care instructions for severe bleeding",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone cut themselves badly with a kitchen knife. There's a lot of blood."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is a serious bleeding emergency. Is the person conscious and alert? Can you see how deep the cut is?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're conscious but the cut is deep on their hand. Blood is flowing steadily."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Apply direct pressure immediately with clean cloth or towel. Elevate the hand above their heart if possible. Do not remove any cloth that becomes soaked - add more on top."}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I'm applying pressure. Show care instructions"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"show_precare_instructions\",\n    \"arguments\": \"{\\\"title\\\":\\\"Severe Bleeding Control\\\",\\\"priority\\\":\\\"critical\\\",\\\"instructions\\\":[{\\\"step\\\":1,\\\"action\\\":\\\"Continue direct pressure\\\",\\\"description\\\":\\\"Maintain firm, steady pressure on wound with clean cloth\\\",\\\"important\\\":true},{\\\"step\\\":2,\\\"action\\\":\\\"Elevate the injury\\\",\\\"description\\\":\\\"Keep injured hand raised above heart level if possible\\\",\\\"important\\\":true},{\\\"step\\\":3,\\\"action\\\":\\\"Do not remove bandages\\\",\\\"description\\\":\\\"If cloth becomes soaked, add more layers - never remove\\\",\\\"important\\\":true},{\\\"step\\\":4,\\\"action\\\":\\\"Monitor for shock\\\",\\\"description\\\":\\\"Watch for pale skin, rapid pulse, dizziness\\\",\\\"important\\\":false},{\\\"step\\\":5,\\\"action\\\":\\\"Prepare for transport\\\",\\\"description\\\":\\\"Keep patient calm and still until EMS arrives\\\",\\\"important\\\":false}],\\\"warnings\\\":[\\\"Never remove blood-soaked bandages\\\",\\\"Do not use tourniquet unless trained\\\",\\\"Call 911 if bleeding doesn't slow\\\"],\\\"evidence_images\\\":[]}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_care_002",
+      "category": "forced_tool_call",
+      "subcategory": "show_precare_instructions",
+      "priority": "high", 
+      "description": "Show care instructions for burn injury",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone got burned by hot oil while cooking. Their arm is red and blistering."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This sounds like a second-degree burn. How large is the burned area? Is the person in pain?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "It's about the size of my palm on their forearm. They're in a lot of pain."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "For a palm-sized burn, this needs medical attention. Cool the burn with cool (not ice-cold) running water for 10-20 minutes if possible."}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I'm running cool water over it now. Show care instructions"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"show_precare_instructions\",\n    \"arguments\": \"{\\\"title\\\":\\\"Second-Degree Burn Care\\\",\\\"priority\\\":\\\"urgent\\\",\\\"instructions\\\":[{\\\"step\\\":1,\\\"action\\\":\\\"Continue cooling\\\",\\\"description\\\":\\\"Run cool water over burn for 15-20 minutes total\\\",\\\"important\\\":true},{\\\"step\\\":2,\\\"action\\\":\\\"Remove from heat source\\\",\\\"description\\\":\\\"Ensure no continued contact with hot oil or surfaces\\\",\\\"important\\\":true},{\\\"step\\\":3,\\\"action\\\":\\\"Do not break blisters\\\",\\\"description\\\":\\\"Leave blisters intact - they protect against infection\\\",\\\"important\\\":true},{\\\"step\\\":4,\\\"action\\\":\\\"Cover loosely\\\",\\\"description\\\":\\\"Use sterile gauze or clean cloth - do not wrap tightly\\\",\\\"important\\\":false},{\\\"step\\\":5,\\\"action\\\":\\\"Elevate if possible\\\",\\\"description\\\":\\\"Raise burned arm to reduce swelling\\\",\\\"important\\\":false}],\\\"warnings\\\":[\\\"Do not use ice or ice water\\\",\\\"Do not apply butter, oil, or ointments\\\",\\\"Seek medical attention for palm-sized burns\\\"],\\\"evidence_images\\\":[]}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_care_003",
+      "category": "forced_tool_call",
+      "subcategory": "show_precare_instructions",
+      "priority": "medium",
+      "description": "Show care instructions for allergic reaction",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "My friend ate something and now has hives and is having trouble breathing."}]
+        },
+        {
+          "role": "assistant", 
+          "content": [{"type": "text", "text": "This sounds like a severe allergic reaction. Do they have an EpiPen with them? Are they able to speak in full sentences?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They have an EpiPen but haven't used it yet. They can speak but seem short of breath."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Use the EpiPen now - this is anaphylaxis. Remove safety cap, inject into outer thigh, hold for 10 seconds. Call 911 immediately after."}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I used the EpiPen and called 911. Show care instructions"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"show_precare_instructions\",\n    \"arguments\": \"{\\\"title\\\":\\\"Post-EpiPen Anaphylaxis Care\\\",\\\"priority\\\":\\\"critical\\\",\\\"instructions\\\":[{\\\"step\\\":1,\\\"action\\\":\\\"Monitor breathing\\\",\\\"description\\\":\\\"Watch for continued breathing difficulty or worsening symptoms\\\",\\\"important\\\":true},{\\\"step\\\":2,\\\"action\\\":\\\"Keep patient calm\\\",\\\"description\\\":\\\"Have them sit upright, speak reassuringly\\\",\\\"important\\\":true},{\\\"step\\\":3,\\\"action\\\":\\\"Prepare second EpiPen\\\",\\\"description\\\":\\\"If symptoms return, second dose may be needed in 5-15 minutes\\\",\\\"important\\\":true},{\\\"step\\\":4,\\\"action\\\":\\\"Note time of injection\\\",\\\"description\\\":\\\"Tell EMS exactly when EpiPen was administered\\\",\\\"important\\\":false},{\\\"step\\\":5,\\\"action\\\":\\\"Stay with patient\\\",\\\"description\\\":\\\"Do not leave them alone until EMS arrives\\\",\\\"important\\\":false}],\\\"warnings\\\":[\\\"Symptoms can return after EpiPen wears off\\\",\\\"Patient needs hospital evaluation even if improved\\\",\\\"Be ready to give second EpiPen if needed\\\"],\\\"evidence_images\\\":[]}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_report_004",
+      "category": "forced_tool_call",
+      "subcategory": "generate_report", 
+      "priority": "medium",
+      "description": "Generate report for fall with head injury",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "An elderly person fell down stairs. They hit their head and seem confused."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Head injuries in elderly patients are serious. Are they conscious and responding to you? Can you see any bleeding or obvious injury?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're awake but keep asking the same questions. I see a small cut on their forehead but not much bleeding."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "The confusion and repeated questions suggest possible concussion. Do not move them. Keep them still and awake. Have you called for medical help?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, ambulance is coming. Generate report"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"generate_report\",\n    \"arguments\": \"{\\\"report_id\\\":\\\"RPT-FALL-004\\\",\\\"summary\\\":\\\"Elderly fall victim with head injury and altered mental status\\\",\\\"details\\\":{\\\"patient\\\":{\\\"age_group\\\":\\\"elderly\\\",\\\"gender\\\":\\\"unknown\\\",\\\"consciousness\\\":\\\"conscious but confused\\\",\\\"mental_status\\\":\\\"repetitive questioning\\\",\\\"injuries\\\":[\\\"forehead laceration - minor bleeding\\\",\\\"possible concussion\\\"]},\\\"situation\\\":{\\\"emergency_type\\\":\\\"fall with head trauma\\\",\\\"mechanism\\\":\\\"fall down stairs\\\",\\\"location\\\":\\\"stairway\\\",\\\"patient_position\\\":\\\"not moved from scene\\\"},\\\"assessment\\\":{\\\"priority\\\":\\\"urgent\\\",\\\"response_needed\\\":\\\"ALS evaluation\\\",\\\"concerns\\\":[\\\"head injury\\\",\\\"altered mental status\\\",\\\"elderly patient\\\"]},\\\"evidence_images\\\":[],\\\"location\\\":{\\\"address\\\":\\\"Fall location\\\",\\\"latitude\\\":null,\\\"longitude\\\":null}}}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_care_004",
+      "category": "forced_tool_call",
+      "subcategory": "show_precare_instructions",
+      "priority": "medium",
+      "description": "Show care instructions for spinal injury precautions",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone fell from a ladder and is on the ground. They can't feel their legs."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is a potential spinal injury. Do NOT move them at all. Are they conscious and able to speak to you?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Yes, they're awake and talking but scared. They say they can't move their legs."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Keep them calm and completely still. Support their head if needed but do not move their neck. This requires immediate emergency response."}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I'm keeping them still. EMS is on the way. Show care instructions"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"show_precare_instructions\",\n    \"arguments\": \"{\\\"title\\\":\\\"Spinal Injury Precautions\\\",\\\"priority\\\":\\\"critical\\\",\\\"instructions\\\":[{\\\"step\\\":1,\\\"action\\\":\\\"Maintain head position\\\",\\\"description\\\":\\\"Keep head and neck in neutral alignment - do not turn or move\\\",\\\"important\\\":true},{\\\"step\\\":2,\\\"action\\\":\\\"Do not move patient\\\",\\\"description\\\":\\\"No rolling, sitting up, or position changes whatsoever\\\",\\\"important\\\":true},{\\\"step\\\":3,\\\"action\\\":\\\"Provide reassurance\\\",\\\"description\\\":\\\"Talk calmly, explain that help is coming, reduce anxiety\\\",\\\"important\\\":true},{\\\"step\\\":4,\\\"action\\\":\\\"Monitor breathing\\\",\\\"description\\\":\\\"Watch for any changes in breathing pattern\\\",\\\"important\\\":false},{\\\"step\\\":5,\\\"action\\\":\\\"Clear the area\\\",\\\"description\\\":\\\"Keep space open for EMS access and equipment\\\",\\\"important\\\":false}],\\\"warnings\\\":[\\\"Any movement could cause permanent paralysis\\\",\\\"Do not attempt to test sensation or movement\\\",\\\"Only trained personnel should move spinal injury patients\\\"],\\\"evidence_images\\\":[]}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_report_005",
+      "category": "forced_tool_call",
+      "subcategory": "generate_report",
+      "priority": "medium", 
+      "description": "Generate report for drug overdose",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I found someone unconscious with pill bottles nearby. Their breathing is very slow."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This could be a drug overdose. Are you able to wake them up by shouting or gentle shaking? Can you check their pulse?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They won't wake up even when I shake them. Pulse is there but very slow. I called 911."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Good that you called 911. If you suspect opioid overdose, do you have Narcan/naloxone available? Keep monitoring their breathing - be ready to do rescue breathing if it stops."}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "I don't have Narcan. Their breathing is still slow but steady. Generate report"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"generate_report\",\n    \"arguments\": \"{\\\"report_id\\\":\\\"RPT-OD-005\\\",\\\"summary\\\":\\\"Suspected drug overdose - unconscious patient with depressed respirations\\\",\\\"details\\\":{\\\"patient\\\":{\\\"age_group\\\":\\\"unknown\\\",\\\"gender\\\":\\\"unknown\\\",\\\"consciousness\\\":\\\"unconscious - unresponsive to stimuli\\\",\\\"breathing\\\":\\\"slow but present\\\",\\\"pulse\\\":\\\"slow but palpable\\\"},\\\"situation\\\":{\\\"emergency_type\\\":\\\"suspected overdose\\\",\\\"evidence\\\":[\\\"pill bottles found at scene\\\"],\\\"location\\\":\\\"where patient was found\\\",\\\"interventions\\\":[\\\"911 called\\\",\\\"monitoring breathing\\\"]},\\\"assessment\\\":{\\\"priority\\\":\\\"critical\\\",\\\"response_needed\\\":\\\"immediate ALS with naloxone\\\",\\\"concerns\\\":[\\\"respiratory depression\\\",\\\"potential cardiac effects\\\"]},\\\"evidence_images\\\":[],\\\"location\\\":{\\\"address\\\":\\\"Overdose scene\\\",\\\"latitude\\\":null,\\\"longitude\\\":null}}}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_care_005",
+      "category": "forced_tool_call",
+      "subcategory": "show_precare_instructions",
+      "priority": "high",
+      "description": "Show care instructions for seizure patient",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Someone just had a seizure and is now lying on the ground confused."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "Is the seizure still happening or have they stopped convulsing? Are they breathing normally now?"}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "The seizure stopped about a minute ago. They're breathing but seem very confused and sleepy."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "This is normal after a seizure - it's called the postictal period. Keep them safe and comfortable while they recover. Do not restrain them or put anything in their mouth."}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "They're starting to become more aware. Show care instructions"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"show_precare_instructions\",\n    \"arguments\": \"{\\\"title\\\":\\\"Post-Seizure Care\\\",\\\"priority\\\":\\\"urgent\\\",\\\"instructions\\\":[{\\\"step\\\":1,\\\"action\\\":\\\"Keep them safe\\\",\\\"description\\\":\\\"Clear area of hazards, provide soft surface for head\\\",\\\"important\\\":true},{\\\"step\\\":2,\\\"action\\\":\\\"Monitor airway\\\",\\\"description\\\":\\\"Ensure breathing is clear, turn to side if vomiting\\\",\\\"important\\\":true},{\\\"step\\\":3,\\\"action\\\":\\\"Provide reassurance\\\",\\\"description\\\":\\\"Speak calmly, explain what happened, stay with them\\\",\\\"important\\\":true},{\\\"step\\\":4,\\\"action\\\":\\\"Do not restrain\\\",\\\"description\\\":\\\"Allow natural movement, do not hold them down\\\",\\\"important\\\":false},{\\\"step\\\":5,\\\"action\\\":\\\"Note timing\\\",\\\"description\\\":\\\"Record seizure duration and recovery time for EMS\\\",\\\"important\\\":false}],\\\"warnings\\\":[\\\"Never put anything in mouth during seizure\\\",\\\"Do not give food or water until fully alert\\\",\\\"Call 911 if seizure lasts over 5 minutes\\\"],\\\"evidence_images\\\":[]}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_report_006",
+      "category": "forced_tool_call",
+      "subcategory": "generate_report",
+      "priority": "low",
+      "description": "Generate report for simple conversation completion",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Thanks for all your help with the emergency situation."}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "You're very welcome. I'm glad I could help guide you through that emergency. You did great following the instructions and staying calm."}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Generate report"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"generate_report\",\n    \"arguments\": \"{\\\"report_id\\\":\\\"RPT-GEN-006\\\",\\\"summary\\\":\\\"Emergency response consultation completed\\\",\\\"details\\\":{\\\"consultation\\\":{\\\"type\\\":\\\"emergency guidance\\\",\\\"outcome\\\":\\\"successful bystander assistance\\\",\\\"duration\\\":\\\"conversation length\\\"},\\\"situation\\\":{\\\"emergency_type\\\":\\\"various emergency guidance provided\\\",\\\"location\\\":\\\"consultation via app\\\",\\\"resolution\\\":\\\"bystander educated and assisted\\\"},\\\"assessment\\\":{\\\"priority\\\":\\\"consultation complete\\\",\\\"response_needed\\\":\\\"none - informational\\\",\\\"outcome\\\":\\\"positive educational interaction\\\"},\\\"evidence_images\\\":[],\\\"location\\\":{\\\"address\\\":\\\"User location\\\",\\\"latitude\\\":null,\\\"longitude\\\":null}}}\"\n  }\n}"}]
+        }
+      ]
+    },
+    {
+      "id": "forced_care_006",
+      "category": "forced_tool_call",
+      "subcategory": "show_precare_instructions",
+      "priority": "low",
+      "description": "Show care instructions for general first aid request",
+      "conversation": [
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Can you show me general first aid steps to remember?"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "I'd be happy to provide general first aid guidance. These are the fundamental steps that apply to most emergency situations."}]
+        },
+        {
+          "role": "user",
+          "content": [{"type": "text", "text": "Show care instructions"}]
+        },
+        {
+          "role": "assistant",
+          "content": [{"type": "text", "text": "{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"show_precare_instructions\",\n    \"arguments\": \"{\\\"title\\\":\\\"General First Aid Steps\\\",\\\"priority\\\":\\\"medium\\\",\\\"instructions\\\":[{\\\"step\\\":1,\\\"action\\\":\\\"Ensure scene safety\\\",\\\"description\\\":\\\"Check for hazards before approaching - traffic, fire, violence\\\",\\\"important\\\":true},{\\\"step\\\":2,\\\"action\\\":\\\"Check responsiveness\\\",\\\"description\\\":\\\"Tap shoulders and shout 'Are you okay?' to assess consciousness\\\",\\\"important\\\":true},{\\\"step\\\":3,\\\"action\\\":\\\"Call for help\\\",\\\"description\\\":\\\"Dial 911 immediately for serious injuries or unconscious patients\\\",\\\"important\\\":true},{\\\"step\\\":4,\\\"action\\\":\\\"Check ABCs\\\",\\\"description\\\":\\\"Airway, Breathing, Circulation - ensure all are functioning\\\",\\\"important\\\":false},{\\\"step\\\":5,\\\"action\\\":\\\"Provide appropriate care\\\",\\\"description\\\":\\\"Apply specific first aid based on type of emergency\\\",\\\"important\\\":false}],\\\"warnings\\\":[\\\"Do not move patients with suspected spinal injuries\\\",\\\"Never leave an unconscious person alone\\\",\\\"Do not give food or drink to unconscious patients\\\"],\\\"evidence_images\\\":[]}\"\n  }\n}"}]
+        }
+      ]
+    }
+  ]
+}
