@@ -102,3 +102,5 @@ finetuning/medical_gemma_output
 finetuning/medical_gemma_lora
 
 finetuning/medical_gemma_merged
+
+finetuning/medical_gemma_hf_upload

@@ -65,6 +65,8 @@ from unsloth.chat_templates import get_chat_template, standardize_data_formats, 
 from trl import SFTTrainer, SFTConfig
 from transformers import TextStreamer
 from huggingface_hub import HfApi
+from gguf_export import export_gguf_model, export_multiple_quantizations
+from hf_upload import upload_to_huggingface, check_hf_auth
 
 # Fix TorchDynamo recompilation limit issues
 torch._dynamo.config.disable = True
@@ -692,165 +694,6 @@ def test_medical_inference(model, tokenizer):
 4. Deploy with existing emergency tool calling system
 """
 
-# %% [code]
-def upload_to_huggingface(model, tokenizer):
-    """Upload the fine-tuned model to HuggingFace Hub"""
-    print("\n=== Uploading to HuggingFace Hub ===")
-    
-    try:
-        # Save merged model for upload (better for inference)
-        print("Creating merged model for HuggingFace upload...")
-        merged_path = "medical_gemma_hf_upload"
-        model.save_pretrained_merged(merged_path, tokenizer, save_method="merged_16bit")
-        
-        # Create model card content
-        model_card_content = f"""---
-language:
-- en
-license: apache-2.0
-base_model: unsloth/gemma-3n-E4B-it
-tags:
-- medical
-- emergency-response
-- healthcare
-- fine-tuned
-- unsloth
-- gemma3n
-- citizen2responder
-pipeline_tag: text-generation
----
-
-# Medical Emergency Response AI - Gemma 3N Fine-tuned
-
-This model is a fine-tuned version of Gemma 3N specialized for medical emergency response scenarios. 
-It's designed for the Citizen2Responder app to provide dual-mode emergency assistance:
-
-## Model Description
-
-- **Base Model:** unsloth/gemma-3n-E4B-it
-- **Fine-tuning Dataset:** Medical emergency conversation scenarios
-- **Use Case:** Emergency medical guidance and tool calling
-- **License:** Apache 2.0
-
-## Features
-
-### 🗣️ Natural Conversation Mode
-- Progressive medical questioning and guidance
-- Conversational flow without tool call JSON
-- Educational support for bystanders
-
-### 🔧 Forced Tool Call Mode  
-- Structured emergency reports for EMTs/dispatch
-- Formatted step-by-step medical procedures
-- Pure JSON output for tool responses
-
-## Emergency Categories Covered
-
-- Cardiac emergencies (heart attack, cardiac arrest)
-- Respiratory emergencies (choking, asthma, anaphylaxis)
-- Trauma & bleeding (severe bleeding, burns, fractures)
-- Neurological (stroke, seizures, concussion)
-- Poisoning & overdose
-- Multi-casualty events
-- Pediatric emergencies
-
-## Usage
-
-```python
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-model = AutoModelForCausalLM.from_pretrained("{HF_REPO_ID}")
-tokenizer = AutoTokenizer.from_pretrained("{HF_REPO_ID}")
-
-# Example usage for emergency response
-prompt = "Someone collapsed and is not responding. What should I assess first?"
-inputs = tokenizer(prompt, return_tensors="pt")
-outputs = model.generate(**inputs, max_length=200, temperature=0.7)
-response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-```
-
-## Training Details
-
-- **Training Framework:** Unsloth + LoRA
-- **Base Model:** Gemma 3N (4B parameters)
-- **Dataset:** Custom medical emergency scenarios
-- **Training Steps:** 200 steps
-- **Learning Rate:** 1e-4
-- **Batch Size:** 8 (effective)
-
-## Intended Use
-
-This model is designed for **emergency response guidance and education only**. 
-It should NOT be used as a substitute for professional medical advice, diagnosis, or treatment.
-
-## Privacy & Security
-
-- Designed for local deployment
-- No data transmission to external servers
-- Privacy-first emergency assistance
-
-## Citation
-
-```
-@misc{{medical-gemma3n-emergency-response,
-  title={{Medical Emergency Response AI - Gemma 3N Fine-tuned}},
-  author={{Citizen2Responder Team}},
-  year={{2025}},
-  url={{https://huggingface.co/{HF_REPO_ID}}}
-}}
-```
-"""
-        
-        # Save model card
-        with open(f"{merged_path}/README.md", "w") as f:
-            f.write(model_card_content)
-        
-        # Upload to HuggingFace Hub
-        print(f"Uploading model to {HF_REPO_ID}...")
-        model.push_to_hub_merged(
-            repo_id=HF_REPO_ID,
-            tokenizer=tokenizer,
-            save_method="merged_16bit",
-            token=True,  # Uses HF_TOKEN environment variable
-            private=PRIVATE_REPO,
-            commit_message="Add fine-tuned medical emergency response model"
-        )
-        
-        print(f"✅ Model successfully uploaded to https://huggingface.co/{HF_REPO_ID}")
-        
-    except Exception as e:
-        print(f"❌ Failed to upload to HuggingFace: {str(e)}")
-        print("💡 Make sure you're logged in with `huggingface-cli login` or set HF_TOKEN environment variable")
-        print("💡 Ensure you have write access to the repository")
-        raise  # Re-raise to be caught by the outer exception handler
-
-def retry_upload_from_saved_model(model_path="medical_gemma_merged", repo_id=None):
-    """Retry uploading a previously saved model to HuggingFace Hub"""
-    if repo_id is None:
-        repo_id = HF_REPO_ID
-    
-    print(f"\n=== Retrying Upload from Saved Model ===")
-    print(f"Loading model from: {model_path}")
-    
-    try:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-        
-        # Load the saved merged model
-        model = AutoModelForCausalLM.from_pretrained(model_path)
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
-        
-        # Upload to HuggingFace
-        model.push_to_hub(repo_id, token=True, private=PRIVATE_REPO)
-        tokenizer.push_to_hub(repo_id, token=True, private=PRIVATE_REPO)
-        
-        print(f"✅ Successfully uploaded model to https://huggingface.co/{repo_id}")
-        
-    except Exception as e:
-        print(f"❌ Retry upload failed: {str(e)}")
-        print("💡 Check your authentication and network connection")
-        return False
-    
-    return True
 
 def save_medical_model(model, tokenizer):
     """Save the fine-tuned medical model for deployment"""
@@ -868,38 +711,14 @@ def save_medical_model(model, tokenizer):
         aliases=["latest", "emergency-response", "v1.0"]
     )
     
-    # Upload to HuggingFace Hub if enabled (with error protection)
-    if UPLOAD_TO_HF:
-        try:
-            upload_to_huggingface(model, tokenizer)
-        except Exception as upload_error:
-            print(f"⚠️  HuggingFace upload failed, but model is safely saved locally: {str(upload_error)}")
-            print("📁 Your model files are preserved in:")
-            print("   - medical_gemma_lora/ (LoRA adapters)")
-            print("   - medical_gemma_merged/ (merged model)")
-            print("   - WandB artifacts (logged)")
-            print("💡 You can retry upload later using these saved files")
-    
     # Save merged model for direct inference
     model.save_pretrained_merged("medical_gemma_merged", tokenizer)
     print("✅ Merged model saved to 'medical_gemma_merged'")
     
-    # Save GGUF for mobile deployment (llama.rn compatibility)
-    model.save_pretrained_gguf(
-        "medical_gemma_mobile",
-        quantization_type="Q8_0",  # Optimal quality/size balance
-    )
-    print("✅ GGUF model saved to 'medical_gemma_mobile' for mobile deployment")
-    
-    # Log mobile model to WandB
-    wandb.log_model(
-        path="medical_gemma_mobile",
-        name="medical-gemma3n-mobile-gguf",
-        aliases=["latest", "mobile-deployment", "q8_0"]
-    )
-    
-    print("\n🏥 Medical Emergency AI Model Ready for Deployment!")
-    print("Compatible with relay-responder-app's llama.rn integration")
+    print("\n🏥 Medical Emergency AI Model Ready for Further Processing!")
+    print("Use separate export/upload scripts for deployment:")
+    print("   - Run gguf_export.py for mobile deployment")
+    print("   - Run hf_upload.py for HuggingFace Hub upload")
     print("Models logged to WandB for version tracking and sharing")
 
 # %% [markdown]
@@ -934,8 +753,34 @@ def main():
         # Validate emergency response capabilities
         test_medical_inference(model, tokenizer)
         
-        # Export for deployment
+        # Save model (LoRA adapters and merged model)
         save_medical_model(model, tokenizer)
+        
+        # Optional: Export to GGUF for mobile deployment
+        print("\n=== Optional GGUF Export ===")
+        export_gguf = input("Export GGUF model for mobile deployment? (y/n): ").lower().strip()
+        if export_gguf == 'yes' or export_gguf == 'y':
+            try:
+                export_gguf_model(model, tokenizer)
+                print("✅ GGUF export completed")
+            except Exception as gguf_error:
+                print(f"⚠️  GGUF export failed: {gguf_error}")
+                print("You can run gguf_export.py separately later")
+        
+        # Optional: Upload to HuggingFace Hub
+        print("\n=== Optional HuggingFace Upload ===")
+        upload_hf = input("Upload to HuggingFace Hub? (y/n): ").lower().strip()
+        if upload_hf == 'yes' or upload_hf == 'y':
+            if UPLOAD_TO_HF and check_hf_auth():
+                try:
+                    upload_to_huggingface(model, tokenizer, repo_id=HF_REPO_ID, private=PRIVATE_REPO)
+                    print("✅ HuggingFace upload completed")
+                except Exception as hf_error:
+                    print(f"⚠️  HuggingFace upload failed: {hf_error}")
+                    print("You can run hf_upload.py separately later")
+            else:
+                print("⚠️  HuggingFace upload not configured or authentication failed")
+                print("You can run hf_upload.py separately after configuring authentication")
         
         # Finalize WandB run
         wandb.finish()
@@ -943,6 +788,10 @@ def main():
         print("\n✅ Medical AI fine-tuning completed successfully!")
         print("Model ready for integration with Citizen2Responder app")
         print("Training metrics and models saved to WandB for analysis")
+        print("\n📋 Next Steps:")
+        print("   - Run gguf_export.py for mobile deployment")
+        print("   - Run hf_upload.py for HuggingFace Hub upload")
+        print("   - Integrate with relay-responder-app")
         
     except Exception as e:
         print(f"❌ Training failed: {str(e)}")
