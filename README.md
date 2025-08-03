@@ -183,10 +183,7 @@ The app includes AI-powered vision analysis for visual assessment support.
    EXPO_PUBLIC_DEEPGRAM_PUBLIC_KEY=your_deepgram_api_key_here
    EXPO_PUBLIC_REPLICATE_API_KEY=your_replicate_api_key_here
    ```
-   
-   **Required API Keys:**
-   - **Deepgram API Key**: Required for Speech-to-Text (STT) functionality
-   - **Replicate API Key**: Required for Text-to-Speech (TTS) functionality
+
 
 ### Development
 
