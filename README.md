@@ -68,14 +68,19 @@ The app intelligently routes requests based on capability requirements:
 - **Specialized Training**: Fine-tuned Gemma 3N for emergency response scenarios
 - **Dual-mode Operation**: Natural conversation guidance + structured tool calling for EMTs
 - **Emergency Coverage**: 20+ categories including cardiac, respiratory, trauma, and neurological emergencies
-- **Mobile Optimized**: GGUF quantization for efficient on-device deployment
+- **Mobile Optimized**: GGUF quantization for efficient on-device deployment  
 - **Development Tools**: Fine-tuning and model conversion scripts available in `finetuning/` directory
+
+<div align="center">
+  <img src="assets/images/wandb-logs.png" alt="WandB Training Logs" width="600"/>
+  <p><em>WandB Training Logs - Model fine-tuning metrics and performance tracking</em></p>
+</div>
 
 ## 🎛️ Core Features
 
 ### Emergency Response Toggles
 
-The app features four primary access modes accessible through intuitive toggle controls:
+The app features three primary access modes accessible through intuitive toggle controls, plus vision capabilities:
 
 #### ASSESS Mode
 - **Purpose**: Guided emergency assessment
@@ -110,11 +115,8 @@ The app features four primary access modes accessible through intuitive toggle c
   <p><em>Care Mode - Pre-care instructions with step-by-step guidance</em></p>
 </div>
 
-#### VISION Mode
-- **Purpose**: Visual analysis capabilities
-- **Function**: AI-powered image and video analysis
-- **Icon**: Eye/Vision
-- **Usage**: Enable camera input for visual assessment
+#### Vision Capabilities
+The app includes AI-powered vision analysis for visual assessment support.
 
 ### Additional Controls
 - **Camera Toggle**: Video feed control with permission management

@@ -104,6 +104,60 @@ Our training dataset was developed through Clint Potters' front-line EMT experie
 - **Multi-Casualty Events**: Car accidents, workplace injuries, mass casualty triage
 - **Pediatric Emergencies**: Infant choking, febrile seizures, pediatric trauma
 
+#### Dataset Structure & Quality
+
+**Conversation Format**: Each training example follows a structured conversation pattern where the AI progressively guides bystanders through proper emergency assessment protocols. The dataset captures both natural language guidance and structured tool calling, ensuring the model learns when to provide conversational support versus when to trigger emergency tools.
+
+**Data Quality Standards**:
+- **Medical Accuracy**: All scenarios vetted against EMT protocols and real-world emergency procedures
+- **Progressive Assessment**: Training examples demonstrate proper medical questioning sequences that build situational awareness
+- **Dual-Mode Training**: Each scenario includes both conversational guidance and structured JSON tool calls for comprehensive emergency response
+- **Safety-First Approach**: Responses prioritize patient safety and emphasize when professional help is required
+
+**Training Data Preparation**: The dataset uses response-only training methodology, where the model learns exclusively from expert emergency guidance responses rather than user inputs. This ensures the AI provides professional-grade medical guidance rather than mimicking untrained user behavior during critical situations.
+
+#### Example Training Scenario: Cardiac Emergency
+
+**Scenario Setup**: Person collapsed at workplace, bystander calling for help
+
+**User**: "Someone just collapsed at work! They're not moving and I don't know what to do!"
+
+**AI Response (Natural Conversation Mode)**:
+```
+I'm here to help you through this emergency. First, stay calm - you're doing the right thing by getting help.
+
+Can you tell me:
+1. Is the person breathing? Look for chest movement or put your ear near their mouth
+2. Are they responsive? Try tapping their shoulders and shouting "Are you okay?"
+3. Do you see any obvious injuries or blood?
+
+Time is critical, so let me know what you observe and I'll guide you through the next steps.
+```
+
+**AI Response (Tool Calling Mode)**:
+```json
+{
+  "tool_calls": [
+    {
+      "name": "show_precare_instructions",
+      "arguments": {
+        "emergency_type": "cardiac_arrest",
+        "priority": "high",
+        "instructions": [
+          "Check for responsiveness by tapping shoulders and shouting",
+          "Look, listen, and feel for breathing for no more than 10 seconds",
+          "If unresponsive and not breathing normally, call 911 immediately",
+          "Begin CPR if trained - 30 chest compressions followed by 2 rescue breaths",
+          "Continue until professional help arrives"
+        ]
+      }
+    }
+  ]
+}
+```
+
+This dual-mode training ensures the model can both guide untrained bystanders conversationally and provide structured emergency protocols when triggered.
+
 **Validation Process**: Each scenario was reviewed against actual EMT protocols and field experience to ensure medical accuracy and practical effectiveness in real emergency situations.
 
 ### 🔧 Technical Fine-tuning Implementation
@@ -171,6 +225,11 @@ The `finetuning/` directory provides a comprehensive toolkit for medical AI deve
 - **Tool Calling Precision**: >90% accuracy in triggering appropriate emergency tools
 - **Medical Safety**: 100% of responses reviewed and approved by EMT professionals
 - **Mobile Performance**: <2 second response time on modern smartphones
+
+<div align="center">
+  <img src="assets/images/wandb-logs.png" alt="WandB Training Logs Dashboard" width="800"/>
+  <p><em>WandB Training Dashboard - Real-time monitoring of medical fine-tuning metrics including loss curves, learning rate scheduling, and model performance validation</em></p>
+</div>
 
 This fine-tuning approach creates a specialized medical emergency AI that maintains Gemma 3N's conversational capabilities while adding the structured knowledge and response patterns required for life-saving emergency response.
 
