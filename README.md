@@ -66,7 +66,7 @@ The app intelligently routes requests based on capability requirements:
 
 ### 🏥 Medical Fine-tuning
 - **Specialized Training**: Fine-tuned Gemma 3N for emergency response scenarios
-- **Dual-mode Operation**: Natural conversation guidance + structured tool calling for EMTs
+- **Dual-mode Operation**: Natural conversation guidance + structured tool calling for EMTs and medics
 - **Emergency Coverage**: 20+ categories including cardiac, respiratory, trauma, and neurological emergencies
 - **Mobile Optimized**: GGUF quantization for efficient on-device deployment  
 - **Development Tools**: Fine-tuning and model conversion scripts available in `finetuning/` directory
