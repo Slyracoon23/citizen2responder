@@ -1,14 +1,14 @@
 <div align="center">
   <img src="assets/images/logo-transparent-with-white-text-and-full-icon.png" alt="Citizen2 Responder Logo" width="400"/>
   
-  # Relay Responder App
+  # Citizen2Responder App
   
   *A cutting-edge emergency response and medical assistance application that combines AI-powered real-time video communication with intelligent assessment tools. Built with React Native and Expo, featuring local AI processing with cloud fallback for optimal performance and privacy.*
 </div>
 
 ## 🚨 Overview
 
-The Relay Responder App is designed to assist emergency responders, medical professionals, and individuals during critical situations. It provides AI-guided assessments, automated report generation, and real-time care instructions through an intuitive video calling interface.
+The Citizen2Responder App is designed to assist emergency responders, medical professionals, and individuals during critical situations. It provides AI-guided assessments, automated report generation, and real-time care instructions through an intuitive video calling interface.
 
 ## 🎥 App Preview
 
