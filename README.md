@@ -71,6 +71,13 @@ The app intelligently routes requests based on capability requirements:
 - **Mobile Optimized**: GGUF quantization for efficient on-device deployment  
 - **Development Tools**: Fine-tuning and model conversion scripts available in `finetuning/` directory
 
+#### Training Dataset
+Our medical training dataset was developed through real EMT field experience, featuring 40+ emergency scenarios across critical categories:
+- **EMT-Validated**: All scenarios reviewed against actual emergency protocols
+- **Dual-Mode Training**: Each scenario includes both conversational guidance and structured tool calling
+- **Safety-First**: Responses prioritize patient safety and professional handoff protocols
+- **Progressive Assessment**: Training examples demonstrate proper medical questioning sequences
+
 <div align="center">
   <img src="assets/images/wandb-logs.png" alt="WandB Training Logs" width="600"/>
   <p><em>WandB Training Logs - Model fine-tuning metrics and performance tracking</em></p>
