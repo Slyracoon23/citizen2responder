@@ -91,3 +91,8 @@ yarn-error.*
 
 
 *.mp4
+
+
+finetuning/unsloth_compiled_cache/
+
+finetuning/wandb

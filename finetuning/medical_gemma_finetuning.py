@@ -65,6 +65,10 @@ from unsloth.chat_templates import get_chat_template, standardize_data_formats, 
 from trl import SFTTrainer, SFTConfig
 from transformers import TextStreamer
 
+# Fix TorchDynamo recompilation limit issues
+torch._dynamo.config.disable = True
+torch._dynamo.config.cache_size_limit = 128
+
 # %% [markdown]
 """
 ## Medical Emergency Dataset Loading and Validation
@@ -247,14 +251,24 @@ def convert_to_training_format(dataset_json):
     
     training_data = []
     for scenario in dataset_json["scenarios"]:
+        # Flatten the nested content structure for Unsloth compatibility
+        flattened_conversation = []
+        for message in scenario["conversation"]:
+            flattened_message = {
+                "role": message["role"],
+                "content": message["content"][0]["text"]  # Extract text from nested structure
+            }
+            flattened_conversation.append(flattened_message)
+        
         training_data.append({
-            "conversations": scenario["conversation"]
+            "conversations": flattened_conversation
         })
     
     print(f"✅ Converted {len(training_data)} scenarios to training format")
     return training_data
 
 # Load and validate dataset
+from pathlib import Path  # Ensure Path is available
 DATASET_JSON = load_medical_dataset()
 DATASET_STATS = validate_dataset(DATASET_JSON)
 MEDICAL_DATASET = convert_to_training_format(DATASET_JSON)
@@ -468,8 +482,8 @@ def create_medical_trainer(model, tokenizer, dataset):
         eval_dataset=None,  # Could add validation set for production
         args=SFTConfig(
             dataset_text_field="text",
-            per_device_train_batch_size=2,  # Conservative for GPU memory
-            gradient_accumulation_steps=4,  # Effective batch size of 8
+            per_device_train_batch_size=1,  # Ultra-conservative to avoid recompilation
+            gradient_accumulation_steps=8,  # Effective batch size of 8
             warmup_steps=10,  # Gradual learning rate warmup
             max_steps=200,  # Sufficient for medical domain adaptation
             learning_rate=1e-4,  # Conservative for medical accuracy
@@ -760,3 +774,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+# %%
