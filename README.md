@@ -46,7 +46,7 @@ Experience the app instantly using the Expo Go app on your mobile device. Scan t
 ## 🧠 AI Technology
 
 ### Local AI Processing
-- **Model**: Gemma-3n (gemma-3n-E2B-it-Q4_K_M.gguf)
+- **Model**: Fine-tuned Medical Gemma 3N ([HuggingFace](https://huggingface.co/Slyracoon23/medical-gemma3n-emergency-response))
 - **Framework**: llama.rn for on-device inference
 - **Benefits**: Low latency, privacy protection, offline capability
 - **Use Cases**: Text conversations, assessments, report generation
@@ -63,6 +63,13 @@ The app intelligently routes requests based on capability requirements:
 - **Text-only interactions** → Local Gemma-3n model
 - **Vision/image analysis** → Cloud Gemini Flash model
 - **Automatic fallback** → Cloud processing if local model fails
+
+### 🏥 Medical Fine-tuning
+- **Specialized Training**: Fine-tuned Gemma 3N for emergency response scenarios
+- **Dual-mode Operation**: Natural conversation guidance + structured tool calling for EMTs
+- **Emergency Coverage**: 20+ categories including cardiac, respiratory, trauma, and neurological emergencies
+- **Mobile Optimized**: GGUF quantization for efficient on-device deployment
+- **Development Tools**: Fine-tuning and model conversion scripts available in `finetuning/` directory
 
 ## 🎛️ Core Features
 
