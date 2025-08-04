@@ -144,6 +144,8 @@ The app includes AI-powered vision analysis for visual assessment support.
 - **OpenRouter** - Cloud AI API gateway
 - **Replicate** - Text-to-Speech (TTS) services
 - **Deepgram** - Speech-to-Text (STT) transcription
+- **Unsloth** - Finetuning framework
+
 
 ## 📱 Setup Instructions
 
